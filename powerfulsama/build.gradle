@@ -1,4 +1,7 @@
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 28
@@ -22,13 +25,32 @@ android {
         }
     }
 
+    dataBinding {enabled = true}
+
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'com.android.support:appcompat-v7:28.0.0'
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.3.10"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.0"
+
+
+    //google libraries
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+//    implementation 'androidx.cardview:cardview:1.0.0'
+//    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'androidx.recyclerview:recyclerview:1.0.0'
+    implementation "com.stefanosiano:powerfulsharedpreferences:0.1.20"  //PowerfulSharedPreferences
+    implementation "com.stefanosiano:powerfulsharedpreferences_livedata:0.1.15"  //PowerfulSharedPreferences
+//    implementation 'androidx.constraintlayout:constraintlayout:2.0.0-alpha2'
+
+    // Architecture Components
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.0.0'                                  //ViewModel and LiveData
+//    implementation 'androidx.lifecycle:lifecycle-common-java8:2.0.0'                                //Java8 support for Lifecycles
+//    implementation 'androidx.room:room-runtime:2.0.0'                                               //Room
+//    implementation 'androidx.paging:paging-runtime:2.0.0'                                           //Paging
+//    kapt 'androidx.room:room-compiler:2.0.0'                                                        //Room annotations
+//    testImplementation 'androidx.arch.core:core-testing:2.0.0'                                      //Test helpers for LiveData
+//    testImplementation 'androidx.room:room-testing:2.0.0'                                           //Test helpers for Room
 }
