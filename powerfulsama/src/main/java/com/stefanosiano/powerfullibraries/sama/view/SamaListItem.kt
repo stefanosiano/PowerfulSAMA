@@ -1,9 +1,9 @@
-package com.stefanosiano.powerfulsama
+package com.stefanosiano.powerfullibraries.sama.view
 
 import android.util.SparseArray
 import androidx.recyclerview.widget.RecyclerView
 
-abstract class BaseLI {
+abstract class SamaListItem {
 
     /** Returns the unique id of the item (default implementation returns [RecyclerView.NO_ID]) */
     open fun getStableId(): Long = RecyclerView.NO_ID
@@ -15,31 +15,31 @@ abstract class BaseLI {
     open fun onSaveItems(saveItems: SparseArray<Any>): SparseArray<Any> = saveItems
 
     /** Function called when the item is bound to the view */
-    fun bind(initObjects: Map<String, Any>) = onBind(initObjects)
+    internal fun bind(initObjects: Map<String, Any>) = onBind(initObjects)
 
     /** Function called when the item is bound to the view */
     open fun onBind(initObjects: Map<String, Any>) {  }
 
     /** Function called when the item is bound to the view */
-    fun bindInBackground(initObjects: Map<String, Any>) = onBindInBackground(initObjects)
+    internal suspend fun bindInBackground(initObjects: Map<String, Any>) = onBindInBackground(initObjects)
 
     /** Function called when the item is bound to the view. Called in background after [onBind]. It gets blocked if the adapter is destroyed (e.g. activity finished) */
-    open fun onBindInBackground(initObjects: Map<String, Any>) {}
+    open suspend fun onBindInBackground(initObjects: Map<String, Any>) {}
 
     /** Function called when the item variables should be restored. Called after [onBind] and [onBindInBackground]. Works only id [getStableId] is overridden and the adapter's hasStableId is true! */
-    open fun reload(savedObjects: SparseArray<Any>) = onReload(savedObjects)
+    internal fun reload(savedObjects: SparseArray<Any>) = onReload(savedObjects)
 
     /** Function called when the item variables should be restored. Called after [onBind] and [onBindInBackground]. Works only id [getStableId] is overridden and the adapter's hasStableId is true! */
     open fun onReload(savedObjects: SparseArray<Any>) {}
 
     /** Function called in background when the item variables should be restored, after [onReload]. It gets blocked if the adapter is destroyed (e.g. activity finished). Works only id [getStableId] is overridden and the adapter's hasStableId is true! */
-    fun reloadInBackground(savedObjects: SparseArray<Any>) = onReloadInBackground(savedObjects)
+    internal suspend fun reloadInBackground(savedObjects: SparseArray<Any>) = onReloadInBackground(savedObjects)
 
     /** Function called in background when the item variables should be restored, after [onReload]. It gets blocked if the adapter is destroyed (e.g. activity finished). Works only id [getStableId] is overridden and the adapter's hasStableId is true! */
-    open fun onReloadInBackground(savedObjects: SparseArray<Any>) {}
+    open suspend fun onReloadInBackground(savedObjects: SparseArray<Any>) {}
 
     /** Function called when the adapter is removed from the parent or when notifyDatasetChanged() is called on adapter */
-    fun stop() = onStop()
+    internal fun stop() = onStop()
 
     /** Function called when the adapter is removed from the parent or when notifyDatasetChanged() is called on adapter */
     open fun onStop() {}

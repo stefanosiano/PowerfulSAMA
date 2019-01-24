@@ -28,11 +28,11 @@ import kotlin.coroutines.CoroutineContext
  * @param itemBindingId Id of the dataBinding variable in the row layout
  * @param hasStableId Whether the adapter has stableIds (The items of the adapter must implement getStableId(), or it won't have any effect)
  */
-class SimpleRvAdapter(
+class SamaRvAdapter(
     private var itemLayoutId: Int,
     private val itemBindingId: Int,
     private val hasStableId: Boolean
-): RecyclerView.Adapter<SimpleRvAdapter.SimpleViewHolder>(), CoroutineScope {
+): RecyclerView.Adapter<SamaRvAdapter.SimpleViewHolder>(), CoroutineScope {
 
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineJob + CoroutineExceptionHandler { _, t -> t.printStackTrace() }
@@ -63,13 +63,13 @@ class SimpleRvAdapter(
     private val onListChangedCallback: WeakReferenceOnListChangedCallback = WeakReferenceOnListChangedCallback(this)
 
     /** items shown bound to rows (implemented through ObservableArrayList) */
-    private var items: ObservableList<BaseLI> = ObservableArrayList()
+    private var items: ObservableList<SamaListItem> = ObservableArrayList()
 
     /** Coroutine contexts bound to each adapter item */
     private val contexts: HashMap<Long, CoroutineContext> = HashMap()
 
     /** items implemented through live data */
-    private var liveDataItems: LiveData<out List<BaseLI>>? = null
+    private var liveDataItems: LiveData<out List<SamaListItem>>? = null
 
     /** map that saves variables of each row and reload them when the items are reloaded (available only if hasStableId = true) */
     private val savedItems: HashMap<Long, SparseArray<Any>> = HashMap()
@@ -79,7 +79,7 @@ class SimpleRvAdapter(
 
 
     /** Function to be called when the liveData changes. It will reload the list */
-    private val liveDataObserver = Observer<List<BaseLI>> {
+    private val liveDataObserver = Observer<List<SamaListItem>> {
         //        Timber.v(it.toString())
         if(it != null) {
             recyclerView?.get()?.unregisterAdapterDataObserver()
@@ -98,7 +98,7 @@ class SimpleRvAdapter(
         }
     }
 
-    fun addLayoutType(viewType: Int, layoutId: Int): SimpleRvAdapter { itemLayoutIds.put(viewType, layoutId); return this }
+    fun addLayoutType(viewType: Int, layoutId: Int): SamaRvAdapter { itemLayoutIds.put(viewType, layoutId); return this }
 
     /** Sets the SimpleRecyclerView instance and tries to show the loadingView when loading the list */
     fun setRecyclerView(simpleRV: SimpleRecyclerView) { recyclerView = WeakReference(simpleRV) }
@@ -142,7 +142,7 @@ class SimpleRvAdapter(
 
 
     /** Function that binds the item to the view holder, calling appropriate methods in the right order */
-    private fun bindItemToViewHolder(listItem: BaseLI?, context: CoroutineContext){
+    private fun bindItemToViewHolder(listItem: SamaListItem?, context: CoroutineContext){
         listItem ?: return
         listItem.bind(initObjects)
         launch(context) { listItem.bindInBackground(initObjects) }
@@ -165,14 +165,14 @@ class SimpleRvAdapter(
      *              When it changes, the changes will be reflected to the adapter.
      */
     @Suppress("unchecked_cast")
-    fun bindItems(items: ObservableList<out BaseLI>) : SimpleRvAdapter {
+    fun bindItems(items: ObservableList<out SamaListItem>) : SamaRvAdapter {
         recyclerView?.get()?.showLoading()
         recyclerView?.get()?.unregisterAdapterDataObserver()
         this.items.removeOnListChangedCallback(onListChangedCallback)
         this.saveAll()
         this.items.clear()
         this.contexts.clear()
-        this.items = items as ObservableList<BaseLI>
+        this.items = items as ObservableList<SamaListItem>
         recyclerView?.get()?.registerAdapterDataObserver()
         this.items.addOnListChangedCallback(onListChangedCallback)
         itemRangeInserted(0, items.size)
@@ -187,7 +187,7 @@ class SimpleRvAdapter(
      * @param items LiveData of List that will be bound to the adapter.
      *              When it changes, the changes will be reflected to the adapter.
      */
-    fun bindItems(items: LiveData<out List<BaseLI>>?) : SimpleRvAdapter {
+    fun bindItems(items: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
         //remove the observer from the optional current liveData
         liveDataItems?.removeObserver(liveDataObserver)
         liveDataItems = items
@@ -197,7 +197,7 @@ class SimpleRvAdapter(
     }
 
     /** Pass the [ob] to all the items in the list, using [key] */
-    fun passToItems(key: String, ob: Any) : SimpleRvAdapter {
+    fun passToItems(key: String, ob: Any) : SamaRvAdapter {
         initObjects.remove(key)
         initObjects[key] = ob
         return this
@@ -238,10 +238,10 @@ class SimpleRvAdapter(
     override fun getItemId(position: Int): Long = if(hasStableId) getItem(position)?.getStableId() ?: RecyclerView.NO_ID else RecyclerView.NO_ID
 
     /** Returns all the items in the adapter */
-    fun getItems(): List<BaseLI> = this.items
+    fun getItems(): List<SamaListItem> = this.items
 
     /** Returns the item at position [position] */
-    fun getItem(position: Int): BaseLI? = tryOrNull { items[position] }
+    fun getItem(position: Int): SamaListItem? = tryOrNull { items[position] }
 
     /** Returns the coroutine context bound to the item at position [position] */
     private fun getItemContext(position: Int): CoroutineContext {
@@ -254,7 +254,7 @@ class SimpleRvAdapter(
     }
 
     /** Returns the coroutine context bound to the item [item]. Use it only if [hasStableId]!!! */
-    private fun getItemContext(item: BaseLI): CoroutineContext? {
+    private fun getItemContext(item: SamaListItem): CoroutineContext? {
         if(!hasStableId) return null
         if(contexts[item.getStableId()] == null || contexts[item.getStableId()]?.isActive != true) {
             val c = Job(coroutineJob) + CoroutineExceptionHandler { _, t -> t.printStackTrace() }
@@ -315,15 +315,15 @@ class SimpleRvAdapter(
     }
 
     /** Class that listens for changes of the passed list and calls the methods of the adapter */
-    inner class WeakReferenceOnListChangedCallback( bindingRvAdapter: SimpleRvAdapter ): ObservableList.OnListChangedCallback<ObservableList<BaseLI>>() {
+    inner class WeakReferenceOnListChangedCallback( bindingRvAdapter: SamaRvAdapter ): ObservableList.OnListChangedCallback<ObservableList<SamaListItem>>() {
 
         private val adapterReference = WeakReference(bindingRvAdapter)
 
-        @Synchronized override fun onChanged(sender: ObservableList<BaseLI>?) { adapterReference.get()?.dataSetChanged() }
-        @Synchronized override fun onItemRangeRemoved(sender: ObservableList<BaseLI>?, positionStart: Int, itemCount: Int) { adapterReference.get()?.itemRangeRemoved(positionStart, itemCount) }
-        @Synchronized override fun onItemRangeMoved(sender: ObservableList<BaseLI>?, fromPosition: Int, toPosition: Int, itemCount: Int) { adapterReference.get()?.itemRangeMoved(fromPosition, toPosition, itemCount) }
-        @Synchronized override fun onItemRangeInserted(sender: ObservableList<BaseLI>?, positionStart: Int, itemCount: Int) { adapterReference.get()?.itemRangeInserted(positionStart, itemCount) }
-        @Synchronized override fun onItemRangeChanged(sender: ObservableList<BaseLI>?, positionStart: Int, itemCount: Int) { adapterReference.get()?.itemRangeChanged(positionStart, itemCount) }
+        @Synchronized override fun onChanged(sender: ObservableList<SamaListItem>?) { adapterReference.get()?.dataSetChanged() }
+        @Synchronized override fun onItemRangeRemoved(sender: ObservableList<SamaListItem>?, positionStart: Int, itemCount: Int) { adapterReference.get()?.itemRangeRemoved(positionStart, itemCount) }
+        @Synchronized override fun onItemRangeMoved(sender: ObservableList<SamaListItem>?, fromPosition: Int, toPosition: Int, itemCount: Int) { adapterReference.get()?.itemRangeMoved(fromPosition, toPosition, itemCount) }
+        @Synchronized override fun onItemRangeInserted(sender: ObservableList<SamaListItem>?, positionStart: Int, itemCount: Int) { adapterReference.get()?.itemRangeInserted(positionStart, itemCount) }
+        @Synchronized override fun onItemRangeChanged(sender: ObservableList<SamaListItem>?, positionStart: Int, itemCount: Int) { adapterReference.get()?.itemRangeChanged(positionStart, itemCount) }
     }
 
 }

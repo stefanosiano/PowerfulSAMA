@@ -7,7 +7,7 @@ apply plugin: 'kotlin-kapt'
 
 //fixed data
 def pkgName = 'powerfulsama'
-def libGroupId = "com.stefanosiano.powerfullibraries"                               // Maven Group ID for the artifact
+def libGroupId = "com.stefanosiano.powerful_libraries"                              // Maven Group ID for the artifact
 def libArtifactId = "sama"                                                          // Maven Artifact ID for the artifact
 def libName = "Powerful Sama (Simplified Android Mvvm Architecture)"                // Library name
 def siteUrl = 'https://github.com/stefanosiano/PowerfulSAMA'                        // Homepage URL of the library
@@ -32,6 +32,7 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
+        consumerProguardFiles 'sama-proguard-rules.txt'
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -140,7 +141,7 @@ bintray {
 
     // Package info for BinTray
     pkg {
-        repo = 'maven-repo'
+        repo = 'powerful_libraries'
         // it is the name that appears in bintray when logged
         name = pkgName
         desc = libDescription

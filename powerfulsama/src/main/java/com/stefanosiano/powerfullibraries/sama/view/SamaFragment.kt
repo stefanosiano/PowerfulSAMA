@@ -6,7 +6,7 @@ import kotlinx.coroutines.*
 
 
 /** Abstract Fragment for all Fragments to extend */
-abstract class BaseFragment: Fragment(), CoroutineScope {
+abstract class SamaFragment: Fragment(), CoroutineScope {
 
     private val loggingExceptionHandler = CoroutineExceptionHandler { _, t -> t.printStackTrace() }
     override val coroutineContext = SupervisorJob() + loggingExceptionHandler

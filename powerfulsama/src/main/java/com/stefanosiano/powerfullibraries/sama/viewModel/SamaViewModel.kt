@@ -15,7 +15,7 @@ import kotlinx.coroutines.*
  * @param <E> Enum extending [VmResponse.VmError]. It indicates the error of the response the activity/fragment should handle.
 </E></A>
  */
-open class BaseViewModel<A, E>
+open class SamaViewModel<A, E>
 /** Initializes the LiveData of the response */
 protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAction, E : VmResponse.VmError {
     private val loggingExceptionHandler = CoroutineExceptionHandler { _, t -> t.printStackTrace() }
@@ -138,7 +138,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      *      @param vmAction Action sent from the ViewModel. It will never be null.
      *      @param vmData Data sent from the ViewModel. It can be null.
      *      @return True to clear the response after being sent to the observer. False to retain it.
-     *      If false, the response should be cleared using [clearVmResponse][BaseViewModel.clearVmResponse] method.
+     *      If false, the response should be cleared using [clearVmResponse][SamaViewModel.clearVmResponse] method.
      *
      *
      * @param errorObserver
@@ -152,7 +152,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      *
      *      @param vmResponse Response sent from the ViewModel. It will never be null.
      *      @return True to clear the response after being sent to the observer. False to retain it.
-     *      If false, the response should be cleared using [clearVmResponse][BaseViewModel.clearVmResponse] method.
+     *      If false, the response should be cleared using [clearVmResponse][SamaViewModel.clearVmResponse] method.
      */
     fun observeVmResponse(lifecycleOwner: LifecycleOwner, observer: ((vmAction: A, vmData: Any?) -> Boolean)? = null, errorObserver: ((vmResponse: VmResponse<A, E, Any>) -> Boolean)? = null) {
         liveResponse.observeLd(lifecycleOwner) {

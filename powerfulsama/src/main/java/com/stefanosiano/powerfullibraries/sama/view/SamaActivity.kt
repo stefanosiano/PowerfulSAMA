@@ -8,7 +8,7 @@ import com.stefanosiano.powerfullibraries.sama.viewModel.VmResponse
 import kotlinx.coroutines.*
 
 /** Abstract Activity for all Activities to extend */
-abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
+abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     private val loggingExceptionHandler = CoroutineExceptionHandler { _, t -> t.printStackTrace() }
     override val coroutineContext = SupervisorJob() + loggingExceptionHandler
 
@@ -52,7 +52,7 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
      * @param vmAction Action sent from the ViewModel. It will never be null.
      * @param vmData Data sent from the ViewModel. It can be null.
      * @return True to clear the response after being sent to the observer. False to retain it.
-     * If false, the response should be cleared using [com.stefanosiano.powerfullibraries.sama.viewModel.BaseViewModel.clearVmResponse] method.
+     * If false, the response should be cleared using [com.stefanosiano.powerfullibraries.sama.viewModel.SamaViewModel.clearVmResponse] method.
      */
     open fun handleVmResponse(vmAction: VmResponse.VmAction, vmData: Any?): Boolean {
         //This method does nothing. It's here just to have a reference to the javadoc used by extending activities
@@ -76,7 +76,7 @@ abstract class BaseActivity : AppCompatActivity(), CoroutineScope {
      *
      * @param vmResponse Response sent from the ViewModel. It will never be null.
      * @return True to clear the response after being sent to the observer. False to retain it.
-     * If false, the response should be cleared using [com.stefanosiano.powerfullibraries.sama.viewModel.BaseViewModel.clearVmResponse] method.
+     * If false, the response should be cleared using [com.stefanosiano.powerfullibraries.sama.viewModel.SamaViewModel.clearVmResponse] method.
      *//*
     protected fun handleVmResponseError(vmResponse: VmResponse<out VmResponse.VmAction, out VmResponse.VmError, Any>): Boolean {
         //This method does nothing. It's here just to have a reference to the javadoc used by extending activities

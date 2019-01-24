@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-import com.stefanosiano.powerfullibraries.sama.view.SimpleRvAdapter
+import com.stefanosiano.powerfullibraries.sama.view.SamaRvAdapter
 
 /** Simple RecyclerView implementation */
 class SimpleRecyclerView: RecyclerView {
@@ -35,7 +35,7 @@ class SimpleRecyclerView: RecyclerView {
     /** Sets the adapter */
     override fun setAdapter(adapter: RecyclerView.Adapter<*>?) {
 
-        (adapter as? SimpleRvAdapter)?.setRecyclerView(this)
+        (adapter as? SamaRvAdapter)?.setRecyclerView(this)
 
         val oldAdapter = getAdapter()
         oldAdapter?.unregisterAdapterDataObserver(observer)
@@ -58,7 +58,7 @@ class SimpleRecyclerView: RecyclerView {
         oldAdapter?.unregisterAdapterDataObserver(observer)
         adapter?.registerAdapterDataObserver(observer)
 
-        (adapter as? SimpleRvAdapter)?.setRecyclerView(this)
+        (adapter as? SamaRvAdapter)?.setRecyclerView(this)
 
         super.swapAdapter(adapter, removeAndRecycleExistingViews)
 

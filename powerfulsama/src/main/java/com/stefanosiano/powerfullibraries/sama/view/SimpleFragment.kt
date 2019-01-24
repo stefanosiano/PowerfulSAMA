@@ -11,7 +11,7 @@ import com.stefanosiano.powerfullibraries.sama.ui.SimpleSearchView
 import java.lang.ref.WeakReference
 
 /** Base Class that provides easy way to use data binding with a fragment without the need of other classes */
-class SimpleFragment: BaseFragment() {
+class SimpleFragment: SamaFragment() {
 
     private var layoutId: Int = 0
     private var menuId: Int = 0
