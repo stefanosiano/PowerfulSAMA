@@ -1,7 +1,7 @@
-package com.stefanosiano.powerfullibraries.sama.view
+package com.stefanosiano.powerful_libraries.sama.view
 
 import androidx.fragment.app.Fragment
-import com.stefanosiano.powerfullibraries.sama.tryOrNull
+import com.stefanosiano.powerful_libraries.sama.tryOrNull
 import kotlinx.coroutines.*
 
 

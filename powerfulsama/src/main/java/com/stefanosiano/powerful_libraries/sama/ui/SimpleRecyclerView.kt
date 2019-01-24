@@ -1,10 +1,10 @@
-package com.stefanosiano.powerfullibraries.sama.ui
+package com.stefanosiano.powerful_libraries.sama.ui
 
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-import com.stefanosiano.powerfullibraries.sama.view.SamaRvAdapter
+import com.stefanosiano.powerful_libraries.sama.view.SamaRvAdapter
 
 /** Simple RecyclerView implementation */
 class SimpleRecyclerView: RecyclerView {

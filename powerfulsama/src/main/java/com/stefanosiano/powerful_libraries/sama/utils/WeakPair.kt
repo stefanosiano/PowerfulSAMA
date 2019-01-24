@@ -1,4 +1,4 @@
-package com.stefanosiano.powerfullibraries.sama.utils
+package com.stefanosiano.powerful_libraries.sama.utils
 
 import java.lang.ref.WeakReference
 

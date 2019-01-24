@@ -1,4 +1,4 @@
-package com.stefanosiano.powerfullibraries.sama.view
+package com.stefanosiano.powerful_libraries.sama.view
 
 import android.util.SparseArray
 import androidx.recyclerview.widget.RecyclerView

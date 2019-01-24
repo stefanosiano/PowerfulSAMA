@@ -1,4 +1,4 @@
-package com.stefanosiano.powerfullibraries.sama.view
+package com.stefanosiano.powerful_libraries.sama.view
 
 import android.os.Handler
 import android.os.Looper
@@ -14,9 +14,9 @@ import androidx.databinding.ViewDataBinding
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.RecyclerView
-import com.stefanosiano.powerfullibraries.sama.ui.SimpleRecyclerView
-import com.stefanosiano.powerfullibraries.sama.runAndWait
-import com.stefanosiano.powerfullibraries.sama.tryOrNull
+import com.stefanosiano.powerful_libraries.sama.ui.SimpleRecyclerView
+import com.stefanosiano.powerful_libraries.sama.runAndWait
+import com.stefanosiano.powerful_libraries.sama.tryOrNull
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import kotlin.coroutines.CoroutineContext

@@ -1,4 +1,4 @@
-package com.stefanosiano.powerfullibraries.sama.ui
+package com.stefanosiano.powerful_libraries.sama.ui
 
 import android.content.Context
 import android.os.Handler
@@ -7,10 +7,10 @@ import android.view.View
 import androidx.appcompat.widget.SearchView
 import androidx.databinding.Observable
 import androidx.databinding.ObservableField
-import com.stefanosiano.powerfullibraries.sama.R
-import com.stefanosiano.powerfullibraries.sama.utils.WeakPair
-import com.stefanosiano.powerfullibraries.sama.addOnChangedAndNow
-import com.stefanosiano.powerfullibraries.sama.toWeakReference
+import com.stefanosiano.powerful_libraries.sama.R
+import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
+import com.stefanosiano.powerful_libraries.sama.addOnChangedAndNow
+import com.stefanosiano.powerful_libraries.sama.toWeakReference
 
 /** Class that provides easy to use SearchView with data binding */
 class SimpleSearchView : SearchView {

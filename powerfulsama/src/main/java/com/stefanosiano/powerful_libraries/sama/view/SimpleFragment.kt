@@ -1,4 +1,4 @@
-package com.stefanosiano.powerfullibraries.sama.view
+package com.stefanosiano.powerful_libraries.sama.view
 
 import android.content.Context
 import android.os.Bundle
@@ -6,8 +6,8 @@ import android.view.*
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ObservableField
 import androidx.databinding.ViewDataBinding
-import com.stefanosiano.powerfullibraries.sama.toWeakReference
-import com.stefanosiano.powerfullibraries.sama.ui.SimpleSearchView
+import com.stefanosiano.powerful_libraries.sama.toWeakReference
+import com.stefanosiano.powerful_libraries.sama.ui.SimpleSearchView
 import java.lang.ref.WeakReference
 
 /** Base Class that provides easy way to use data binding with a fragment without the need of other classes */

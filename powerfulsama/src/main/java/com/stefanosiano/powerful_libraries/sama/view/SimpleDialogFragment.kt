@@ -1,4 +1,4 @@
-package com.stefanosiano.powerfullibraries.sama.view
+package com.stefanosiano.powerful_libraries.sama.view
 
 import android.os.Bundle
 import android.view.*

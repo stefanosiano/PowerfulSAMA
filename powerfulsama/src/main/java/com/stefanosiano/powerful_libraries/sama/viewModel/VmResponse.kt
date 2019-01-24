@@ -1,4 +1,4 @@
-package com.stefanosiano.powerfullibraries.sama.viewModel
+package com.stefanosiano.powerful_libraries.sama.viewModel
 /** Class containing action, error and data sent from the ViewModel to its observers */
 
 class VmResponse<A, E, out D> (
