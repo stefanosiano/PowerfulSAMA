@@ -15,7 +15,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import com.stefanosiano.powerful_libraries.sama.ui.SimpleRecyclerView
 import com.stefanosiano.powerful_libraries.sama.runAndWait
 import com.stefanosiano.powerful_libraries.sama.tryOrNull
 import kotlinx.coroutines.*
@@ -75,27 +74,13 @@ class SamaRvAdapter(
     /** map that saves variables of each row and reload them when the items are reloaded (available only if hasStableId = true) */
     private val savedItems: HashMap<Long, SparseArray<Any>> = HashMap()
 
-    /** SimpleRecyclerView instance */
-    private var recyclerView: WeakReference<SimpleRecyclerView>? = null
+    /** Function to be called when the liveData changes. It will reload the list */
+    private val liveDataObserver = Observer<List<SamaListItem>> { if(it != null) bindItems(it, false) }
 
 
-    inner class LIDiffCallback(private val oldList: List<SamaListItem>, private val newList: List<SamaListItem>) : DiffUtil.Callback() {
-        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = if(hasStableId) oldList[oldItemPosition].getStableId() == newList[newItemPosition].getStableId() else true
-        override fun getOldListSize(): Int = oldList.size
-        override fun getNewListSize(): Int = newList.size
-        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = oldList[oldItemPosition].contentEquals(newList[newItemPosition])
-    }
 
+    /** Set a different [layoutId] for different [viewType] (viewTypes should be used in [SamaListItem.getViewType] of the items) */
     fun addLayoutType(viewType: Int, layoutId: Int): SamaRvAdapter { itemLayoutIds.put(viewType, layoutId); return this }
-
-    /** Sets the SimpleRecyclerView instance and tries to show the loadingView when loading the list */
-    fun setRecyclerView(simpleRV: SimpleRecyclerView) { recyclerView = WeakReference(simpleRV) }
-
-    /** Tries to show the loadingView of the attached recyclerView (if available) */
-    fun showLoading() { recyclerView?.get()?.showLoading() }
-
-    /** Tries to hide the loadingView of the attached recyclerView (if available) */
-    fun hideLoading() { recyclerView?.get()?.hideLoading() }
 
     /** Changes the layout of the rows and reload the list */
     fun setItemLayoutId(itemLayoutId: Int) {
@@ -162,58 +147,41 @@ class SamaRvAdapter(
      */
     @Suppress("unchecked_cast")
     fun bindItems(items: ObservableList<out SamaListItem>) : SamaRvAdapter {
-        recyclerView?.get()?.showLoading()
-        recyclerView?.get()?.unregisterAdapterDataObserver()
         this.items.removeOnListChangedCallback(onListChangedCallback)
         this.saveAll()
         this.items.clear()
         this.contexts.clear()
         this.items = items as ObservableList<SamaListItem>
-        recyclerView?.get()?.registerAdapterDataObserver()
         this.items.addOnListChangedCallback(onListChangedCallback)
         itemRangeInserted(0, items.size)
-        recyclerView?.get()?.hideLoading()
         return this
     }
+
 
     /**
      * Binds the items of the adapter to the passed list
      *
-     * @param items List that will be bound to the adapter. It completely reload the adapter
+     * @param list List that will be bound to the adapter. Checks differences with previous items to check what changed
+     * @param forceReload Force the adapter to completely reload all of its items, calling [notifyDataSetChanged]. Use it if you know all the items will change (will be faster), otherwise leave the default (false)
      */
-    fun bindItemsAndReload(items: List<out SamaListItem>) : SamaRvAdapter {
-        recyclerView?.get()?.showLoading()
-        recyclerView?.get()?.unregisterAdapterDataObserver()
+    fun bindItems(list: List<out SamaListItem>, forceReload: Boolean = false) : SamaRvAdapter {
         this.items.removeOnListChangedCallback(onListChangedCallback)
-        this.saveAll()
-        this.contexts.clear()
-        this.items.clear()
-        this.items.addAll(items)
-        recyclerView?.get()?.registerAdapterDataObserver()
-        dataSetChanged()
-        recyclerView?.get()?.hideLoading()
-        return this
-    }
+        saveAll()
 
-    /**
-     * Binds the items of the adapter to the passed list
-     *
-     * @param items List that will be bound to the adapter. Checks differences with previous items to check what changed
-     */
-    fun bindItems(list: List<out SamaListItem>) : SamaRvAdapter {
-        recyclerView?.get()?.unregisterAdapterDataObserver()
-        this.items.removeOnListChangedCallback(onListChangedCallback)
-
-        launch {
-            saveAll()
-            val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
-            items.clear()
-            items.addAll(list)
-            diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+        if(forceReload) {
+            this.items.clear()
+            this.contexts.clear()
+            this.items.addAll(list)
+            dataSetChanged()
         }
-
-        recyclerView?.get()?.registerAdapterDataObserver()
-        recyclerView?.get()?.hideLoading()
+        else {
+            launch {
+                val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
+                items.clear()
+                items.addAll(list)
+                diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+            }
+        }
         return this
     }
 
@@ -221,36 +189,14 @@ class SamaRvAdapter(
     /**
      * Binds the items of the adapter to the passed list
      *
-     * @param items LiveData of List that will be bound to the adapter.
-     *              When it changes, the changes will be reflected to the adapter.
+     * @param items LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
      */
     fun bindItems(items: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
         //remove the observer from the optional current liveData
         liveDataItems?.removeObserver(liveDataObserver)
         liveDataItems = items
-        recyclerView?.get()?.showLoading()
         liveDataItems?.observeForever(liveDataObserver)
         return this
-    }
-
-
-    /** Function to be called when the liveData changes. It will reload the list */
-    private val liveDataObserver = Observer<List<SamaListItem>> {
-        if(it != null) {
-            recyclerView?.get()?.unregisterAdapterDataObserver()
-            this.items.removeOnListChangedCallback(onListChangedCallback)
-
-            launch {
-                saveAll()
-                val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, it))
-                items.clear()
-                items.addAll(it)
-                diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
-            }
-
-            recyclerView?.get()?.registerAdapterDataObserver()
-            recyclerView?.get()?.hideLoading()
-        }
     }
 
     /** Pass the [ob] to all the items in the list, using [key] */
@@ -350,7 +296,6 @@ class SamaRvAdapter(
     /** Function to be called when the whole list changes */
     private fun dataSetChanged() {
         this.saveAll()
-        recyclerView?.get()?.recycledViewPool?.clear()
         items.forEach { it.stop() }
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancelChildren()
@@ -376,4 +321,12 @@ class SamaRvAdapter(
         @Synchronized override fun onItemRangeChanged(sender: ObservableList<SamaListItem>?, positionStart: Int, itemCount: Int) { adapterReference.get()?.itemRangeChanged(positionStart, itemCount) }
     }
 
+
+
+    inner class LIDiffCallback(private val oldList: List<SamaListItem>, private val newList: List<SamaListItem>) : DiffUtil.Callback() {
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = if(hasStableId) oldList[oldItemPosition].getStableId() == newList[newItemPosition].getStableId() else true
+        override fun getOldListSize(): Int = oldList.size
+        override fun getNewListSize(): Int = newList.size
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = oldList[oldItemPosition].contentEquals(newList[newItemPosition])
+    }
 }
