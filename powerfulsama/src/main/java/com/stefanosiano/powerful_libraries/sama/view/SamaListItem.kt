@@ -44,4 +44,7 @@ abstract class SamaListItem {
     /** Function called when the adapter is removed from the parent or when notifyDatasetChanged() is called on adapter */
     open fun onStop() {}
 
+    /** Compares this to another item to decide if they are the same when the list is reloaded. By default it calls == */
+    open fun contentEquals(other: SamaListItem) = this == other
+
 }

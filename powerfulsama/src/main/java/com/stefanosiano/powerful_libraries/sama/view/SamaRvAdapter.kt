@@ -13,6 +13,7 @@ import androidx.databinding.ObservableList
 import androidx.databinding.ViewDataBinding
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.ui.SimpleRecyclerView
 import com.stefanosiano.powerful_libraries.sama.runAndWait
@@ -78,24 +79,11 @@ class SamaRvAdapter(
     private var recyclerView: WeakReference<SimpleRecyclerView>? = null
 
 
-    /** Function to be called when the liveData changes. It will reload the list */
-    private val liveDataObserver = Observer<List<SamaListItem>> {
-        //        Timber.v(it.toString())
-        if(it != null) {
-            recyclerView?.get()?.unregisterAdapterDataObserver()
-            items.removeOnListChangedCallback(onListChangedCallback)
-            saveAll()
-            items.forEach { item -> item.stop() }
-            contexts.values.forEach { context -> context.cancel() }
-            coroutineContext.cancelChildren()
-            items.clear()
-            contexts.clear()
-            items.addAll(it)
-            recyclerView?.get()?.registerAdapterDataObserver()
-            items.addOnListChangedCallback(onListChangedCallback)
-            notifyDataSetChanged()
-            recyclerView?.get()?.hideLoading()
-        }
+    inner class LIDiffCallback(private val oldList: List<SamaListItem>, private val newList: List<SamaListItem>) : DiffUtil.Callback() {
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = if(hasStableId) oldList[oldItemPosition].getStableId() == newList[newItemPosition].getStableId() else true
+        override fun getOldListSize(): Int = oldList.size
+        override fun getNewListSize(): Int = newList.size
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = oldList[oldItemPosition].contentEquals(newList[newItemPosition])
     }
 
     fun addLayoutType(viewType: Int, layoutId: Int): SamaRvAdapter { itemLayoutIds.put(viewType, layoutId); return this }
@@ -136,10 +124,18 @@ class SamaRvAdapter(
     }
 
     override fun onBindViewHolder(holder: SimpleViewHolder, position: Int) {
+        getItemContext(position).cancel()
         holder.binding.get()?.setVariable(itemBindingId, getItem(position))
         bindItemToViewHolder(getItem(position), getItemContext(position))
     }
 
+    override fun onViewDetachedFromWindow(holder: SimpleViewHolder) {
+        super.onViewDetachedFromWindow(holder)
+        val item = getItem(holder.adapterPosition) ?: return
+        item.stop()
+        contexts[item.getStableId()]?.cancel()
+
+    }
 
     /** Function that binds the item to the view holder, calling appropriate methods in the right order */
     private fun bindItemToViewHolder(listItem: SamaListItem?, context: CoroutineContext){
@@ -180,6 +176,47 @@ class SamaRvAdapter(
         return this
     }
 
+    /**
+     * Binds the items of the adapter to the passed list
+     *
+     * @param items List that will be bound to the adapter. It completely reload the adapter
+     */
+    fun bindItemsAndReload(items: List<out SamaListItem>) : SamaRvAdapter {
+        recyclerView?.get()?.showLoading()
+        recyclerView?.get()?.unregisterAdapterDataObserver()
+        this.items.removeOnListChangedCallback(onListChangedCallback)
+        this.saveAll()
+        this.contexts.clear()
+        this.items.clear()
+        this.items.addAll(items)
+        recyclerView?.get()?.registerAdapterDataObserver()
+        dataSetChanged()
+        recyclerView?.get()?.hideLoading()
+        return this
+    }
+
+    /**
+     * Binds the items of the adapter to the passed list
+     *
+     * @param items List that will be bound to the adapter. Checks differences with previous items to check what changed
+     */
+    fun bindItems(list: List<out SamaListItem>) : SamaRvAdapter {
+        recyclerView?.get()?.unregisterAdapterDataObserver()
+        this.items.removeOnListChangedCallback(onListChangedCallback)
+
+        launch {
+            saveAll()
+            val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
+            items.clear()
+            items.addAll(list)
+            diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+        }
+
+        recyclerView?.get()?.registerAdapterDataObserver()
+        recyclerView?.get()?.hideLoading()
+        return this
+    }
+
 
     /**
      * Binds the items of the adapter to the passed list
@@ -194,6 +231,26 @@ class SamaRvAdapter(
         recyclerView?.get()?.showLoading()
         liveDataItems?.observeForever(liveDataObserver)
         return this
+    }
+
+
+    /** Function to be called when the liveData changes. It will reload the list */
+    private val liveDataObserver = Observer<List<SamaListItem>> {
+        if(it != null) {
+            recyclerView?.get()?.unregisterAdapterDataObserver()
+            this.items.removeOnListChangedCallback(onListChangedCallback)
+
+            launch {
+                saveAll()
+                val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, it))
+                items.clear()
+                items.addAll(it)
+                diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+            }
+
+            recyclerView?.get()?.registerAdapterDataObserver()
+            recyclerView?.get()?.hideLoading()
+        }
     }
 
     /** Pass the [ob] to all the items in the list, using [key] */
@@ -244,24 +301,19 @@ class SamaRvAdapter(
     fun getItem(position: Int): SamaListItem? = tryOrNull { items[position] }
 
     /** Returns the coroutine context bound to the item at position [position] */
-    private fun getItemContext(position: Int): CoroutineContext {
-        val id = if(hasStableId) getItemId(position) else position.toLong()
-        if(contexts[id] == null || contexts[id]?.isActive != true) {
-            val c = Job(coroutineJob) + CoroutineExceptionHandler { _, t -> t.printStackTrace() }
-            if(contexts[id]?.isActive != true) contexts.put(id, c)
-        }
-        return contexts[id]!!
-    }
+    private fun getItemContext(position: Int) = getLIContext( if(hasStableId) getItemId(position) else position.toLong() )
 
     /** Returns the coroutine context bound to the item [item]. Use it only if [hasStableId]!!! */
-    private fun getItemContext(item: SamaListItem): CoroutineContext? {
-        if(!hasStableId) return null
-        if(contexts[item.getStableId()] == null || contexts[item.getStableId()]?.isActive != true) {
-            val c = Job(coroutineJob) + CoroutineExceptionHandler { _, t -> t.printStackTrace() }
-            if(contexts[item.getStableId()]?.isActive != true) contexts.put(item.getStableId(), c)
-        }
-        return contexts[item.getStableId()]!!
+    private fun getItemContext(item: SamaListItem) = if(!hasStableId) null else getLIContext(item.getStableId())
+
+
+    private fun getLIContext(itemId: Long): CoroutineContext {
+        if(contexts[itemId]?.isActive != true)
+            contexts.put( itemId, Job(coroutineJob) + CoroutineExceptionHandler { _, t -> t.printStackTrace() } )
+
+        return contexts[itemId]!!
     }
+
 
 
 
@@ -287,11 +339,9 @@ class SamaRvAdapter(
     /** Function to be called when some items are removed */
     private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = handler.post {
         this.saveAll()
-        var i = positionStart
-        while(i < positionStart + itemCount) {
+        for(i in positionStart until positionStart+itemCount) {
             getItem(i)?.stop()
             getItemContext(i).cancel()
-            i++
         }
 
         notifyItemRangeRemoved(positionStart, itemCount)
