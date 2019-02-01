@@ -126,6 +126,8 @@ class SamaRvAdapter(
     private fun bindItemToViewHolder(listItem: SamaListItem?, context: CoroutineContext){
         listItem ?: return
         listItem.bind(initObjects)
+        if(!isActive) return
+
         launch(context) { listItem.bindInBackground(initObjects) }
 
         //reload saved variables of the items
@@ -175,12 +177,12 @@ class SamaRvAdapter(
             dataSetChanged()
         }
         else {
-            launch {
-                val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
-                items.clear()
-                items.addAll(list)
-                diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
-            }
+            if(!isActive) return this
+
+            val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
+            items.clear()
+            items.addAll(list)
+            diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
         }
         return this
     }
