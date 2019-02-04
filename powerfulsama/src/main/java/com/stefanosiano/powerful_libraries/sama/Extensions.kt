@@ -183,8 +183,8 @@ fun daysToMillis(days : Long) :Long = days * 86_400_000
 fun <T> T.toWeakReference() = WeakReference<T>(this)
 
 /** Removes all items that satisfy [filter] predicate */
-fun <K, V> MutableMap<K, V>.removeWhen(filter: (Map.Entry<K, V>) -> Boolean) = this.keys.removeAll(this.filter { filter.invoke(it) }.keys)
+inline fun <K, V> MutableMap<K, V>.removeWhen(filter: (Map.Entry<K, V>) -> Boolean) = this.keys.removeAll(this.filter { filter.invoke(it) }.keys)
 
 /** Removes all items that satisfy [filter] predicate */
-fun <E> MutableCollection<E>.removeWhen(filter: (E) -> Boolean) = this.removeAll(this.filter { filter.invoke(it) })
+inline fun <E> MutableCollection<E>.removeWhen(filter: (E) -> Boolean) = this.removeAll(this.filter { filter.invoke(it) })
 

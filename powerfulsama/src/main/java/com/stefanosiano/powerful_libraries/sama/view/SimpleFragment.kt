@@ -7,7 +7,7 @@ import androidx.databinding.DataBindingUtil
 import androidx.databinding.ObservableField
 import androidx.databinding.ViewDataBinding
 import com.stefanosiano.powerful_libraries.sama.toWeakReference
-import com.stefanosiano.powerful_libraries.sama.ui.SimpleSearchView
+import com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
 import java.lang.ref.WeakReference
 
 /** Base Class that provides easy way to use data binding with a fragment without the need of other classes */
@@ -22,7 +22,7 @@ class SimpleFragment: SamaFragment() {
     private var title = ""
     private var defaultTitle = ""
     private var onOptionMenuCreated: ((menu: Menu?) -> Unit)? = null
-    private var searchView: WeakReference<SimpleSearchView>? = null
+    private var searchView: WeakReference<SamaSearchView>? = null
 
     companion object {
 
@@ -78,7 +78,7 @@ class SimpleFragment: SamaFragment() {
         return this
     }
 
-    /** Binds an observableString to a SimpleSearchView
+    /** Binds an observableString to a SamaSearchView
      *
      * @param searchMenuId id of the searchView
      * @param searchString observableString to binds the searchView to
@@ -116,7 +116,7 @@ class SimpleFragment: SamaFragment() {
             inflater?.inflate(menuId, menu)
         onOptionMenuCreated?.invoke(menu)
 
-        searchView = if(searchMenuId != 0) (menu?.findItem(searchMenuId)?.actionView as? SimpleSearchView)?.toWeakReference() else null
+        searchView = if(searchMenuId != 0) (menu?.findItem(searchMenuId)?.actionView as? SamaSearchView)?.toWeakReference() else null
         searchView?.get()?.bindQuery(searchString)
         super.onCreateOptionsMenu(menu, inflater)
     }

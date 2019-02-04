@@ -13,7 +13,7 @@ import com.stefanosiano.powerful_libraries.sama.addOnChangedAndNow
 import com.stefanosiano.powerful_libraries.sama.toWeakReference
 
 /** Class that provides easy to use SearchView with data binding */
-class SimpleSearchView : SearchView {
+class SamaSearchView : SearchView {
 
     /** Delay in milliseconds to execute the listener or update the observable */
     var millis = 0L
