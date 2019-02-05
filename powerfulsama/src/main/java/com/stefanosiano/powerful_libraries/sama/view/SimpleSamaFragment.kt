@@ -11,7 +11,7 @@ import com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
 import java.lang.ref.WeakReference
 
 /** Base Class that provides easy way to use data binding with a fragment without the need of other classes */
-class SimpleFragment: SamaFragment() {
+open class SimpleSamaFragment: SamaFragment() {
 
     private var layoutId: Int = 0
     private var menuId: Int = 0
@@ -33,16 +33,16 @@ class SimpleFragment: SamaFragment() {
          * Creates a new SimpleFragment
          * @param layoutId The id of the layout to use. (0 means no layout is shown)
          */
-        fun newInstance(layoutId: Int): SimpleFragment = newInstance(layoutId, 0)
+        fun new(layoutId: Int): SimpleSamaFragment = new(layoutId, 0)
 
         /**
          * Creates a new SimpleFragment
          * @param layoutId The id of the layout to use. (0 means no layout is shown)
          * @param menuId The id of the menu to load. (0 means no menu is shown)
          */
-        fun newInstance(layoutId: Int, menuId: Int): SimpleFragment {
+        fun new(layoutId: Int, menuId: Int): SimpleSamaFragment {
 
-            val fragment = SimpleFragment()
+            val fragment = SimpleSamaFragment()
             val bundle = Bundle()
             bundle.putInt(ExtraLayoutId, layoutId)
             bundle.putInt(ExtraMenuId, menuId)
@@ -60,20 +60,20 @@ class SimpleFragment: SamaFragment() {
      * @param dataBindingId the id of the variable in the layout
      * @param bindingData the data to bind to the id
      */
-    fun with(dataBindingId: Int, bindingData: Any): SimpleFragment {
+    fun with(dataBindingId: Int, bindingData: Any): SimpleSamaFragment {
         if(!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId))
             this.bindingPairs.add(Pair(dataBindingId, bindingData))
         return this
     }
 
     /** Sets the title to show on the toolbar (optional) */
-    fun title(titleId: Int): SimpleFragment {
+    fun title(titleId: Int): SimpleSamaFragment {
         this.title = getString(titleId)
         return this
     }
 
     /** Sets the title to show on the toolbar (optional) */
-    fun title(title: String): SimpleFragment {
+    fun title(title: String): SimpleSamaFragment {
         this.title = title
         return this
     }
@@ -83,7 +83,7 @@ class SimpleFragment: SamaFragment() {
      * @param searchMenuId id of the searchView
      * @param searchString observableString to binds the searchView to
      */
-    fun search(searchMenuId: Int, searchString: ObservableField<String>): SimpleFragment {
+    fun search(searchMenuId: Int, searchString: ObservableField<String>): SimpleSamaFragment {
         this.searchMenuId = searchMenuId
         this.searchString = searchString
         return this
@@ -95,13 +95,13 @@ class SimpleFragment: SamaFragment() {
      * @param menuId
      * @param function
      */
-    fun onOptionSelected(menuId: Int, function: () -> Unit): SimpleFragment {
+    fun onOption(menuId: Int, function: () -> Unit): SimpleSamaFragment {
         menuFunctions.add(Pair(menuId, function))
         return this
     }
 
     /** Sets the function to call when creating the menu (optional) */
-    fun onOptionMenuCreated(onOptionMenuCreated: (menu: Menu?) -> Unit): SimpleFragment {
+    fun onOptionMenu(onOptionMenuCreated: (menu: Menu?) -> Unit): SimpleSamaFragment {
         this.onOptionMenuCreated = onOptionMenuCreated
         return this
     }

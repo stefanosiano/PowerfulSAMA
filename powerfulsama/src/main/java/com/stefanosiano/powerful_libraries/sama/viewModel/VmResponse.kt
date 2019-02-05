@@ -1,7 +1,7 @@
 package com.stefanosiano.powerful_libraries.sama.viewModel
 /** Class containing action, error and data sent from the ViewModel to its observers */
 
-class VmResponse<A, E, out D> (
+open class VmResponse<A, E, out D> (
     /** Specifies what the response is about  */
     val action: A,
     /** Specifies the error enum occurred during an action  */

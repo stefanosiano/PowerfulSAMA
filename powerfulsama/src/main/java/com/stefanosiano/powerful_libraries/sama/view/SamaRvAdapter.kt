@@ -19,6 +19,7 @@ import com.stefanosiano.powerful_libraries.sama.runAndWait
 import com.stefanosiano.powerful_libraries.sama.tryOrNull
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -26,9 +27,9 @@ import kotlin.coroutines.CoroutineContext
  *
  * @param itemLayoutId Id of the layout of each row
  * @param itemBindingId Id of the dataBinding variable in the row layout
- * @param hasStableId Whether the adapter has stableIds (The items of the adapter must implement getStableId(), or it won't have any effect)
+ * @param hasStableId Whether the adapter has stableIds (The items of the adapter must implement getStableId() or getStableIdString(), or it won't have any effect)
  */
-class SamaRvAdapter(
+open class SamaRvAdapter(
     private var itemLayoutId: Int,
     private val itemBindingId: Int,
     private val hasStableId: Boolean
@@ -41,20 +42,6 @@ class SamaRvAdapter(
 
     /** Objects passed to items during onBind */
     private val initObjects = HashMap<String, Any>()
-
-    /**
-     * Class that implements RecyclerViewAdapter in an easy and powerful way!
-     * hasStableId defaults to true
-     *
-     * @param itemLayoutId Id of the layout of each row
-     * @param itemBindingId Id of the dataBinding variable in the row layout
-     */
-    constructor(itemLayoutId: Int, itemBindingId: Int): this(itemLayoutId, itemBindingId, true)
-
-    init {
-        setHasStableIds(hasStableId)
-        itemLayoutIds.put(-1, itemLayoutId)
-    }
 
     /** handler to execute stuff in the main thread */
     private val handler: Handler = Handler(Looper.getMainLooper())
@@ -74,8 +61,24 @@ class SamaRvAdapter(
     /** map that saves variables of each row and reload them when the items are reloaded (available only if hasStableId = true) */
     private val savedItems: HashMap<Long, SparseArray<Any>> = HashMap()
 
+    private val idsMap: ConcurrentHashMap<String, Long> = ConcurrentHashMap()
+
     /** Function to be called when the liveData changes. It will reload the list */
     private val liveDataObserver = Observer<List<SamaListItem>> { if(it != null) bindItems(it, false) }
+
+    /**
+     * Class that implements RecyclerViewAdapter in an easy and powerful way!
+     * hasStableId defaults to true
+     *
+     * @param itemLayoutId Id of the layout of each row
+     * @param itemBindingId Id of the dataBinding variable in the row layout
+     */
+    constructor(itemLayoutId: Int, itemBindingId: Int): this(itemLayoutId, itemBindingId, true)
+
+    init {
+        setHasStableIds(hasStableId)
+        itemLayoutIds.put(-1, itemLayoutId)
+    }
 
 
 
@@ -92,15 +95,13 @@ class SamaRvAdapter(
 
     /** save variables for each item that will be restored when the list is reloaded */
     private fun saveAll(){
-        if(hasStableId) items.runAndWait { savedItems[it.getStableId()] = it.onSaveItems(SparseArray()) }
+        if(hasStableId) items.runAndWait { savedItems[getItemStableId(it)] = it.onSaveItems(SparseArray()) }
     }
 
     /** forces all items to reload all saved variables */
-    fun forceReload() { if(hasStableId) items.runAndWait { bindItemToViewHolder(it, getItemContext(it)!!) } }
+    fun forceReload() { if(hasStableId) items.runAndWait { bindItemToViewHolder(null, it, getItemContext(it)!!) } }
 
-    override fun getItemViewType(position: Int): Int {
-        return getItem(position)?.getViewType() ?: -1
-    }
+    override fun getItemViewType(position: Int): Int = getItem(position)?.getViewType() ?: -1
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SimpleViewHolder {
         val layoutId = if(itemLayoutIds.get(viewType) != 0) itemLayoutIds.get(viewType) else itemLayoutId
@@ -110,34 +111,35 @@ class SamaRvAdapter(
 
     override fun onBindViewHolder(holder: SimpleViewHolder, position: Int) {
         getItemContext(position).cancel()
-        holder.binding.get()?.setVariable(itemBindingId, getItem(position))
-        bindItemToViewHolder(getItem(position), getItemContext(position))
+        val bindJob = launch(getItemContext(position)) { holder.binding.get()?.setVariable(itemBindingId, getItem(position)) }
+        bindItemToViewHolder(bindJob, getItem(position), getItemContext(position))
     }
 
     override fun onViewDetachedFromWindow(holder: SimpleViewHolder) {
         super.onViewDetachedFromWindow(holder)
         val item = getItem(holder.adapterPosition) ?: return
         item.stop()
-        contexts[item.getStableId()]?.cancel()
-
+        contexts[getItemStableId(item)]?.cancel()
     }
 
     /** Function that binds the item to the view holder, calling appropriate methods in the right order */
-    private fun bindItemToViewHolder(listItem: SamaListItem?, context: CoroutineContext){
+    private fun bindItemToViewHolder(job: Job?, listItem: SamaListItem?, context: CoroutineContext){
         listItem ?: return
+        runBlocking(context) { job?.join() }
         listItem.bind(initObjects)
         if(!isActive) return
 
-        launch(context) { listItem.bindInBackground(initObjects) }
+        val bindBackgrounJob = launch(context) { listItem.bindInBackground(initObjects) }
 
         //reload saved variables of the items
         if(hasStableId) {
-            val saved = savedItems[listItem.getStableId()]
+            val saved = savedItems[getItemStableId(listItem)]
             if(saved != null) {
+                runBlocking(context) { bindBackgrounJob.join() }
                 listItem.reload(saved)
                 launch(context) { listItem.reloadInBackground(saved) }
             }
-            savedItems.remove(listItem.getStableId())
+            savedItems.remove(getItemStableId(listItem))
         }
     }
 
@@ -208,6 +210,16 @@ class SamaRvAdapter(
         return this
     }
 
+    private fun getItemStableId(listItem: SamaListItem): Long {
+        return if(listItem.getStableId() != RecyclerView.NO_ID)
+            listItem.getStableId()
+        else {
+            val id = idsMap[listItem.getStableIdString()] ?: RecyclerView.NO_ID
+            if(id == RecyclerView.NO_ID) idsMap[listItem.getStableIdString()] = idsMap.size.toLong()
+            idsMap[listItem.getStableIdString()] ?: RecyclerView.NO_ID
+        }
+    }
+
     /** Clear liveData observer (if any) */
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
@@ -240,7 +252,7 @@ class SamaRvAdapter(
     }
 
     /** Returns the stableId of the item at position [position], if available and if adapter hasStableId. */
-    override fun getItemId(position: Int): Long = if(hasStableId) getItem(position)?.getStableId() ?: RecyclerView.NO_ID else RecyclerView.NO_ID
+    override fun getItemId(position: Int): Long = if(hasStableId && getItem(position) != null) getItemStableId(getItem(position)!!) else RecyclerView.NO_ID
 
     /** Returns all the items in the adapter */
     fun getItems(): List<SamaListItem> = this.items
@@ -252,7 +264,7 @@ class SamaRvAdapter(
     private fun getItemContext(position: Int) = getLIContext( if(hasStableId) getItemId(position) else position.toLong() )
 
     /** Returns the coroutine context bound to the item [item]. Use it only if [hasStableId]!!! */
-    private fun getItemContext(item: SamaListItem) = if(!hasStableId) null else getLIContext(item.getStableId())
+    private fun getItemContext(item: SamaListItem) = if(!hasStableId) null else getLIContext(getItemStableId(item))
 
 
     private fun getLIContext(itemId: Long): CoroutineContext {
@@ -326,7 +338,7 @@ class SamaRvAdapter(
 
 
     inner class LIDiffCallback(private val oldList: List<SamaListItem>, private val newList: List<SamaListItem>) : DiffUtil.Callback() {
-        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = if(hasStableId) oldList[oldItemPosition].getStableId() == newList[newItemPosition].getStableId() else true
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = if(hasStableId) getItemStableId(oldList[oldItemPosition]) == getItemStableId(newList[newItemPosition]) else true
         override fun getOldListSize(): Int = oldList.size
         override fun getNewListSize(): Int = newList.size
         override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = oldList[oldItemPosition].contentEquals(newList[newItemPosition])

@@ -5,8 +5,11 @@ import androidx.recyclerview.widget.RecyclerView
 
 abstract class SamaListItem {
 
-    /** Returns the unique id of the item (default implementation returns [RecyclerView.NO_ID]) */
+    /** Returns the unique id of the item (defaults to [RecyclerView.NO_ID]). Overrides [getStableIdString] */
     open fun getStableId(): Long = RecyclerView.NO_ID
+
+    /** Returns the unique id (as a string) of the item (defaults to an empty string). It's converted to a long in the adapter. Is overridden by [getStableId] */
+    open fun getStableIdString(): String = ""
 
     /** returns the viewType of the item. Defaults to -1 */
     open fun getViewType() = -1

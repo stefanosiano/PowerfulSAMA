@@ -9,7 +9,7 @@ import androidx.fragment.app.FragmentManager
 import java.util.*
 
 /** Abstract DialogFragment for all DialogFragments to extend */
-class SimpleDialogFragment: DialogFragment() {
+open class SimpleSamaDialogFragment: DialogFragment() {
 
     private var layoutId: Int = 0
     private var fullScreen: Boolean = false
@@ -23,19 +23,19 @@ class SimpleDialogFragment: DialogFragment() {
         private const val ExtraFullScreen = "ExtraFullScreen"
 
         /**
-         * Creates a new SimpleDialogFragment
+         * Creates a new SimpleSamaDialogFragment
          * @param layoutId The id of the layout to use. (0 means no layout is shown)
          */
-        fun newInstance(layoutId: Int): SimpleDialogFragment = newInstance(layoutId, false)
+        fun new(layoutId: Int): SimpleSamaDialogFragment = new(layoutId, false)
 
         /**
-         * Creates a new SimpleDialogFragment
+         * Creates a new SimpleSamaDialogFragment
          * @param layoutId The id of the layout to use. (0 means no layout is shown)
          * @param fullScreen Forces the dialog to be in full screen mode
          */
-        fun newInstance(layoutId: Int, fullScreen: Boolean): SimpleDialogFragment {
+        fun new(layoutId: Int, fullScreen: Boolean): SimpleSamaDialogFragment {
 
-            val fragment = SimpleDialogFragment()
+            val fragment = SimpleSamaDialogFragment()
             val bundle = Bundle()
             bundle.putInt(ExtraLayoutId, layoutId)
             bundle.putBoolean(ExtraFullScreen, fullScreen)
@@ -53,7 +53,7 @@ class SimpleDialogFragment: DialogFragment() {
      * @param dataBindingId the id of the variable in the layout
      * @param bindingData the data to bind to the id
      */
-    fun with(dataBindingId: Int, bindingData: Any): SimpleDialogFragment {
+    fun with(dataBindingId: Int, bindingData: Any): SimpleSamaDialogFragment {
         if(!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId))
             this.bindingPairs.add(Pair(dataBindingId, bindingData))
         return this
@@ -65,7 +65,7 @@ class SimpleDialogFragment: DialogFragment() {
      *
      * @param dataBindingId the id of the dialog variable in the layout
      */
-    fun setDialogAsVariable(dataBindingId: Int): SimpleDialogFragment {
+    fun setDialogAsVariable(dataBindingId: Int): SimpleSamaDialogFragment {
         if(!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId))
             this.bindingPairs.add(Pair(dataBindingId, this))
         return this

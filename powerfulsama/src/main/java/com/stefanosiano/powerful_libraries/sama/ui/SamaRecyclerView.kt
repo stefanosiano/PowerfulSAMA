@@ -5,7 +5,7 @@ import android.util.AttributeSet
 import androidx.recyclerview.widget.RecyclerView
 
 /** Simple RecyclerView implementation. It just have a fix to avoid memory leaks when using a long living adapter */
-class SamaRecyclerView: RecyclerView {
+open class SamaRecyclerView: RecyclerView {
 
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
