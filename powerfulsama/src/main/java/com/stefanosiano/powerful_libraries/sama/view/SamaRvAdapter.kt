@@ -118,7 +118,7 @@ open class SamaRvAdapter(
     override fun onViewDetachedFromWindow(holder: SimpleViewHolder) {
         super.onViewDetachedFromWindow(holder)
         val item = getItem(holder.adapterPosition) ?: return
-        item.stop()
+        item.onStop()
         contexts[getItemStableId(item)]?.cancel()
     }
 
@@ -126,18 +126,18 @@ open class SamaRvAdapter(
     private fun bindItemToViewHolder(job: Job?, listItem: SamaListItem?, context: CoroutineContext){
         listItem ?: return
         runBlocking(context) { job?.join() }
-        listItem.bind(initObjects)
+        listItem.onBind(initObjects)
         if(!isActive) return
 
-        val bindBackgrounJob = launch(context) { listItem.bindInBackground(initObjects) }
+        val bindBackgrounJob = launch(context) { listItem.onBindInBackground(initObjects) }
 
         //reload saved variables of the items
         if(hasStableId) {
             val saved = savedItems[getItemStableId(listItem)]
             if(saved != null) {
                 runBlocking(context) { bindBackgrounJob.join() }
-                listItem.reload(saved)
-                launch(context) { listItem.reloadInBackground(saved) }
+                listItem.onReload(saved)
+                launch(context) { listItem.onReloadInBackground(saved) }
             }
             savedItems.remove(getItemStableId(listItem))
         }
@@ -225,7 +225,7 @@ open class SamaRvAdapter(
         super.onDetachedFromRecyclerView(recyclerView)
         //remove the observer from the optional current liveData
         liveDataItems?.removeObserver(liveDataObserver)
-        items.forEach { it.stop() }
+        items.forEach { it.onStop() }
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancelChildren()
     }
@@ -240,14 +240,14 @@ open class SamaRvAdapter(
     fun clear() {
         //remove the observer from the optional current liveData
         liveDataItems?.removeObserver(liveDataObserver)
-        items.forEach { it.stop() }
+        items.forEach { it.onStop() }
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancel()
     }
 
     override fun onViewRecycled(holder: SimpleViewHolder) {
         super.onViewRecycled(holder)
-        getItem(holder.adapterPosition)?.stop()
+        getItem(holder.adapterPosition)?.onStop()
         getItemContext(holder.adapterPosition).cancel()
     }
 
@@ -300,7 +300,7 @@ open class SamaRvAdapter(
     private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = handler.post {
         this.saveAll()
         for(i in positionStart until positionStart+itemCount) {
-            getItem(i)?.stop()
+            getItem(i)?.onStop()
             getItemContext(i).cancel()
         }
 
@@ -310,7 +310,7 @@ open class SamaRvAdapter(
     /** Function to be called when the whole list changes */
     private fun dataSetChanged() {
         this.saveAll()
-        items.forEach { it.stop() }
+        items.forEach { it.onStop() }
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancelChildren()
         notifyDataSetChanged()
