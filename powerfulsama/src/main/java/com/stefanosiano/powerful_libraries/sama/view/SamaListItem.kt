@@ -14,23 +14,26 @@ interface SamaListItem {
     /** Returns the viewType of the item. Use it to provide different layouDefaults to -1 */
     open fun getViewType() = -1
 
-    /** Function called to save the item variables. You can save any variable with an integer id, using saveItems.put(1, lockedState) */
+    /** Called to save its variables. You can save any variable with an integer id, using saveItems.put(1, lockedState) */
     open fun onSaveItems(saveItems: SparseArray<Any>): SparseArray<Any> = saveItems
 
-    /** Function called when the item is bound to the view */
+    /** Called when it's bound to the view */
     open fun onBind(initObjects: Map<String, Any>) {  }
 
-    /** Function called when the item is bound to the view. Called in background after [onBind]. It gets blocked if the adapter is destroyed (e.g. activity finished) */
+    /** Called when it's bound to the view, in background after [onBind] */
     open suspend fun onBindInBackground(initObjects: Map<String, Any>) {}
 
-    /** Function called when the item variables should be restored. Called after [onBind] and [onBindInBackground]. Works only id [getStableId] is overridden and the adapter's hasStableId is true! */
+    /** Called when its variables should be restored. Called after [onBind] and [onBindInBackground]. Works only if [getStableId] or [getStableIdString] is overridden and the adapter's hasStableId is true! */
     open fun onReload(savedObjects: SparseArray<Any>) {}
 
-    /** Function called in background when the item variables should be restored, after [onReload]. It gets blocked if the adapter is destroyed (e.g. activity finished). Works only id [getStableId] is overridden and the adapter's hasStableId is true! */
+    /** Called in background when its variables should be restored, after [onReload]. Works only if [getStableId] or [getStableIdString] is overridden and the adapter's hasStableId is true! */
     open suspend fun onReloadInBackground(savedObjects: SparseArray<Any>) {}
 
-    /** Function called when the adapter is removed from the parent or when notifyDatasetChanged() is called on adapter */
+    /** Called when it's removed from the recyclerview, or its view was recycled or the recyclerView no longer observes the adapter. Use it to clear resources, keeping in mind the item may be reused later on */
     open fun onStop() {}
+
+    /** Called when it's removed from the recyclerview or the recyclerView no longer observes the adapter. Always called after [onStop]. Use it to completely clear any resource */
+    open fun onDestroy() {}
 
     /** Compares this to another item to decide if they are the same when the list is reloaded. By default it calls == */
     open fun contentEquals(other: SamaListItem) = this == other

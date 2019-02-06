@@ -237,6 +237,7 @@ open class SamaRvAdapter(
         //remove the observer from the optional current liveData
         liveDataItems?.removeObserver(liveDataObserver)
         items.forEach { it.onStop() }
+        items.forEach { it.onDestroy() }
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancelChildren()
     }
@@ -252,6 +253,7 @@ open class SamaRvAdapter(
         //remove the observer from the optional current liveData
         liveDataItems?.removeObserver(liveDataObserver)
         items.forEach { it.onStop() }
+        items.forEach { it.onDestroy() }
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancel()
     }
@@ -312,6 +314,7 @@ open class SamaRvAdapter(
         this.saveAll()
         for(i in positionStart until positionStart+itemCount) {
             getItem(i)?.onStop()
+            getItem(i)?.onDestroy()
             getItemContext(i).cancel()
         }
 
@@ -322,6 +325,7 @@ open class SamaRvAdapter(
     private fun dataSetChanged() {
         this.saveAll()
         items.forEach { it.onStop() }
+        items.forEach { it.onDestroy() }
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancelChildren()
         notifyDataSetChanged()
