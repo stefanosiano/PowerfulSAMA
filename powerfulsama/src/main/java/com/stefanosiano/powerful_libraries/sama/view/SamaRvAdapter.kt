@@ -61,7 +61,11 @@ open class SamaRvAdapter(
     /** map that saves variables of each row and reload them when the items are reloaded (available only if hasStableId = true) */
     private val savedItems: HashMap<Long, SparseArray<Any>> = HashMap()
 
+    /** Map that link string ids to unique long numbers, to use as stableId */
     private val idsMap: ConcurrentHashMap<String, Long> = ConcurrentHashMap()
+
+    /** Job used to bind the item list in the background */
+    private var bindListJob : Job? = null
 
     /** Function to be called when the liveData changes. It will reload the list */
     private val liveDataObserver = Observer<List<SamaListItem>> { if(it != null) bindItems(it, false) }
@@ -111,6 +115,7 @@ open class SamaRvAdapter(
 
     override fun onBindViewHolder(holder: SimpleViewHolder, position: Int) {
         getItemContext(position).cancel()
+        runBlocking { bindListJob?.join() }
         val bindJob = launch(getItemContext(position)) { holder.binding.get()?.setVariable(itemBindingId, getItem(position)) }
         bindItemToViewHolder(bindJob, getItem(position), getItemContext(position))
     }
@@ -129,6 +134,7 @@ open class SamaRvAdapter(
         listItem.onBind(initObjects)
         if(!isActive) return
 
+        runBlocking { bindListJob?.join() }
         val bindBackgrounJob = launch(context) { listItem.onBindInBackground(initObjects) }
 
         //reload saved variables of the items
@@ -146,18 +152,21 @@ open class SamaRvAdapter(
     /**
      * Binds the items of the adapter to the passed list
      *
-     * @param items ObservableList that will be bound to the adapter.
+     * @param list ObservableList that will be bound to the adapter.
      *              When it changes, the changes will be reflected to the adapter.
      */
     @Suppress("unchecked_cast")
-    fun bindItems(items: ObservableList<out SamaListItem>) : SamaRvAdapter {
-        this.items.removeOnListChangedCallback(onListChangedCallback)
-        this.saveAll()
-        this.items.clear()
-        this.contexts.clear()
-        this.items = items as ObservableList<SamaListItem>
-        this.items.addOnListChangedCallback(onListChangedCallback)
-        itemRangeInserted(0, items.size)
+    fun bindItems(list: ObservableList<out SamaListItem>) : SamaRvAdapter {
+        runBlocking { bindListJob?.join() }
+        bindListJob = launch {
+            items.removeOnListChangedCallback(onListChangedCallback)
+            saveAll()
+            items.clear()
+            contexts.clear()
+            items = list as ObservableList<SamaListItem>
+            items.addOnListChangedCallback(onListChangedCallback)
+            itemRangeInserted(0, list.size)
+        }
         return this
     }
 
@@ -170,21 +179,23 @@ open class SamaRvAdapter(
      */
     fun bindItems(list: List<out SamaListItem>, forceReload: Boolean = false) : SamaRvAdapter {
         this.items.removeOnListChangedCallback(onListChangedCallback)
-        saveAll()
 
-        if(forceReload) {
-            this.items.clear()
-            this.contexts.clear()
-            this.items.addAll(list)
-            dataSetChanged()
-        }
-        else {
-            if(!isActive) return this
+        runBlocking { bindListJob?.join() }
+        bindListJob = launch {
+            saveAll()
+            if (forceReload) {
+                items.clear()
+                contexts.clear()
+                items.addAll(list)
+                dataSetChanged()
+            } else {
 
-            val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
-            items.clear()
-            items.addAll(list)
-            diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+                val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
+                if (!isActive) return@launch
+                items.clear()
+                items.addAll(list)
+                diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+            }
         }
         return this
     }
@@ -193,12 +204,12 @@ open class SamaRvAdapter(
     /**
      * Binds the items of the adapter to the passed list
      *
-     * @param items LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
+     * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
      */
-    fun bindItems(items: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
+    fun bindItems(list: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
         //remove the observer from the optional current liveData
         liveDataItems?.removeObserver(liveDataObserver)
-        liveDataItems = items
+        liveDataItems = list
         liveDataItems?.observeForever(liveDataObserver)
         return this
     }
