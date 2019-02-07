@@ -127,6 +127,13 @@ open class SamaRvAdapter(
         contexts[getItemStableId(item)]?.cancel()
     }
 
+    override fun onViewAttachedToWindow(holder: SimpleViewHolder) {
+        super.onViewAttachedToWindow(holder)
+        val item = getItem(holder.adapterPosition) ?: return
+        item.onStart()
+        contexts[getItemStableId(item)]?.cancel()
+    }
+
     /** Function that binds the item to the view holder, calling appropriate methods in the right order */
     private fun bindItemToViewHolder(job: Job?, listItem: SamaListItem?, context: CoroutineContext){
         listItem ?: return

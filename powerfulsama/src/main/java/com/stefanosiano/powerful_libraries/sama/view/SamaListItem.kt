@@ -32,6 +32,9 @@ interface SamaListItem {
     /** Called when it's removed from the recyclerview, or its view was recycled or the recyclerView no longer observes the adapter. Use it to clear resources, keeping in mind the item may be reused later on */
     open fun onStop() {}
 
+    /** Called when it's reattached to the recyclerview after being detached. Use it if you need to reuse resources freed in [onStop] */
+    open fun onStart() {}
+
     /** Called when it's removed from the recyclerview or the recyclerView no longer observes the adapter. Always called after [onStop]. Use it to completely clear any resource */
     open fun onDestroy() {}
 
