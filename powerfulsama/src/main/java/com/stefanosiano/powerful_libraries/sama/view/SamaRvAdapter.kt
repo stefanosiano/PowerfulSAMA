@@ -65,10 +65,13 @@ open class SamaRvAdapter(
     private val idsMap: ConcurrentHashMap<String, Long> = ConcurrentHashMap()
 
     /** Job used to bind the item list in the background */
-    private var bindListJob : Job? = null
+    private var bindListJob: Job? = null
 
     /** Function to be called when the liveData changes. It will reload the list */
     private val liveDataObserver = Observer<List<SamaListItem>> { if(it != null) bindItems(it, false) }
+
+    /** Reference to the recyclerView. Will be used to post runnables to the UIthread */
+    private var recyclerView: WeakReference<RecyclerView>? = null
 
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
@@ -116,8 +119,8 @@ open class SamaRvAdapter(
     override fun onBindViewHolder(holder: SimpleViewHolder, position: Int) {
         getItemContext(position).cancel()
         runBlocking { bindListJob?.join() }
-        val bindJob = launch(getItemContext(position)) { holder.binding.get()?.setVariable(itemBindingId, getItem(position)) }
-        bindItemToViewHolder(bindJob, getItem(position), getItemContext(position))
+        val bindJob = launch(getItemContext(holder.adapterPosition)) { holder.binding.get()?.setVariable(itemBindingId, getItem(holder.adapterPosition)) }
+        bindItemToViewHolder(bindJob, getItem(holder.adapterPosition), getItemContext(holder.adapterPosition))
     }
 
     override fun onViewDetachedFromWindow(holder: SimpleViewHolder) {
@@ -131,7 +134,6 @@ open class SamaRvAdapter(
         super.onViewAttachedToWindow(holder)
         val item = getItem(holder.adapterPosition) ?: return
         item.onStart()
-        contexts[getItemStableId(item)]?.cancel()
     }
 
     /** Function that binds the item to the view holder, calling appropriate methods in the right order */
@@ -172,7 +174,7 @@ open class SamaRvAdapter(
             contexts.clear()
             items = list as ObservableList<SamaListItem>
             items.addOnListChangedCallback(onListChangedCallback)
-            itemRangeInserted(0, list.size)
+            recyclerView?.get()?.post { itemRangeInserted(0, list.size) } ?: itemRangeInserted(0, list.size)
         }
         return this
     }
@@ -186,7 +188,6 @@ open class SamaRvAdapter(
      */
     fun bindItems(list: List<out SamaListItem>, forceReload: Boolean = false) : SamaRvAdapter {
         this.items.removeOnListChangedCallback(onListChangedCallback)
-
         runBlocking { bindListJob?.join() }
         bindListJob = launch {
             saveAll()
@@ -194,16 +195,16 @@ open class SamaRvAdapter(
                 items.clear()
                 contexts.clear()
                 items.addAll(list)
-                dataSetChanged()
+                recyclerView?.get()?.post { dataSetChanged() } ?: dataSetChanged()
             } else {
-
                 val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
                 if (!isActive) return@launch
                 items.clear()
                 items.addAll(list)
-                diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+                recyclerView?.get()?.post { diffResult.dispatchUpdatesTo(this@SamaRvAdapter) } ?: diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
             }
         }
+
         return this
     }
 
@@ -241,6 +242,9 @@ open class SamaRvAdapter(
     /** Clear liveData observer (if any) */
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
         super.onDetachedFromRecyclerView(recyclerView)
+        this.recyclerView?.clear()
+        this.recyclerView = null
+
         //remove the observer from the optional current liveData
         liveDataItems?.removeObserver(liveDataObserver)
         items.forEach { it.onStop() }
@@ -251,6 +255,7 @@ open class SamaRvAdapter(
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
+        this.recyclerView = WeakReference(recyclerView)
         //remove the observer from the optional current liveData
         liveDataItems?.observeForever(liveDataObserver)
     }
