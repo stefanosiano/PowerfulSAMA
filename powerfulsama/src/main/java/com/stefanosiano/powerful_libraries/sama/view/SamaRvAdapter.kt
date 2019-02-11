@@ -186,7 +186,7 @@ open class SamaRvAdapter(
      * @param list List that will be bound to the adapter. Checks differences with previous items to check what changed
      * @param forceReload Force the adapter to completely reload all of its items, calling [notifyDataSetChanged]. Use it if you know all the items will change (will be faster), otherwise leave the default (false)
      */
-    fun bindItems(list: List<out SamaListItem>, forceReload: Boolean = false) : SamaRvAdapter {
+    fun bindItems(list: List<SamaListItem>, forceReload: Boolean = false) : SamaRvAdapter {
         this.items.removeOnListChangedCallback(onListChangedCallback)
         runBlocking { bindListJob?.join() }
         bindListJob = launch {
