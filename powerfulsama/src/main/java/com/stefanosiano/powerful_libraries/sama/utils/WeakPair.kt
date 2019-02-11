@@ -3,7 +3,7 @@ package com.stefanosiano.powerful_libraries.sama.utils
 import java.lang.ref.WeakReference
 
 /** Returns a pair made up of weakReferences */
-internal class WeakPair<T, R>(first: T, second: R) {
+open class WeakPair<T, R>(first: T, second: R) {
     val p = Pair(WeakReference(first), WeakReference(second))
 
     /** Return first item */

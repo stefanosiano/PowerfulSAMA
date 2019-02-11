@@ -1,6 +1,7 @@
 package com.stefanosiano.powerful_libraries.sama
 
 import android.content.Context
+import android.util.Log
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.databinding.*
@@ -18,17 +19,21 @@ import java.lang.ref.WeakReference
 class LiveDataExtensions
 
 /** Observes a live data using a lambda function instead of an Observer (use this only if you don't need a reference to the observer */
-internal fun <T> LiveData<T>.observeLd(lifecycleOwner: LifecycleOwner, observerFunction: (data: T?) -> Unit) = this.observe(lifecycleOwner, Observer { observerFunction.invoke(it) })
+internal inline fun <T> LiveData<T>.observeLd(lifecycleOwner: LifecycleOwner, crossinline observerFunction: (data: T?) -> Unit) = this.observe(lifecycleOwner, Observer { observerFunction.invoke(it) })
 
 /** Returns a liveData which returns values only when they change */
-fun <T> LiveData<T>.getDistinct(): LiveData<T> {
+fun <T> LiveData<T>.getDistinct(): LiveData<T> = getDistinctBy { it as Any }
+
+/** Returns a liveData which returns values only when they change */
+inline fun <T> LiveData<T>.getDistinctBy(crossinline function: (T) -> Any): LiveData<T> {
     val distinctLiveData = MediatorLiveData<T>()
 
     distinctLiveData.addSource(this, object : Observer<T> {
         private var lastObj: T? = null
 
         override fun onChanged(obj: T?) {
-            if(lastObj != null && obj == lastObj) return
+            if(lastObj != null && obj != null && function.invoke(lastObj!!) == function.invoke(obj)) return
+
             lastObj = obj
             distinctLiveData.postValue(lastObj)
         }
@@ -36,8 +41,43 @@ fun <T> LiveData<T>.getDistinct(): LiveData<T> {
     return distinctLiveData
 }
 
+/** Returns a liveData which returns values only when they change */
+fun <T> LiveData<List<T>>.getListDistinct(): LiveData<List<T>> = this.getListDistinctBy{ it as Any }
+
+/** Returns a liveData which returns values only when they change */
+inline fun <T> LiveData<List<T>>.getListDistinctBy(crossinline function: (T) -> Any): LiveData<List<T>> {
+    val distinctLiveData = MediatorLiveData<List<T>>()
+
+    distinctLiveData.addSource(this, object : Observer<List<T>> {
+        private var lastObj: List<T>? = null
+
+        override fun onChanged(obj: List<T>?) {
+            if(lastObj != null &&
+                obj?.size == lastObj?.size &&
+                compareListsContent(obj ?: ArrayList(), lastObj ?: ArrayList(), function)) return
+
+            lastObj = obj
+            distinctLiveData.postValue(lastObj)
+        }
+
+        private inline fun compareListsContent(list1: List<T>, list2: List<T>, compare: (T) -> Any): Boolean {
+            for(i in 0 until list1.size)
+                if(compare.invoke( tryOrNull { list1[i] } ?: return false ) != compare.invoke( tryOrNull { list2[i] } ?: return false )) return false
+            return true
+        }
+    })
+    return distinctLiveData
+}
+
+/** Returns a live data that prints its values to log and then returns itself. Useful for debugging (remove it if not needed!) */
+fun <T> LiveData<List<T>>.print(): LiveData<List<T>> {
+    val printLiveData = MediatorLiveData<List<T>>()
+    printLiveData.addSource(this) { obj -> obj?.forEach { Log.d("LiveData", it.toString()) }; printLiveData.postValue(obj ?: ArrayList()) }
+    return printLiveData
+}
+
 /** Returns a list containing only elements matching the given [filterBy] */
-fun <T> LiveData<List<T>>.filter(filterBy: (t: T) -> Boolean): LiveData<List<T>> {
+inline fun <T> LiveData<List<T>>.filter(crossinline filterBy: (t: T) -> Boolean): LiveData<List<T>> {
     val filterLiveData = MediatorLiveData<List<T>>()
     filterLiveData.addSource(this) { obj -> filterLiveData.postValue(obj?.filter { filterBy.invoke(it) } ?: ArrayList()) }
     return filterLiveData
@@ -47,7 +87,7 @@ fun <T> LiveData<List<T>>.filter(filterBy: (t: T) -> Boolean): LiveData<List<T>>
  * Returns a list containing only elements matching the given [filterBy].
  * When [observableField] changes, the list is calculated again.
  */
-fun <T> LiveData<List<T>>.filter(observableField: ObservableField<*>, filterBy: (t: T) -> Boolean): LiveData<List<T>> {
+inline fun <T> LiveData<List<T>>.filter(observableField: ObservableField<*>, crossinline filterBy: (t: T) -> Boolean): LiveData<List<T>> {
     var lastValue: List<T>?
     var lastFullValue: List<T>? = null
     val filterLiveData = MediatorLiveData<List<T>>()
@@ -67,14 +107,14 @@ fun <T> LiveData<List<T>>.filter(observableField: ObservableField<*>, filterBy: 
 }
 
 /** Returns a list of all elements sorted according to natural sort order of the value returned by specified [sortedBy] function. */
-fun <T, R> LiveData<List<T>>.sortedBy(sortedBy: (t: T) -> R): LiveData<List<T>> where R:Comparable<R> {
+inline fun <T, R> LiveData<List<T>>.sortedBy(crossinline sortedBy: (t: T) -> R): LiveData<List<T>> where R:Comparable<R> {
     val filterLiveData = MediatorLiveData<List<T>>()
     filterLiveData.addSource(this) { obj -> filterLiveData.postValue(obj?.sortedBy { sortedBy.invoke(it) } ?: ArrayList()) }
     return filterLiveData
 }
 
 /** Transforms the liveData using the function [onValue] every time it changes, returning another liveData */
-fun <T, D> LiveData<T>.transform(onValue: (t: T?) -> D): LiveData<D> {
+inline fun <T, D> LiveData<T>.map(crossinline onValue: (t: T?) -> D): LiveData<D> {
     val filterLiveData = MediatorLiveData<D>()
     filterLiveData.addSource(this) { obj -> filterLiveData.postValue(onValue.invoke(obj)) }
     return filterLiveData
@@ -84,42 +124,29 @@ fun <T, D> LiveData<T>.transform(onValue: (t: T?) -> D): LiveData<D> {
 
 class ObservableFieldExtensions
 
-/** Called by an Observable whenever an observable property changes. */
-internal fun BaseObservable.addOnPropertyChangedCallback(onChanged: () -> Unit ){
-    this.addOnPropertyChangedCallback(object : Observable.OnPropertyChangedCallback() {
-        override fun onPropertyChanged(sender: Observable?, propertyId: Int) { onChanged.invoke() }
-    })
-}
+/** Called by an Observable whenever an observable property changes. It also runs the same function now */
+inline fun <T> ObservableField<T>.addOnChangedAndNow(crossinline f: (T?) -> Unit): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-internal fun <T> ObservableField<T>.addOnChangedAndNow(onChanged: (T?) -> Unit): Observable.OnPropertyChangedCallback
-{ val callback = this.onChange{ onChanged.invoke(get()) }; onChanged.invoke(get()); return callback }
+inline fun ObservableBoolean.addOnChangedAndNow(crossinline f: (Boolean) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-internal fun ObservableBoolean.addOnChangedAndNow(onChanged: (Boolean) -> Unit ): Observable.OnPropertyChangedCallback
-{ val callback = this.onChange{ onChanged.invoke(get()) }; onChanged.invoke(get()); return callback }
+inline fun ObservableInt.addOnChangedAndNow(crossinline f: (Int) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-internal fun ObservableInt.addOnChangedAndNow(onChanged: (Int) -> Unit ): Observable.OnPropertyChangedCallback
-{ val callback = this.onChange{ onChanged.invoke(get()) }; onChanged.invoke(get()); return callback }
+inline fun ObservableShort.addOnChangedAndNow(crossinline f: (Short) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-internal fun ObservableShort.addOnChangedAndNow(onChanged: (Short) -> Unit ): Observable.OnPropertyChangedCallback
-{ val callback = this.onChange{ onChanged.invoke(get()) }; onChanged.invoke(get()); return callback }
+inline fun ObservableLong.addOnChangedAndNow(crossinline f: (Long) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-internal fun ObservableLong.addOnChangedAndNow(onChanged: (Long) -> Unit ): Observable.OnPropertyChangedCallback
-{ val callback = this.onChange{ onChanged.invoke(get()) }; onChanged.invoke(get()); return callback }
+inline fun ObservableFloat.addOnChangedAndNow(crossinline f: (Float) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-internal fun ObservableFloat.addOnChangedAndNow(onChanged: (Float) -> Unit ): Observable.OnPropertyChangedCallback
-{ val callback = this.onChange{ onChanged.invoke(get()) }; onChanged.invoke(get()); return callback }
+inline fun ObservableDouble.addOnChangedAndNow(crossinline f: (Double) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now */
-internal fun ObservableDouble.addOnChangedAndNow(onChanged: (Double) -> Unit ): Observable.OnPropertyChangedCallback
-{ val callback = this.onChange{ onChanged.invoke(get()) }; onChanged.invoke(get()); return callback }
-
-private fun Observable.onChange(f:() -> Unit): Observable.OnPropertyChangedCallback {
+/** Calls [f] whenever an observable property changes. */
+inline fun Observable.onChange(crossinline f:() -> Unit): Observable.OnPropertyChangedCallback {
     val callback = object : Observable.OnPropertyChangedCallback() {
         override fun onPropertyChanged(sender: Observable?, propertyId: Int) { f.invoke() }
     }
@@ -133,16 +160,16 @@ private fun Observable.onChange(f:() -> Unit): Observable.OnPropertyChangedCallb
 class AndroidExtensions
 
 /** Returns the drawable associated with the id */
-fun Context.getCompatDrawable(drawableId: Int) = AppCompatResources.getDrawable(this, drawableId)
+fun Context.compatDrawable(drawableId: Int) = AppCompatResources.getDrawable(this, drawableId)
 
 /** Returns the color associated with the id */
-fun Context.getCompatColor(colorId: Int) = ContextCompat.getColor(this, colorId)
+fun Context.compatColor(colorId: Int) = ContextCompat.getColor(this, colorId)
 
 /** Returns the dimension associated with the id in dp */
-fun Context.getDimensInDp(dimenId: Int) = resources.getDimension(dimenId)/resources.displayMetrics.density
+fun Context.dimensInDp(dimenId: Int) = resources.getDimension(dimenId)/resources.displayMetrics.density
 
 /** Returns the dimension associated with the id in px */
-fun Context.getDimensInPx(dimenId: Int) = resources.getDimension(dimenId)
+fun Context.dimensInPx(dimenId: Int) = resources.getDimension(dimenId)
 
 
 
@@ -150,10 +177,10 @@ class Extensions
 
 
 /** Run a function for each element and wait for the completion of all of them, using coroutines */
-fun <T> Iterable<T>.runAndWait(run: (x: T) -> Unit) = runBlocking { map { async {run.invoke(it)} }.map { it.await() } }
+inline fun <T> Iterable<T>.runAndWait(crossinline run: (x: T) -> Unit) = runBlocking { map { async {run.invoke(it)} }.map { it.await() } }
 
 /** Run a function for each element, using coroutines */
-fun <T> Iterable<T>.launch(coroutineScope: CoroutineScope, run: (x: T) -> Unit) = coroutineScope.launch { map { async {run.invoke(it)} } }
+inline fun <T> Iterable<T>.launch(coroutineScope: CoroutineScope, crossinline run: (x: T) -> Unit) = coroutineScope.launch { map { async {run.invoke(it)} } }
 
 /** Try to execute [toTry] in a try catch block, return null if an exception is raised */
 inline fun <T> tryOrNull(toTry: () -> T): T? = tryOr(null, toTry)
@@ -178,6 +205,9 @@ fun hoursToMillis(hours : Long) :Long = hours * 3_600_000
 
 /** Transforms passed [days] into milliseconds */
 fun daysToMillis(days : Long) :Long = days * 86_400_000
+
+/** Transforms passed [weeks] into milliseconds */
+fun weeksToMillis(weeks : Long) :Long = weeks * 7 * 86_400_000
 
 /** Returns a weakReference to this object */
 fun <T> T.toWeakReference() = WeakReference<T>(this)
