@@ -18,10 +18,10 @@ class LiveDataExtensions
 /** Observes a live data using a lambda function instead of an Observer (use this only if you don't need a reference to the observer */
 internal inline fun <T> LiveData<T>.observeLd(lifecycleOwner: LifecycleOwner, crossinline observerFunction: (data: T?) -> Unit) = this.observe(lifecycleOwner, Observer { observerFunction.invoke(it) })
 
-/** Returns a liveData which returns values only when they change */
+/** Returns a liveData which returns values only when they change. You can optionally pass a CoroutineContext [context] to execute it in the background */
 fun <T> LiveData<T>.getDistinct(context: CoroutineScope? = null): LiveData<T> = getDistinctBy(context) { it as Any }
 
-/** Returns a liveData which returns values only when they change */
+/** Returns a liveData which returns values only when they change. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun <T> LiveData<T>.getDistinctBy(context: CoroutineScope? = null, crossinline function: (T) -> Any): LiveData<T> {
     val distinctLiveData = MediatorLiveData<T>()
 
@@ -40,10 +40,10 @@ inline fun <T> LiveData<T>.getDistinctBy(context: CoroutineScope? = null, crossi
     return distinctLiveData
 }
 
-/** Returns a liveData which returns values only when they change */
+/** Returns a liveData which returns values only when they change. You can optionally pass a CoroutineContext [context] to execute it in the background */
 fun <T> LiveData<List<T>>.getListDistinct(context: CoroutineScope? = null): LiveData<List<T>> = this.getListDistinctBy(context) { it as Any }
 
-/** Returns a liveData which returns values only when they change */
+/** Returns a liveData which returns values only when they change. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun <T> LiveData<List<T>>.getListDistinctBy(context: CoroutineScope? = null, crossinline function: (T) -> Any): LiveData<List<T>> {
     val distinctLiveData = MediatorLiveData<List<T>>()
 
@@ -71,21 +71,21 @@ inline fun <T> LiveData<List<T>>.getListDistinctBy(context: CoroutineScope? = nu
     return distinctLiveData
 }
 
-/** Returns a live data that prints its values to log and then returns itself. Useful for debugging (remove it if not needed!) */
+/** Returns a live data that prints its values to log and then returns itself. Useful for debugging (remove it if not needed!). You can optionally pass a CoroutineContext [context] to execute it in the background */
 fun <T> LiveData<List<T>>.print(context: CoroutineScope? = null): LiveData<List<T>> {
     val printLiveData = MediatorLiveData<List<T>>()
     printLiveData.addSource(this) { obj -> launchIfActiveOrNull(context) { obj?.forEach { Log.d("LiveData", it.toString()) }; printLiveData.postValue(obj ?: ArrayList()) } }
     return printLiveData
 }
 
-/** Returns a list containing only elements matching the given [filterBy] */
+/** Returns a list containing only elements matching the given [filterBy]. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun <T> LiveData<List<T>>.filter(context: CoroutineScope? = null, crossinline filterBy: (t: T) -> Boolean): LiveData<List<T>> {
     val filterLiveData = MediatorLiveData<List<T>>()
     filterLiveData.addSource(this) { obj -> launchIfActiveOrNull(context) { filterLiveData.postValue(obj?.filter { filterBy.invoke(it) } ?: ArrayList()) } }
     return filterLiveData
 }
 
-/** Calls [f] with [launch] using passed context, if it's active. If no context is passed (it's null), [f] is called directly */
+/** Calls [f] with [launch] using passed context, if it's active. If no context is passed (it's null), [f] is called directly. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun launchIfActiveOrNull(context: CoroutineScope?, crossinline f: () -> Unit) {
     if(context?.isActive == false) return
     context?.launch { f.invoke() } ?: f.invoke()
@@ -94,6 +94,7 @@ inline fun launchIfActiveOrNull(context: CoroutineScope?, crossinline f: () -> U
 /**
  * Returns a list containing only elements matching the given [filterBy].
  * When [observableField] changes, the list is calculated again.
+ * You can optionally pass a CoroutineContext [context] to execute it in the background
  */
 inline fun <T> LiveData<List<T>>.filter(context: CoroutineScope? = null, observableField: ObservableField<*>, crossinline filterBy: (t: T) -> Boolean): LiveData<List<T>> {
     var lastValue: List<T>?
@@ -118,14 +119,14 @@ inline fun <T> LiveData<List<T>>.filter(context: CoroutineScope? = null, observa
     return filterLiveData
 }
 
-/** Returns a list of all elements sorted according to natural sort order of the value returned by specified [sortedBy] function. */
+/** Returns a list of all elements sorted according to natural sort order of the value returned by specified [sortedBy] function. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun <T, R> LiveData<List<T>>.sortedBy(context: CoroutineScope? = null, crossinline sortedBy: (t: T) -> R): LiveData<List<T>> where R:Comparable<R> {
     val filterLiveData = MediatorLiveData<List<T>>()
     launchIfActiveOrNull(context) { filterLiveData.addSource(this) { obj -> filterLiveData.postValue(obj?.sortedBy { sortedBy.invoke(it) } ?: ArrayList()) } }
     return filterLiveData
 }
 
-/** Transforms the liveData using the function [onValue] every time it changes, returning another liveData */
+/** Transforms the liveData using the function [onValue] every time it changes, returning another liveData. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline onValue: (t: T?) -> D): LiveData<D> {
     val filterLiveData = MediatorLiveData<D>()
     launchIfActiveOrNull(context) { filterLiveData.addSource(this) { obj -> filterLiveData.postValue(onValue.invoke(obj)) } }
