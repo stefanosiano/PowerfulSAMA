@@ -9,10 +9,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 
 
@@ -22,42 +19,47 @@ class LiveDataExtensions
 internal inline fun <T> LiveData<T>.observeLd(lifecycleOwner: LifecycleOwner, crossinline observerFunction: (data: T?) -> Unit) = this.observe(lifecycleOwner, Observer { observerFunction.invoke(it) })
 
 /** Returns a liveData which returns values only when they change */
-fun <T> LiveData<T>.getDistinct(): LiveData<T> = getDistinctBy { it as Any }
+fun <T> LiveData<T>.getDistinct(context: CoroutineScope? = null): LiveData<T> = getDistinctBy(context) { it as Any }
 
 /** Returns a liveData which returns values only when they change */
-inline fun <T> LiveData<T>.getDistinctBy(crossinline function: (T) -> Any): LiveData<T> {
+inline fun <T> LiveData<T>.getDistinctBy(context: CoroutineScope? = null, crossinline function: (T) -> Any): LiveData<T> {
     val distinctLiveData = MediatorLiveData<T>()
 
     distinctLiveData.addSource(this, object : Observer<T> {
         private var lastObj: T? = null
 
         override fun onChanged(obj: T?) {
-            if(lastObj != null && obj != null && function.invoke(lastObj!!) == function.invoke(obj)) return
+            launchIfActiveOrNull(context) {
+                if (lastObj != null && obj != null && function.invoke(lastObj!!) == function.invoke(obj)) return@launchIfActiveOrNull
 
-            lastObj = obj
-            distinctLiveData.postValue(lastObj)
+                lastObj = obj
+                distinctLiveData.postValue(lastObj)
+            }
         }
     })
     return distinctLiveData
 }
 
 /** Returns a liveData which returns values only when they change */
-fun <T> LiveData<List<T>>.getListDistinct(): LiveData<List<T>> = this.getListDistinctBy{ it as Any }
+fun <T> LiveData<List<T>>.getListDistinct(context: CoroutineScope? = null): LiveData<List<T>> = this.getListDistinctBy(context) { it as Any }
 
 /** Returns a liveData which returns values only when they change */
-inline fun <T> LiveData<List<T>>.getListDistinctBy(crossinline function: (T) -> Any): LiveData<List<T>> {
+inline fun <T> LiveData<List<T>>.getListDistinctBy(context: CoroutineScope? = null, crossinline function: (T) -> Any): LiveData<List<T>> {
     val distinctLiveData = MediatorLiveData<List<T>>()
 
     distinctLiveData.addSource(this, object : Observer<List<T>> {
         private var lastObj: List<T>? = null
 
         override fun onChanged(obj: List<T>?) {
-            if(lastObj != null &&
-                obj?.size == lastObj?.size &&
-                compareListsContent(obj ?: ArrayList(), lastObj ?: ArrayList(), function)) return
+            launchIfActiveOrNull(context) {
+                if (lastObj != null &&
+                    obj?.size == lastObj?.size &&
+                    compareListsContent(obj ?: ArrayList(), lastObj ?: ArrayList(), function)
+                ) return@launchIfActiveOrNull
 
-            lastObj = obj
-            distinctLiveData.postValue(lastObj)
+                lastObj = obj
+                distinctLiveData.postValue(lastObj)
+            }
         }
 
         private inline fun compareListsContent(list1: List<T>, list2: List<T>, compare: (T) -> Any): Boolean {
@@ -70,53 +72,63 @@ inline fun <T> LiveData<List<T>>.getListDistinctBy(crossinline function: (T) -> 
 }
 
 /** Returns a live data that prints its values to log and then returns itself. Useful for debugging (remove it if not needed!) */
-fun <T> LiveData<List<T>>.print(): LiveData<List<T>> {
+fun <T> LiveData<List<T>>.print(context: CoroutineScope? = null): LiveData<List<T>> {
     val printLiveData = MediatorLiveData<List<T>>()
-    printLiveData.addSource(this) { obj -> obj?.forEach { Log.d("LiveData", it.toString()) }; printLiveData.postValue(obj ?: ArrayList()) }
+    printLiveData.addSource(this) { obj -> launchIfActiveOrNull(context) { obj?.forEach { Log.d("LiveData", it.toString()) }; printLiveData.postValue(obj ?: ArrayList()) } }
     return printLiveData
 }
 
 /** Returns a list containing only elements matching the given [filterBy] */
-inline fun <T> LiveData<List<T>>.filter(crossinline filterBy: (t: T) -> Boolean): LiveData<List<T>> {
+inline fun <T> LiveData<List<T>>.filter(context: CoroutineScope? = null, crossinline filterBy: (t: T) -> Boolean): LiveData<List<T>> {
     val filterLiveData = MediatorLiveData<List<T>>()
-    filterLiveData.addSource(this) { obj -> filterLiveData.postValue(obj?.filter { filterBy.invoke(it) } ?: ArrayList()) }
+    filterLiveData.addSource(this) { obj -> launchIfActiveOrNull(context) { filterLiveData.postValue(obj?.filter { filterBy.invoke(it) } ?: ArrayList()) } }
     return filterLiveData
+}
+
+/** Calls [f] with [launch] using passed context, if it's active. If no context is passed (it's null), [f] is called directly */
+inline fun launchIfActiveOrNull(context: CoroutineScope?, crossinline f: () -> Unit) {
+    if(context?.isActive == false) return
+    context?.launch { f.invoke() }
 }
 
 /**
  * Returns a list containing only elements matching the given [filterBy].
  * When [observableField] changes, the list is calculated again.
  */
-inline fun <T> LiveData<List<T>>.filter(observableField: ObservableField<*>, crossinline filterBy: (t: T) -> Boolean): LiveData<List<T>> {
+inline fun <T> LiveData<List<T>>.filter(context: CoroutineScope? = null, observableField: ObservableField<*>, crossinline filterBy: (t: T) -> Boolean): LiveData<List<T>> {
     var lastValue: List<T>?
     var lastFullValue: List<T>? = null
     val filterLiveData = MediatorLiveData<List<T>>()
 
     filterLiveData.addSource(this) { obj ->
-        lastFullValue = obj ?: ArrayList()
-        lastValue = lastFullValue?.filter { filterBy.invoke(it) } ?: ArrayList()
-        filterLiveData.postValue(obj)
+        launchIfActiveOrNull(context) {
+            lastFullValue = obj ?: ArrayList()
+            lastValue = lastFullValue?.filter { filterBy.invoke(it) } ?: ArrayList()
+            filterLiveData.postValue(obj)
+        }
     }
     observableField.addOnPropertyChangedCallback(object : Observable.OnPropertyChangedCallback() {
         override fun onPropertyChanged(sender: Observable?, propertyId: Int) {
-            lastValue = lastFullValue?.filter { filterBy.invoke(it) } ?: ArrayList()
-            filterLiveData.postValue(lastValue)
+            launchIfActiveOrNull(context) {
+                lastValue = lastFullValue?.filter { filterBy.invoke(it) } ?: ArrayList()
+                filterLiveData.postValue(lastValue)
+            }
         }
     } )
     return filterLiveData
 }
 
 /** Returns a list of all elements sorted according to natural sort order of the value returned by specified [sortedBy] function. */
-inline fun <T, R> LiveData<List<T>>.sortedBy(crossinline sortedBy: (t: T) -> R): LiveData<List<T>> where R:Comparable<R> {
+inline fun <T, R> LiveData<List<T>>.sortedBy(context: CoroutineScope? = null, crossinline sortedBy: (t: T) -> R): LiveData<List<T>> where R:Comparable<R> {
     val filterLiveData = MediatorLiveData<List<T>>()
-    filterLiveData.addSource(this) { obj -> filterLiveData.postValue(obj?.sortedBy { sortedBy.invoke(it) } ?: ArrayList()) }
+    launchIfActiveOrNull(context) { filterLiveData.addSource(this) { obj -> filterLiveData.postValue(obj?.sortedBy { sortedBy.invoke(it) } ?: ArrayList()) } }
     return filterLiveData
 }
 
 /** Transforms the liveData using the function [onValue] every time it changes, returning another liveData */
-inline fun <T, D> LiveData<T>.map(crossinline onValue: (t: T?) -> D): LiveData<D> {
+inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline onValue: (t: T?) -> D): LiveData<D> {
     val filterLiveData = MediatorLiveData<D>()
-    filterLiveData.addSource(this) { obj -> filterLiveData.postValue(onValue.invoke(obj)) }
+    launchIfActiveOrNull(context) { filterLiveData.addSource(this) { obj -> filterLiveData.postValue(onValue.invoke(obj)) } }
     return filterLiveData
 }
 
