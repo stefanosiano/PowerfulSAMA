@@ -88,7 +88,7 @@ inline fun <T> LiveData<List<T>>.filter(context: CoroutineScope? = null, crossin
 /** Calls [f] with [launch] using passed context, if it's active. If no context is passed (it's null), [f] is called directly */
 inline fun launchIfActiveOrNull(context: CoroutineScope?, crossinline f: () -> Unit) {
     if(context?.isActive == false) return
-    context?.launch { f.invoke() }
+    context?.launch { f.invoke() } ?: f.invoke()
 }
 
 /**
