@@ -72,8 +72,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * Note: you should call it in the main thread: cannot call observeForever in the background!
      */
     @Suppress("unchecked_cast")
-    protected fun <T> observeLd(liveData: LiveData<T>, observerFunction: (data: T) -> Unit): LiveData<T> {
-
+    protected fun <T> observeLd(liveData: LiveData<T>, observerFunction: suspend (data: T) -> Unit): LiveData<T> {
         val observer: Observer<Any?> = Observer { launch { observerFunction.invoke(it as? T ?: return@launch) } }
         customObservedLiveData.add(Pair(liveData as LiveData<Any?>, observer))
         liveData.observeForever(observer)
@@ -81,25 +80,25 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     }
 
     /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun observeOf(obs: ObservableInt, obFun: (data: Int) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
+    protected fun observeOf(obs: ObservableInt, obFun: suspend (data: Int) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
 
     /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun observeOf(obs: ObservableShort, obFun: (data: Short) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
+    protected fun observeOf(obs: ObservableShort, obFun: suspend (data: Short) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
 
     /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun observeOf(obs: ObservableLong, obFun: (data: Long) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
+    protected fun observeOf(obs: ObservableLong, obFun: suspend (data: Long) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
 
     /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun observeOf(obs: ObservableFloat, obFun: (data: Float) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
+    protected fun observeOf(obs: ObservableFloat, obFun: suspend (data: Float) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
 
     /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun observeOf(obs: ObservableDouble, obFun: (data: Double) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
+    protected fun observeOf(obs: ObservableDouble, obFun: suspend (data: Double) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
 
     /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun observeOf(obs: ObservableBoolean, obFun: (data: Boolean) -> Unit)  = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
+    protected fun observeOf(obs: ObservableBoolean, obFun: suspend (data: Boolean) -> Unit)  = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
 
     /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun <T> observeOf(obs: ObservableField<T>, obFun: (data: T) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it ?: return@addOnChangedAndNow) }) )
+    protected fun <T> observeOf(obs: ObservableField<T>, obFun: suspend (data: T) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it ?: return@addOnChangedAndNow) }) )
 
 /*
     /** Observes a sharedPreference until the ViewModel is destroyed, using a custom live data. It also calls [obFun]. Does nothing if the value of the preference is null */
