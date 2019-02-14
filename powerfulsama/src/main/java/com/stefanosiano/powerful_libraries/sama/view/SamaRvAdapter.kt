@@ -14,6 +14,7 @@ import androidx.databinding.ViewDataBinding
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.runAndWait
 import com.stefanosiano.powerful_libraries.sama.tryOrNull
@@ -199,6 +200,15 @@ open class SamaRvAdapter(
             } else {
                 val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
                 if (!isActive) return@launch
+
+                recyclerView?.get()?.also {
+                    //I have to stop the scrolling if the new list has less items then current item list
+                    if(items.size > list.size) {
+                        val firstPos = (it.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition() ?: items.size
+                        if(firstPos > list.size)
+                            it.stopScroll()
+                    }
+                }
                 items.clear()
                 items.addAll(list)
                 recyclerView?.get()?.post { diffResult.dispatchUpdatesTo(this@SamaRvAdapter) } ?: diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
@@ -218,7 +228,7 @@ open class SamaRvAdapter(
         //remove the observer from the optional current liveData
         liveDataItems?.removeObserver(liveDataObserver)
         liveDataItems = list
-        liveDataItems?.observeForever(liveDataObserver)
+        recyclerView?.get()?.post { liveDataItems?.observeForever(liveDataObserver) }
         return this
     }
 
@@ -255,9 +265,10 @@ open class SamaRvAdapter(
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
+        this.recyclerView?.clear()
         this.recyclerView = WeakReference(recyclerView)
         //remove the observer from the optional current liveData
-        liveDataItems?.observeForever(liveDataObserver)
+        recyclerView.post { liveDataItems?.observeForever(liveDataObserver) }
     }
 
     /** Clears all data from the adapter (call it only if you know the adapter is not needed anymore!) */

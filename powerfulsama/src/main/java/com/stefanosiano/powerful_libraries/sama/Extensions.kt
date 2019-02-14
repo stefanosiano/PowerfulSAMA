@@ -138,25 +138,25 @@ inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline o
 class ObservableFieldExtensions
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-inline fun <T> ObservableField<T>.addOnChangedAndNow(crossinline f: (T?) -> Unit): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
+inline fun <T> ObservableField<T>.addOnChangedAndNow(context: CoroutineScope? = null, crossinline f: (T?) -> Unit): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; launchIfActiveOrNull(context) { f.invoke(get()) }; return c }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-inline fun ObservableBoolean.addOnChangedAndNow(crossinline f: (Boolean) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
+inline fun ObservableBoolean.addOnChangedAndNow(context: CoroutineScope? = null, crossinline f: (Boolean) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; launchIfActiveOrNull(context) { f.invoke(get()) }; return c }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-inline fun ObservableInt.addOnChangedAndNow(crossinline f: (Int) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
+inline fun ObservableInt.addOnChangedAndNow(context: CoroutineScope? = null, crossinline f: (Int) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; launchIfActiveOrNull(context) { f.invoke(get()) }; return c }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-inline fun ObservableShort.addOnChangedAndNow(crossinline f: (Short) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
+inline fun ObservableShort.addOnChangedAndNow(context: CoroutineScope? = null, crossinline f: (Short) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; launchIfActiveOrNull(context) { f.invoke(get()) }; return c }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-inline fun ObservableLong.addOnChangedAndNow(crossinline f: (Long) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
+inline fun ObservableLong.addOnChangedAndNow(context: CoroutineScope? = null, crossinline f: (Long) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; launchIfActiveOrNull(context) { f.invoke(get()) }; return c }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-inline fun ObservableFloat.addOnChangedAndNow(crossinline f: (Float) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
+inline fun ObservableFloat.addOnChangedAndNow(context: CoroutineScope? = null, crossinline f: (Float) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; launchIfActiveOrNull(context) { f.invoke(get()) }; return c }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now */
-inline fun ObservableDouble.addOnChangedAndNow(crossinline f: (Double) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; f.invoke(get()); return c }
+inline fun ObservableDouble.addOnChangedAndNow(context: CoroutineScope? = null, crossinline f: (Double) -> Unit ): Observable.OnPropertyChangedCallback { val c = onChange{ f.invoke(get()) }; launchIfActiveOrNull(context) { f.invoke(get()) }; return c }
 
 /** Calls [f] whenever an observable property changes. */
 inline fun Observable.onChange(crossinline f:() -> Unit): Observable.OnPropertyChangedCallback {
