@@ -137,34 +137,39 @@ inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline o
 
 class ObservableFieldExtensions
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now */
+/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun <T> ObservableField<T>.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (T?) -> Unit): Observable.OnPropertyChangedCallback { val o = onChange(c) { f.invoke(get()) }; launchIfActiveOrNull(c) { f.invoke(get()) }; return o }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now */
+/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun ObservableBoolean.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Boolean) -> Unit ): Observable.OnPropertyChangedCallback { val o = onChange(c) { f.invoke(get()) }; launchIfActiveOrNull(c) { f.invoke(get()) }; return o }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now */
+/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun ObservableInt.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Int) -> Unit ): Observable.OnPropertyChangedCallback { val o = onChange(c) { f.invoke(get()) }; launchIfActiveOrNull(c) { f.invoke(get()) }; return o }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now */
+/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun ObservableShort.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Short) -> Unit ): Observable.OnPropertyChangedCallback { val o = onChange(c) { f.invoke(get()) }; launchIfActiveOrNull(c) { f.invoke(get()) }; return o }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now */
+/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun ObservableLong.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Long) -> Unit ): Observable.OnPropertyChangedCallback { val o = onChange(c) { f.invoke(get()) }; launchIfActiveOrNull(c) { f.invoke(get()) }; return o }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now */
+/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun ObservableFloat.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Float) -> Unit ): Observable.OnPropertyChangedCallback { val o = onChange(c) { f.invoke(get()) }; launchIfActiveOrNull(c) { f.invoke(get()) }; return o }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now */
+/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun ObservableDouble.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Double) -> Unit ): Observable.OnPropertyChangedCallback { val o = onChange(c) { f.invoke(get()) }; launchIfActiveOrNull(c) { f.invoke(get()) }; return o }
 
-/** Calls [f] whenever an observable property changes. */
+/** Calls [f] whenever an observable property changes. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun Observable.onChange(c: CoroutineScope? = null, crossinline f: suspend () -> Unit): Observable.OnPropertyChangedCallback {
     val callback = object : Observable.OnPropertyChangedCallback() {
         override fun onPropertyChanged(sender: Observable?, propertyId: Int) { launchIfActiveOrNull(c) { f.invoke() } }
     }
     addOnPropertyChangedCallback(callback)
     return callback
+}
+
+/** Calls [f] whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineContext [context] to execute it in the background */
+inline fun Observable.onChangeAndNow(c: CoroutineScope? = null, crossinline f: suspend () -> Unit): Observable.OnPropertyChangedCallback {
+    val o = onChange(c, f); launchIfActiveOrNull(c) { f.invoke() }; return o
 }
 
 
