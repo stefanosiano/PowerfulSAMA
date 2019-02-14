@@ -1,6 +1,8 @@
 package com.stefanosiano.powerful_libraries.sama
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
@@ -13,7 +15,15 @@ import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 
 
+internal val mainThreadHandler by lazy { Handler(Looper.getMainLooper()) }
+
 class LiveDataExtensions
+
+/** Calls addSource on main thread. useful when using background threads/coroutines: Calling it in the background throws an exception! */
+fun <T, S> MediatorLiveData<T>.addSourceLd(liveData: LiveData<S>, source: (S) -> Unit) where S: Any? = mainThreadHandler.post { this.addSource(liveData, source) }
+
+/** Calls removeSource on main thread. useful when using background threads/coroutines: Calling it in the background throws an exception! */
+fun <T, S> MediatorLiveData<T>.removeSourceLd(liveData: LiveData<S>) where S: Any? = mainThreadHandler.post { this.removeSource(liveData) }
 
 /** Observes a live data using a lambda function instead of an Observer (use this only if you don't need a reference to the observer */
 internal inline fun <T> LiveData<T>.observeLd(lifecycleOwner: LifecycleOwner, crossinline observerFunction: (data: T?) -> Unit) = this.observe(lifecycleOwner, Observer { observerFunction.invoke(it) })

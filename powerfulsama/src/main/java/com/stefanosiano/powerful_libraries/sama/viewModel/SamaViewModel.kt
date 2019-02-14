@@ -6,11 +6,9 @@ import android.util.Log
 import androidx.databinding.*
 import androidx.lifecycle.*
 import com.stefanosiano.powerful_libraries.sama.addOnChangedAndNow
+import com.stefanosiano.powerful_libraries.sama.mainThreadHandler
 import com.stefanosiano.powerful_libraries.sama.observeLd
 import kotlinx.coroutines.*
-
-
-private val mainThreadHandler by lazy { Handler(Looper.getMainLooper()) }
 
 
 /**

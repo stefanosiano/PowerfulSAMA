@@ -16,16 +16,13 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.stefanosiano.powerful_libraries.sama.mainThreadHandler
 import com.stefanosiano.powerful_libraries.sama.runAndWait
 import com.stefanosiano.powerful_libraries.sama.tryOrNull
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
-
-
-private val mainThreadHandler by lazy { Handler(Looper.getMainLooper()) }
-
 
 /**
  * Class that implements RecyclerViewAdapter in an easy and powerful way!
