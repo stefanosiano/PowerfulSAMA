@@ -70,36 +70,77 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
 
     /**
      * Observes a liveData until the ViewModel is destroyed, using a custom observer
-     * The [observerFunction] will be called in the background
+     * If [forceOnCurrentThread] is not set, [observerFunction] will run in a background coroutine
      */
     @Suppress("unchecked_cast")
-    protected fun <T> observeLd(liveData: LiveData<T>, observerFunction: suspend (data: T) -> Unit): LiveData<T> {
-        val observer: Observer<Any?> = Observer { launch { observerFunction.invoke(it as? T ?: return@launch) } }
+    protected fun <T> observeLd(liveData: LiveData<T>, forceOnCurrentThread: Boolean = false, observerFunction: suspend (data: T) -> Unit): LiveData<T> {
+        val observer: Observer<Any?> = Observer { if(forceOnCurrentThread) runBlocking { observerFunction.invoke(it as? T ?: return@runBlocking) } else launch { observerFunction.invoke(it as? T ?: return@launch) } }
         customObservedLiveData.add(Pair(liveData as LiveData<Any?>, observer))
         mainThreadHandler.post{ liveData.observeForever(observer) }
         return liveData
     }
 
-    /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun observeOf(obs: ObservableInt, obFun: suspend (data: Int) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
 
-    /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun observeOf(obs: ObservableShort, obFun: suspend (data: Short) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
+    /**
+     * Observes an observableField until the ViewModel is destroyed, using a custom observer.
+     * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
+     * It also calls [obFun] (in the background). Does nothing if the value of the observable is null
+     */
+    protected fun observeOf(obs: ObservableInt, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Int) -> Unit) =
+        observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { obFun.invoke(it) }) )
 
-    /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun observeOf(obs: ObservableLong, obFun: suspend (data: Long) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
 
-    /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun observeOf(obs: ObservableFloat, obFun: suspend (data: Float) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
+    /**
+     * Observes an observableField until the ViewModel is destroyed, using a custom observer.
+     * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
+     * It also calls [obFun] (in the background). Does nothing if the value of the observable is null
+     */
+    protected fun observeOf(obs: ObservableShort, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Short) -> Unit) =
+        observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { obFun.invoke(it) }) )
 
-    /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun observeOf(obs: ObservableDouble, obFun: suspend (data: Double) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
 
-    /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun observeOf(obs: ObservableBoolean, obFun: suspend (data: Boolean) -> Unit)  = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it) }) )
+    /**
+     * Observes an observableField until the ViewModel is destroyed, using a custom observer.
+     * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
+     * It also calls [obFun] (in the background). Does nothing if the value of the observable is null
+     */
+    protected fun observeOf(obs: ObservableLong, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Long) -> Unit) =
+        observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { obFun.invoke(it) }) )
 
-    /** Observes an observableField until the ViewModel is destroyed, using a custom observer. It also calls [obFun] (in the background). Does nothing if the value of the observable is null */
-    protected fun <T> observeOf(obs: ObservableField<T>, obFun: suspend (data: T) -> Unit) = observables.add( Pair(obs, obs.addOnChangedAndNow(this) { obFun.invoke(it ?: return@addOnChangedAndNow) }) )
+
+    /**
+     * Observes an observableField until the ViewModel is destroyed, using a custom observer.
+     * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
+     * It also calls [obFun] (in the background). Does nothing if the value of the observable is null
+     */
+    protected fun observeOf(obs: ObservableFloat, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Float) -> Unit) =
+        observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { obFun.invoke(it) }) )
+
+
+    /**
+     * Observes an observableField until the ViewModel is destroyed, using a custom observer.
+     * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
+     * It also calls [obFun] (in the background). Does nothing if the value of the observable is null
+     */
+    protected fun observeOf(obs: ObservableDouble, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Double) -> Unit) =
+        observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { obFun.invoke(it) }) )
+
+
+    /**
+     * Observes an observableField until the ViewModel is destroyed, using a custom observer.
+     * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
+     * It also calls [obFun] (in the background). Does nothing if the value of the observable is null
+     */
+    protected fun observeOf(obs: ObservableBoolean, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Boolean) -> Unit)  =
+        observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { obFun.invoke(it) }) )
+
+    /**
+     * Observes an observableField until the ViewModel is destroyed, using a custom observer.
+     * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
+     * It also calls [obFun] (in the background). Does nothing if the value of the observable is null
+     */
+    protected fun <T> observeOf(obs: ObservableField<T>, forceOnCurrentThread: Boolean = false, obFun: suspend (data: T) -> Unit) =
+        observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { obFun.invoke(it ?: return@addOnChangedAndNow) }) )
 
 /*
     /** Observes a sharedPreference until the ViewModel is destroyed, using a custom live data. It also calls [obFun]. Does nothing if the value of the preference is null */
@@ -113,10 +154,14 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
         return observable
     }*/
 
-    /** Observes a liveData until the ViewModel is destroyed and transforms it into an observable field. Does not update the observable if the value of the liveData is null */
-    protected fun <T> observeLdAsOf(liveData: LiveData<T>): ObservableField<T> {
+    /**
+     * Observes a liveData until the ViewModel is destroyed and transforms it into an observable field.
+     * If [forceOnCurrentThread] is not set, it will run in a background coroutine
+     * Does not update the observable if the value of the liveData is null
+     */
+    protected fun <T> observeLdAsOf(liveData: LiveData<T>, forceOnCurrentThread: Boolean = false): ObservableField<T> {
         val observable = ObservableField<T>()
-        observeLd(liveData) { observable.set(it ?: return@observeLd) }
+        observeLd(liveData, forceOnCurrentThread) { observable.set(it ?: return@observeLd) }
         observable.set(liveData.value ?: return observable)
         return observable
     }
