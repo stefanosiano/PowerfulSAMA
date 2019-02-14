@@ -159,7 +159,7 @@ inline fun ObservableFloat.addOnChangedAndNow(c: CoroutineScope? = null, crossin
 inline fun ObservableDouble.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Double) -> Unit ): Observable.OnPropertyChangedCallback { val o = onChange(c) { f.invoke(get()) }; launchIfActiveOrNull(c) { f.invoke(get()) }; return o }
 
 /** Calls [f] whenever an observable property changes. */
-inline fun Observable.onChange(c: CoroutineScope? = null, crossinline f:suspend () -> Unit): Observable.OnPropertyChangedCallback {
+inline fun Observable.onChange(c: CoroutineScope? = null, crossinline f: suspend () -> Unit): Observable.OnPropertyChangedCallback {
     val callback = object : Observable.OnPropertyChangedCallback() {
         override fun onPropertyChanged(sender: Observable?, propertyId: Int) { launchIfActiveOrNull(c) { f.invoke() } }
     }
