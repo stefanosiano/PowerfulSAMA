@@ -23,6 +23,10 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
 
+
+private val mainThreadHandler by lazy { Handler(Looper.getMainLooper()) }
+
+
 /**
  * Class that implements RecyclerViewAdapter in an easy and powerful way!
  *
@@ -226,9 +230,9 @@ open class SamaRvAdapter(
      */
     fun bindItems(list: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
         //remove the observer from the optional current liveData
-        liveDataItems?.removeObserver(liveDataObserver)
+        mainThreadHandler.post{ liveDataItems?.removeObserver(liveDataObserver) }
         liveDataItems = list
-        recyclerView?.get()?.post { liveDataItems?.observeForever(liveDataObserver) }
+        mainThreadHandler.post{ liveDataItems?.observeForever(liveDataObserver) }
         return this
     }
 
@@ -256,7 +260,7 @@ open class SamaRvAdapter(
         this.recyclerView = null
 
         //remove the observer from the optional current liveData
-        liveDataItems?.removeObserver(liveDataObserver)
+        mainThreadHandler.post{ liveDataItems?.removeObserver(liveDataObserver) }
         items.forEach { it.onStop() }
         items.forEach { it.onDestroy() }
         contexts.values.forEach { it.cancel() }
@@ -268,13 +272,13 @@ open class SamaRvAdapter(
         this.recyclerView?.clear()
         this.recyclerView = WeakReference(recyclerView)
         //remove the observer from the optional current liveData
-        recyclerView.post { liveDataItems?.observeForever(liveDataObserver) }
+        mainThreadHandler.post{ liveDataItems?.observeForever(liveDataObserver) }
     }
 
     /** Clears all data from the adapter (call it only if you know the adapter is not needed anymore!) */
     fun clear() {
         //remove the observer from the optional current liveData
-        liveDataItems?.removeObserver(liveDataObserver)
+        mainThreadHandler.post{ liveDataItems?.removeObserver(liveDataObserver) }
         items.forEach { it.onStop() }
         items.forEach { it.onDestroy() }
         contexts.values.forEach { it.cancel() }

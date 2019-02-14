@@ -1,11 +1,17 @@
 package com.stefanosiano.powerful_libraries.sama.viewModel
 
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.databinding.*
 import androidx.lifecycle.*
 import com.stefanosiano.powerful_libraries.sama.addOnChangedAndNow
 import com.stefanosiano.powerful_libraries.sama.observeLd
 import kotlinx.coroutines.*
+
+
+private val mainThreadHandler by lazy { Handler(Looper.getMainLooper()) }
+
 
 /**
  * Base class for ViewModels.
@@ -20,7 +26,6 @@ open class SamaViewModel<A, E>
 protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAction, E : VmResponse.VmError {
     private val loggingExceptionHandler = CoroutineExceptionHandler { _, t -> t.printStackTrace() }
     override val coroutineContext = SupervisorJob() + loggingExceptionHandler
-
 
     /** Last action sent to the activity. Used to avoid sending multiple actions together (like pressing on 2 buttons) */
     private var lastSentAction: A? = null
@@ -58,24 +63,22 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     /**
      * Observes a liveData until the ViewModel is destroyed, using a custom observer
      * Useful when liveData is not used in a lifecycleOwner
-     * Note: you should call it in the main thread: cannot call observeForever in the background!
      */
     protected fun <T> observeLd(liveData: LiveData<T>): LiveData<T> {
         observedLiveData.add(liveData)
-        liveData.observeForever(persistentObserver)
+        mainThreadHandler.post{ liveData.observeForever(persistentObserver) }
         return liveData
     }
 
     /**
      * Observes a liveData until the ViewModel is destroyed, using a custom observer
      * The [observerFunction] will be called in the background
-     * Note: you should call it in the main thread: cannot call observeForever in the background!
      */
     @Suppress("unchecked_cast")
     protected fun <T> observeLd(liveData: LiveData<T>, observerFunction: suspend (data: T) -> Unit): LiveData<T> {
         val observer: Observer<Any?> = Observer { launch { observerFunction.invoke(it as? T ?: return@launch) } }
         customObservedLiveData.add(Pair(liveData as LiveData<Any?>, observer))
-        liveData.observeForever(observer)
+        mainThreadHandler.post{ liveData.observeForever(observer) }
         return liveData
     }
 
@@ -126,9 +129,9 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
         super.onCleared()
         observables.forEach { it.first.removeOnPropertyChangedCallback(it.second) }
         observables.clear()
-        observedLiveData.forEach { it.removeObserver(persistentObserver) }
+        observedLiveData.forEach { mainThreadHandler.post{ it.removeObserver(persistentObserver) } }
         observedLiveData.clear()
-        customObservedLiveData.forEach { it.first.removeObserver(it.second) }
+        customObservedLiveData.forEach { mainThreadHandler.post{ it.first.removeObserver(it.second) } }
         customObservedLiveData.clear()
         coroutineContext.cancel()
     }
