@@ -159,10 +159,10 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * If [forceOnCurrentThread] is not set, it will run in a background coroutine
      * Does not update the observable if the value of the liveData is null
      */
-    protected fun <T> observeLdAsOf(liveData: LiveData<T>, forceOnCurrentThread: Boolean = false): ObservableField<T> {
+    protected fun <T> observeLdAsOf(liveData: LiveData<T>, defaultValue: T? = null, forceOnCurrentThread: Boolean = false): ObservableField<T> {
         val observable = ObservableField<T>()
         observeLd(liveData, forceOnCurrentThread) { observable.set(it ?: return@observeLd) }
-        observable.set(liveData.value ?: return observable)
+        observable.set(liveData.value ?: defaultValue ?: return observable)
         return observable
     }
 
