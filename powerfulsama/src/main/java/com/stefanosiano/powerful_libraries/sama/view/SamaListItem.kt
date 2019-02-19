@@ -23,6 +23,12 @@ interface SamaListItem {
     /** Called when it's bound to the view, in background after [onBind] */
     open suspend fun onBindInBackground(initObjects: Map<String, Any>) {}
 
+    /** Called in background only once when it should be initialized (it's about to be shown or the initialization background thread reaches it). [isLazyInitialized] is used to understand if the item was already lazy initialized */
+    open suspend fun onLazyInit() {}
+
+    /** Return if it was lazy initialized. Use it with [onLazyInit] */
+    open fun isLazyInitialized() = false
+
     /** Called when its variables should be restored. Called after [onBind] and [onBindInBackground]. Works only if [getStableId] or [getStableIdString] is overridden and the adapter's hasStableId is true! */
     open fun onReload(savedObjects: SparseArray<Any>) {}
 

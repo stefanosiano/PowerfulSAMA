@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.SparseArray
 import android.util.SparseIntArray
+import android.util.SparseLongArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -22,6 +23,7 @@ import com.stefanosiano.powerful_libraries.sama.tryOrNull
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentSkipListSet
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -74,6 +76,9 @@ open class SamaRvAdapter(
 
     /** Reference to the recyclerView. Will be used to post runnables to the UIthread */
     private var recyclerView: WeakReference<RecyclerView>? = null
+
+    /** Set used to understand if the item is being initialized, to be sure to lazy init only once */
+    private val lazyInitSet = ConcurrentSkipListSet<Long>()
 
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
@@ -136,6 +141,7 @@ open class SamaRvAdapter(
         super.onViewAttachedToWindow(holder)
         val item = getItem(holder.adapterPosition) ?: return
         item.onStart()
+        lazyInit(item)
     }
 
     /** Function that binds the item to the view holder, calling appropriate methods in the right order */
@@ -177,6 +183,7 @@ open class SamaRvAdapter(
             items = list as ObservableList<SamaListItem>
             items.addOnListChangedCallback(onListChangedCallback)
             recyclerView?.get()?.post { itemRangeInserted(0, list.size) } ?: itemRangeInserted(0, list.size)
+            startLazyInits()
         }
         return this
     }
@@ -214,9 +221,34 @@ open class SamaRvAdapter(
                 items.addAll(list)
                 recyclerView?.get()?.post { diffResult.dispatchUpdatesTo(this@SamaRvAdapter) } ?: diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
             }
+            startLazyInits()
         }
 
         return this
+    }
+
+
+    private fun startLazyInits() {
+        launch {
+            delay(50)
+            items.forEach{
+                if(lazyInit(it))
+                    delay(50)
+            }
+        }
+    }
+
+
+    private fun lazyInit(item: SamaListItem): Boolean {
+        if(hasStableId && !item.isLazyInitialized() && !lazyInitSet.contains(getItemStableId(item))) {
+            launch(getItemContext(item)!!) {
+                if (!lazyInitSet.add(getItemStableId(item))) return@launch
+                item.onLazyInit()
+                lazyInitSet.remove(getItemStableId(item))
+            }
+            return true
+        }
+        return false
     }
 
 
@@ -298,7 +330,7 @@ open class SamaRvAdapter(
     fun getItem(position: Int): SamaListItem? = tryOrNull { items[position] }
 
     /** Returns the coroutine context bound to the item at position [position] */
-    private fun getItemContext(position: Int) = getLIContext( if(hasStableId) getItemId(position) else position.toLong() )
+    private fun getItemContext(position: Int): CoroutineContext = getLIContext( if(hasStableId) getItemId(position) else position.toLong() )
 
     /** Returns the coroutine context bound to the item [item]. Use it only if [hasStableId]!!! */
     private fun getItemContext(item: SamaListItem) = if(!hasStableId) null else getLIContext(getItemStableId(item))
