@@ -230,10 +230,10 @@ open class SamaRvAdapter(
 
     private fun startLazyInits() {
         launch {
-            delay(50)
+            delay(200)
             items.forEach{
                 if(lazyInit(it))
-                    delay(50)
+                    delay(20)
             }
         }
     }

@@ -26,7 +26,7 @@ fun <T, S> MediatorLiveData<T>.addSourceLd(liveData: LiveData<S>, source: (S) ->
 fun <T, S> MediatorLiveData<T>.removeSourceLd(liveData: LiveData<S>) where S: Any? = mainThreadHandler.post { this.removeSource(liveData) }
 
 /** Observes a live data using a lambda function instead of an Observer (use this only if you don't need a reference to the observer */
-internal inline fun <T> LiveData<T>.observeLd(lifecycleOwner: LifecycleOwner, crossinline observerFunction: (data: T?) -> Unit) = this.observe(lifecycleOwner, Observer { observerFunction.invoke(it) })
+internal inline fun <T> LiveData<T>.observeLd(lifecycleOwner: LifecycleOwner, crossinline observerFunction: (data: T) -> Unit) = this.observe(lifecycleOwner, Observer { observerFunction.invoke(it) })
 
 /** Returns a liveData which returns values only when they change. You can optionally pass a CoroutineContext [context] to execute it in the background */
 fun <T> LiveData<T>.getDistinct(context: CoroutineScope? = null): LiveData<T> = getDistinctBy(context) { it as Any }
@@ -137,7 +137,7 @@ inline fun <T, R> LiveData<List<T>>.sortedBy(context: CoroutineScope? = null, cr
 }
 
 /** Transforms the liveData using the function [onValue] every time it changes, returning another liveData. You can optionally pass a CoroutineContext [context] to execute it in the background */
-inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline onValue: (t: T?) -> D): LiveData<D> {
+inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline onValue: (t: T) -> D): LiveData<D> {
     val filterLiveData = MediatorLiveData<D>()
     launchIfActiveOrNull(context) { filterLiveData.addSource(this) { obj -> filterLiveData.postValue(onValue.invoke(obj)) } }
     return filterLiveData
@@ -241,8 +241,8 @@ fun weeksToMillis(weeks : Long) :Long = weeks * 7 * 86_400_000
 fun <T> T.toWeakReference() = WeakReference<T>(this)
 
 /** Removes all items that satisfy [filter] predicate */
-inline fun <K, V> MutableMap<K, V>.removeWhen(filter: (Map.Entry<K, V>) -> Boolean) = this.keys.removeAll(this.filter { filter.invoke(it) }.keys)
+inline fun <K, V, M> M.removeWhen(filter: (Map.Entry<K, V>) -> Boolean): M where M: MutableMap<K, V> { this.keys.removeAll(this.filter { filter.invoke(it) }.keys); return this }
 
 /** Removes all items that satisfy [filter] predicate */
-inline fun <E> MutableCollection<E>.removeWhen(filter: (E) -> Boolean) = this.removeAll(this.filter { filter.invoke(it) })
+inline fun <E, M> M.removeWhen(filter: (E) -> Boolean): M where M: MutableCollection<E> { this.removeAll(this.filter { filter.invoke(it) }); return this }
 
