@@ -47,9 +47,6 @@ open class SamaRvAdapter(
     /** Objects passed to items during onBind */
     private val initObjects = HashMap<String, Any>()
 
-    /** handler to execute stuff in the main thread */
-    private val handler: Handler = Handler(Looper.getMainLooper())
-
     /** callback called when the item list changes */
     private val onListChangedCallback: WeakReferenceOnListChangedCallback = WeakReferenceOnListChangedCallback(this)
 
@@ -182,7 +179,7 @@ open class SamaRvAdapter(
             contexts.clear()
             items = list as ObservableList<SamaListItem>
             items.addOnListChangedCallback(onListChangedCallback)
-            recyclerView?.get()?.post { itemRangeInserted(0, list.size) } ?: itemRangeInserted(0, list.size)
+            mainThreadHandler.post { itemRangeInserted(0, list.size) }
             startLazyInits()
         }
         return this
@@ -201,10 +198,12 @@ open class SamaRvAdapter(
         bindListJob = launch {
             saveAll()
             if (forceReload) {
-                items.clear()
-                contexts.clear()
-                items.addAll(list)
-                recyclerView?.get()?.post { dataSetChanged() } ?: dataSetChanged()
+                mainThreadHandler.post {
+                    items.clear()
+                    contexts.clear()
+                    items.addAll(list)
+                    dataSetChanged()
+                }
             } else {
                 val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
                 if (!isActive) return@launch
@@ -217,9 +216,11 @@ open class SamaRvAdapter(
                             it.stopScroll()
                     }
                 }
-                items.clear()
-                items.addAll(list)
-                recyclerView?.get()?.post { diffResult.dispatchUpdatesTo(this@SamaRvAdapter) } ?: diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+                mainThreadHandler.post {
+                    items.clear()
+                    items.addAll(list)
+                    diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+                }
             }
             startLazyInits()
         }
@@ -230,10 +231,10 @@ open class SamaRvAdapter(
 
     private fun startLazyInits() {
         launch {
-            delay(200)
+            delay(170)
             items.forEach{
                 if(lazyInit(it))
-                    delay(20)
+                    delay(17)
             }
         }
     }
@@ -351,13 +352,13 @@ open class SamaRvAdapter(
 
     //list observer stuff
     /** Function to be called when some items change */
-    private fun itemRangeChanged(positionStart: Int, itemCount: Int) = handler.post {
+    private fun itemRangeChanged(positionStart: Int, itemCount: Int) = mainThreadHandler.post {
         this.saveAll()
         notifyItemRangeChanged(positionStart, itemCount)
     }
 
     /** Function to be called when some items are added */
-    private fun itemRangeInserted(positionStart: Int, itemCount: Int) = handler.post { notifyItemRangeInserted(positionStart, itemCount) }
+    private fun itemRangeInserted(positionStart: Int, itemCount: Int) = mainThreadHandler.post { notifyItemRangeInserted(positionStart, itemCount) }
 
     /** Function to be called when some items are moved */
     private fun itemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int){
@@ -366,7 +367,7 @@ open class SamaRvAdapter(
     }
 
     /** Function to be called when some items are removed */
-    private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = handler.post {
+    private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = mainThreadHandler.post {
         this.saveAll()
         for(i in positionStart until positionStart+itemCount) {
             getItem(i)?.onStop()
