@@ -174,7 +174,7 @@ open class SamaRvAdapter(
      *              When it changes, the changes will be reflected to the adapter.
      */
     @Suppress("unchecked_cast")
-    fun bindItems(list: ObservableList<out SamaListItem>) : SamaRvAdapter {
+    @Synchronized fun bindItems(list: ObservableList<out SamaListItem>) : SamaRvAdapter {
         bindListJob?.cancel()
         bindListJob = launch {
             items.removeOnListChangedCallback(onListChangedCallback)
@@ -196,7 +196,7 @@ open class SamaRvAdapter(
      * @param list List that will be bound to the adapter. Checks differences with previous items to check what changed
      * @param forceReload Force the adapter to completely reload all of its items, calling [notifyDataSetChanged]. Use it if you know all the items will change (will be faster), otherwise leave the default (false)
      */
-    fun bindItems(list: List<SamaListItem>, forceReload: Boolean = false) : SamaRvAdapter {
+    @Synchronized fun bindItems(list: List<SamaListItem>, forceReload: Boolean = false) : SamaRvAdapter {
         this.items.removeOnListChangedCallback(onListChangedCallback)
         bindListJob?.cancel()
         bindListJob = launch {
@@ -268,11 +268,13 @@ open class SamaRvAdapter(
      *
      * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
      */
-    fun bindItems(list: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
+    @Synchronized fun bindItems(list: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
         //remove the observer from the optional current liveData
-        mainThreadHandler.post{ liveDataItems?.removeObserver(liveDataObserver) }
-        liveDataItems = list
-        mainThreadHandler.post{ liveDataItems?.observeForever(liveDataObserver) }
+        mainThreadHandler.post {
+            liveDataItems?.removeObserver(liveDataObserver)
+            liveDataItems = list
+            liveDataItems?.observeForever(liveDataObserver)
+        }
         return this
     }
 
