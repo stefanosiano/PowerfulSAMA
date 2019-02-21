@@ -246,3 +246,10 @@ inline fun <K, V, M> M.removeWhen(filter: (Map.Entry<K, V>) -> Boolean): M where
 /** Removes all items that satisfy [filter] predicate */
 inline fun <E, M> M.removeWhen(filter: (E) -> Boolean): M where M: MutableCollection<E> { this.removeAll(this.filter { filter.invoke(it) }); return this }
 
+/** For loop that uses iterator item (useful to modify elements in a list without concurrentModification exceptions) */
+inline fun <T,S> T.iterate(f: (S) -> Unit): T where T: Iterable<S> {
+    val iterator = iterator()
+    while(iterator.hasNext()) { f.invoke(iterator.next()) }
+    return this
+}
+

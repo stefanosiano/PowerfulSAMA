@@ -17,6 +17,7 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.stefanosiano.powerful_libraries.sama.iterate
 import com.stefanosiano.powerful_libraries.sama.mainThreadHandler
 import com.stefanosiano.powerful_libraries.sama.runAndWait
 import com.stefanosiano.powerful_libraries.sama.tryOrNull
@@ -76,6 +77,9 @@ open class SamaRvAdapter(
 
     /** Set used to understand if the item is being initialized, to be sure to lazy init only once */
     private val lazyInitSet = ConcurrentSkipListSet<Long>()
+
+    /** Job used to cancel and start lazy initialization */
+    private var lazyInitsJob : Job? = null
 
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
@@ -171,7 +175,7 @@ open class SamaRvAdapter(
      */
     @Suppress("unchecked_cast")
     fun bindItems(list: ObservableList<out SamaListItem>) : SamaRvAdapter {
-        runBlocking { bindListJob?.join() }
+        bindListJob?.cancel()
         bindListJob = launch {
             items.removeOnListChangedCallback(onListChangedCallback)
             saveAll()
@@ -194,10 +198,12 @@ open class SamaRvAdapter(
      */
     fun bindItems(list: List<SamaListItem>, forceReload: Boolean = false) : SamaRvAdapter {
         this.items.removeOnListChangedCallback(onListChangedCallback)
-        runBlocking { bindListJob?.join() }
+        bindListJob?.cancel()
         bindListJob = launch {
             saveAll()
+            if (!isActive) return@launch
             if (forceReload) {
+                if (!isActive) return@launch
                 mainThreadHandler.post {
                     items.clear()
                     contexts.clear()
@@ -216,6 +222,7 @@ open class SamaRvAdapter(
                             it.stopScroll()
                     }
                 }
+                if (!isActive) return@launch
                 mainThreadHandler.post {
                     items.clear()
                     items.addAll(list)
@@ -229,10 +236,13 @@ open class SamaRvAdapter(
     }
 
 
-    private fun startLazyInits() {
-        launch {
+    @Synchronized private fun startLazyInits() {
+        lazyInitsJob?.cancel()
+        lazyInitsJob = launch {
             delay(170)
-            items.forEach{
+            val lazyItems = items.filter { !it.isLazyInitialized() }
+            lazyItems.iterate{
+                if(!isActive) return@launch
                 if(lazyInit(it))
                     delay(17)
             }
