@@ -63,7 +63,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * Observes a liveData until the ViewModel is destroyed, using a custom observer
      * Useful when liveData is not used in a lifecycleOwner
      */
-    protected fun <T> observeLd(liveData: LiveData<T>): LiveData<T> {
+    protected fun <T> observe(liveData: LiveData<T>): LiveData<T> {
         observedLiveData.add(liveData)
         mainThreadHandler.post{ liveData.observeForever(persistentObserver) }
         return liveData
@@ -74,7 +74,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * If [forceOnCurrentThread] is not set, [observerFunction] will run in a background coroutine
      */
     @Suppress("unchecked_cast")
-    protected fun <T> observeLd(liveData: LiveData<T>, forceOnCurrentThread: Boolean = false, observerFunction: suspend (data: T) -> Unit): LiveData<T> {
+    protected fun <T> observe(liveData: LiveData<T>, forceOnCurrentThread: Boolean = false, observerFunction: suspend (data: T) -> Unit): LiveData<T> {
         val observer: Observer<Any?> = Observer { launchIfActiveOrNull(if(forceOnCurrentThread) null else this) { observerFunction.invoke(it as? T ?: return@launchIfActiveOrNull) } }
         customObservedLiveData.add(Pair(liveData as LiveData<Any?>, observer))
         mainThreadHandler.post{ liveData.observeForever(observer) }
@@ -87,7 +87,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
      * It also calls [obFun] (in the background). Does nothing if the value of the observable is null or already changed
      */
-    protected fun observeOf(obs: ObservableInt, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Int) -> Unit) =
+    protected fun observe(obs: ObservableInt, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Int) -> Unit) =
         observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { if(obs.get() == it) obFun.invoke(it) }) )
 
 
@@ -96,7 +96,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
      * It also calls [obFun] (in the background). Does nothing if the value of the observable is null or already changed
      */
-    protected fun observeOf(obs: ObservableShort, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Short) -> Unit) =
+    protected fun observe(obs: ObservableShort, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Short) -> Unit) =
         observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { if(obs.get() == it) obFun.invoke(it) }) )
 
 
@@ -105,7 +105,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
      * It also calls [obFun] (in the background). Does nothing if the value of the observable is null or already changed
      */
-    protected fun observeOf(obs: ObservableLong, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Long) -> Unit) =
+    protected fun observe(obs: ObservableLong, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Long) -> Unit) =
         observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { if(obs.get() == it) obFun.invoke(it) }) )
 
 
@@ -114,7 +114,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
      * It also calls [obFun] (in the background). Does nothing if the value of the observable is null or already changed
      */
-    protected fun observeOf(obs: ObservableFloat, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Float) -> Unit) =
+    protected fun observe(obs: ObservableFloat, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Float) -> Unit) =
         observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { if(obs.get() == it) obFun.invoke(it) }) )
 
 
@@ -123,7 +123,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
      * It also calls [obFun] (in the background). Does nothing if the value of the observable is null or already changed
      */
-    protected fun observeOf(obs: ObservableDouble, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Double) -> Unit) =
+    protected fun observe(obs: ObservableDouble, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Double) -> Unit) =
         observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { if(obs.get() == it) obFun.invoke(it) }) )
 
 
@@ -132,7 +132,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
      * It also calls [obFun] (in the background). Does nothing if the value of the observable is null or already changed
      */
-    protected fun observeOf(obs: ObservableBoolean, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Boolean) -> Unit)  =
+    protected fun observe(obs: ObservableBoolean, forceOnCurrentThread: Boolean = false, obFun: suspend (data: Boolean) -> Unit)  =
         observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { if(obs.get() == it) obFun.invoke(it) }) )
 
     /**
@@ -140,17 +140,17 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * If [forceOnCurrentThread] is not set, it will run in a background coroutine.
      * It also calls [obFun] (in the background). Does nothing if the value of the observable is null or, if [forceReload] is set, already changed
      */
-    protected fun <T> observeOf(obs: ObservableField<T>, forceOnCurrentThread: Boolean = false, forceReload: Boolean = false, obFun: suspend (data: T) -> Unit) =
+    protected fun <T> observe(obs: ObservableField<T>, forceOnCurrentThread: Boolean = false, forceReload: Boolean = false, obFun: suspend (data: T) -> Unit) =
         observables.add( Pair(obs, obs.addOnChangedAndNow(if(forceOnCurrentThread) null else this) { if(!forceReload && obs.get() == it) obFun.invoke(it ?: return@addOnChangedAndNow) }) )
 
 /*
     /** Observes a sharedPreference until the ViewModel is destroyed, using a custom live data. It also calls [obFun]. Does nothing if the value of the preference is null */
-    protected fun <T> observeSp(preference: PowerfulPreference<T>, obFun: (data: T) -> Unit) { observeLd(preference.asLiveData()) { obFun.invoke(it ?: return@observeLd) }; obFun.invoke(preference.get() ?: return) }
+    protected fun <T> observe(preference: PowerfulPreference<T>, obFun: (data: T) -> Unit) { observe(preference.asLiveData()) { obFun.invoke(it ?: return@observe) }; obFun.invoke(preference.get() ?: return) }
 
     /** Observes a sharedPreference until the ViewModel is destroyed, using a custom live data, and transforms it into an observable field. Does not update the observable if the value of the preference is null */
-    protected fun <T> observeSpAsOf(preference: PowerfulPreference<T>): ObservableField<T> {
+    protected fun <T> observeAsOf(preference: PowerfulPreference<T>): ObservableField<T> {
         val observable = ObservableField<T>()
-        observeLd(preference.asLiveData()) { observable.set(it ?: return@observeLd) }
+        observe(preference.asLiveData()) { observable.set(it ?: return@observe) }
         observable.set(preference.get() ?: return observable)
         return observable
     }*/
@@ -160,9 +160,9 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * If [forceOnCurrentThread] is not set, it will run in a background coroutine
      * Does not update the observable if the value of the liveData is null
      */
-    protected fun <T> observeLdAsOf(liveData: LiveData<T>, defaultValue: T? = null, forceOnCurrentThread: Boolean = false): ObservableField<T> {
+    protected fun <T> observeAsOf(liveData: LiveData<T>, defaultValue: T? = null, forceOnCurrentThread: Boolean = false): ObservableField<T> {
         val observable = ObservableField<T>()
-        observeLd(liveData, forceOnCurrentThread) { observable.set(it ?: return@observeLd) }
+        observe(liveData, forceOnCurrentThread) { observable.set(it ?: return@observe) }
         observable.set(liveData.value ?: defaultValue ?: return observable)
         return observable
     }

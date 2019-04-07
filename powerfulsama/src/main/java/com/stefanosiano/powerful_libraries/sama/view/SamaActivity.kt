@@ -82,4 +82,10 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         //This method does nothing. It's here just to have a reference to the javadoc used by extending activities
         return true
     }*/
+
+
+
+    val samaIntent
+        /** Returns the intent that started this activity as [SamaIntent], allowing the use of [SamaIntent.getExtraStatic] */
+        get() = SamaIntent(super.getIntent())
 }

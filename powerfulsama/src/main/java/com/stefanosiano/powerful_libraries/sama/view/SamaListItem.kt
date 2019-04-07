@@ -47,4 +47,5 @@ interface SamaListItem {
     /** Compares this to another item to decide if they are the same when the list is reloaded. By default it calls == */
     open fun contentEquals(other: SamaListItem) = this == other
 
+    fun <T> postToAdapter(id: Long, f: () -> T)
 }

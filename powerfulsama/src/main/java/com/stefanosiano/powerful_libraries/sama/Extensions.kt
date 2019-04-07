@@ -240,6 +240,9 @@ fun weeksToMillis(weeks : Long) :Long = weeks * 7 * 86_400_000
 /** Returns a weakReference to this object */
 fun <T> T.toWeakReference() = WeakReference<T>(this)
 
+/** Retrieves the key bound to the passed [value]. Returns the first key found, or null */
+fun <K, V> Map<K, V>.getKey(value: V): K? = this.filterValues { it == value }.keys.firstOrNull()
+
 /** Removes all items that satisfy [filter] predicate */
 inline fun <K, V, M> M.removeWhen(filter: (Map.Entry<K, V>) -> Boolean): M where M: MutableMap<K, V> { this.keys.removeAll(this.filter { filter.invoke(it) }.keys); return this }
 
