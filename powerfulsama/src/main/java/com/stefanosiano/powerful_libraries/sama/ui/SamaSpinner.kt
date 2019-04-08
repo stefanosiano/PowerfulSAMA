@@ -207,12 +207,12 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         val weakObs = obs.toWeakReference()
         val callback = obs.addOnChangedAndNow {
             weakObs.get()?.also { obs ->
-                if (obserablesValueSet.firstOrNull { set -> set.first() == obs } != null && obs.get() != currentKey.get())
+                if (obserablesValueSet.firstOrNull { set -> set.first() == obs } != null && obs.get() != currentValue.get())
                     obs.get()?.let { spinner.get()?.setValueSelected(it) }
             }
         }
 
-        currentKey.get()?.let { obs.set(it) }
+        currentValue.get()?.let { obs.set(it) }
         obserablesValueSet.add(WeakPair(weakObs.get() ?: return, callback))
     }
 
