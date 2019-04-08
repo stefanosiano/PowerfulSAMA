@@ -127,17 +127,13 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         onItemSelectedListener = object: OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                launch {
-                    currentKey.set(getSelectedKey())
-                    currentValue.set(getSelectedValue())
-                }
+                currentKey.set(getSelectedKey())
+                currentValue.set(getSelectedValue())
             }
         }
 
-        launch {
-            currentKey.set(getSelectedKey())
-            currentValue.set(getSelectedValue())
-        }
+        currentKey.set(getSelectedKey())
+        currentValue.set(getSelectedValue())
     }
 
 
