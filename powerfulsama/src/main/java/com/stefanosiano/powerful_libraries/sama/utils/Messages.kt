@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.snackbar.Snackbar
+import com.stefanosiano.powerful_libraries.sama.mainThreadHandler
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicLong
 
@@ -178,7 +179,7 @@ class Messages private constructor(
 
         internal fun setCurrentActivity(activity: Activity) { currentActivity?.clear(); currentActivity = WeakReference(activity) }
     }
-    
+
 
 
 
@@ -352,7 +353,7 @@ class Messages private constructor(
 
         when (messageImpl) {
             MessageImpl.ProgressDialog -> {
-                buildAsProgressDialog(context)
+                mainThreadHandler.post { buildAsProgressDialog(context) }
                 (implementation?.get() as ProgressDialog).show()
                 return this
             }
@@ -360,11 +361,11 @@ class Messages private constructor(
             MessageImpl.AlertDialogOneButton -> {
                 val activity: Activity? = retrieveActivityFromContext(context)
                 if(activity != null) {
-                    buildAsAlertDialogOneButton(activity)
+                    mainThreadHandler.post { buildAsAlertDialogOneButton(activity) }
                     (implementation?.get() as AlertDialog).show()
                 }
                 else {
-                    buildAsToast(context)
+                    mainThreadHandler.post { buildAsToast(context) }
                     (implementation?.get() as Toast).show()
                 }
                 return this
@@ -373,36 +374,36 @@ class Messages private constructor(
             MessageImpl.AlertDialog -> {
                 val activity: Activity? = retrieveActivityFromContext(context)
                 if(activity != null) {
-                    buildAsAlertDialog(activity)
+                    mainThreadHandler.post { buildAsAlertDialog(activity) }
                     (implementation?.get() as AlertDialog).show()
                 }
                 else {
-                    buildAsToast(context)
+                    mainThreadHandler.post { buildAsToast(context) }
                     (implementation?.get() as Toast).show()
                 }
                 return this
             }
 
             MessageImpl.Toast -> {
-                buildAsToast(context)
+                mainThreadHandler.post { buildAsToast(context) }
                 (implementation?.get() as Toast).show()
                 return this
             }
 
             MessageImpl.Snackbar -> {
                 if(snackbarView != null) {
-                    buildAsSnackbar(snackbarView!!)
+                    mainThreadHandler.post { buildAsSnackbar(snackbarView!!) }
                     (implementation?.get() as Snackbar).show()
                 }
                 else {
                     val activity: Activity? = retrieveActivityFromContext(context)
                     if(activity != null) {
                         val v: View = activity.window.decorView.findViewById(android.R.id.content)
-                        buildAsSnackbar(v)
+                        mainThreadHandler.post { buildAsSnackbar(v) }
                         (implementation?.get() as Snackbar).show()
                     }
                     else {
-                        buildAsToast(context)
+                        mainThreadHandler.post { buildAsToast(context) }
                         (implementation?.get() as Toast).show()
                     }
                 }
