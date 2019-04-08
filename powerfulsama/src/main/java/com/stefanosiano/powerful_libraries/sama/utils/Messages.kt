@@ -353,59 +353,45 @@ class Messages private constructor(
 
         when (messageImpl) {
             MessageImpl.ProgressDialog -> {
-                mainThreadHandler.post { buildAsProgressDialog(context) }
-                (implementation?.get() as ProgressDialog).show()
+                mainThreadHandler.post { buildAsProgressDialog(context); (implementation?.get() as ProgressDialog).show() }
                 return this
             }
 
             MessageImpl.AlertDialogOneButton -> {
                 val activity: Activity? = retrieveActivityFromContext(context)
-                if(activity != null) {
-                    mainThreadHandler.post { buildAsAlertDialogOneButton(activity) }
-                    (implementation?.get() as AlertDialog).show()
-                }
-                else {
-                    mainThreadHandler.post { buildAsToast(context) }
-                    (implementation?.get() as Toast).show()
-                }
+                if(activity != null)
+                    mainThreadHandler.post { buildAsAlertDialogOneButton(activity); (implementation?.get() as AlertDialog).show() }
+                else
+                    mainThreadHandler.post { buildAsToast(context); (implementation?.get() as Toast).show() }
                 return this
             }
 
             MessageImpl.AlertDialog -> {
                 val activity: Activity? = retrieveActivityFromContext(context)
-                if(activity != null) {
-                    mainThreadHandler.post { buildAsAlertDialog(activity) }
-                    (implementation?.get() as AlertDialog).show()
-                }
-                else {
-                    mainThreadHandler.post { buildAsToast(context) }
-                    (implementation?.get() as Toast).show()
-                }
+                if(activity != null)
+                    mainThreadHandler.post { buildAsAlertDialog(activity); (implementation?.get() as AlertDialog).show() }
+                else
+                    mainThreadHandler.post { buildAsToast(context); (implementation?.get() as Toast).show() }
                 return this
             }
 
             MessageImpl.Toast -> {
-                mainThreadHandler.post { buildAsToast(context) }
-                (implementation?.get() as Toast).show()
+                mainThreadHandler.post { buildAsToast(context); (implementation?.get() as Toast).show() }
                 return this
             }
 
             MessageImpl.Snackbar -> {
                 if(snackbarView != null) {
-                    mainThreadHandler.post { buildAsSnackbar(snackbarView!!) }
-                    (implementation?.get() as Snackbar).show()
+                    mainThreadHandler.post { buildAsSnackbar(snackbarView!!); (implementation?.get() as Snackbar).show() }
                 }
                 else {
                     val activity: Activity? = retrieveActivityFromContext(context)
                     if(activity != null) {
                         val v: View = activity.window.decorView.findViewById(android.R.id.content)
-                        mainThreadHandler.post { buildAsSnackbar(v) }
-                        (implementation?.get() as Snackbar).show()
+                        mainThreadHandler.post { buildAsSnackbar(v); (implementation?.get() as Snackbar).show() }
                     }
-                    else {
-                        mainThreadHandler.post { buildAsToast(context) }
-                        (implementation?.get() as Toast).show()
-                    }
+                    else
+                        mainThreadHandler.post { buildAsToast(context); (implementation?.get() as Toast).show() }
                 }
 
                 return this
