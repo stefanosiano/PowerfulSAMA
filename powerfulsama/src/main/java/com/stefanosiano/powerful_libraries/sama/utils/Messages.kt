@@ -317,7 +317,7 @@ class Messages private constructor(
 
 
 
-    /** Retrieves the activity name by the context  */
+    /** Retrieves the activity name by the context. If the activity is not found, it returns the current activity reference */
     private fun retrieveActivityFromContext(context: Context): Activity? {
         var c = context
         while (c is ContextWrapper) {
@@ -325,7 +325,7 @@ class Messages private constructor(
 
             c = c.baseContext
         }
-        return null
+        return currentActivity?.get()
     }
 
 
@@ -335,16 +335,16 @@ class Messages private constructor(
     /** Shows the message and returns it. Always prefer show(Activity) if possible, especially for Dialogs */
     fun <T> showAs(context: Context, showMessage: Boolean = true) = show(context, showMessage)?.implementation?.get() as? T?
 
-    /** Shows the message and returns it. Remember: you may need to call this in UI thread! */
+    /** Shows the message and returns it */
     fun show(activity: Activity, showMessage: Boolean = true) = if(showMessage) showMessage(activity) else { onOk?.invoke(); null }
 
-    /** Shows the message and returns it. Remember: you may need to call this in UI thread! */
+    /** Shows the message and returns it */
     fun <T> showAs(activity: Activity, showMessage: Boolean = true) = show(activity, showMessage)?.implementation?.get() as? T?
 
-    /** Tries to show the message on the currently open activity. If [showMessage] is met (true, default), then [onOk] will be called. Remember: you may need to call this in UI thread! */
+    /** Tries to show the message on the currently open activity. If [showMessage] is met (true, default), then [onOk] will be called */
     fun show(showMessage: Boolean = true): Messages? = currentActivity?.get()?.let { activity -> if(showMessage) showMessage(activity) else { onOk?.invoke(); null } }
 
-    /** Tries to show the message on the currently open activity and returns the implementation (e.g. AlertDialog). If [showMessage] is met (true), then [onOk] will be called. Remember: you may need to call this in UI thread! */
+    /** Tries to show the message on the currently open activity and returns the implementation (e.g. AlertDialog). If [showMessage] is met (true), then [onOk] will be called */
     fun <T> showAs(showMessage: Boolean = true): T? = show(showMessage)?.implementation?.get() as? T?
 
 
@@ -405,30 +405,12 @@ class Messages private constructor(
     fun dismiss() {
 
         when (messageImpl) {
-            MessageImpl.ProgressDialog -> {
-                if ((implementation?.get() as ProgressDialog).isShowing)
-                    (implementation?.get() as ProgressDialog).dismiss()
-                return
-            }
-
-            MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> {
-                if ((implementation?.get() as AlertDialog).isShowing)
-                    (implementation?.get() as AlertDialog).dismiss()
-                return
-            }
-
-            MessageImpl.Toast -> {
-                (implementation?.get() as Toast).cancel()
-                return
-            }
-
-            MessageImpl.Snackbar -> {
-                if ((implementation?.get() as Snackbar).isShown)
-                    (implementation?.get() as Snackbar).dismiss()
-                return
-            }
+            MessageImpl.ProgressDialog -> if ((implementation?.get() as ProgressDialog).isShowing) (implementation?.get() as ProgressDialog).dismiss()
+            MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> if ((implementation?.get() as AlertDialog).isShowing) (implementation?.get() as AlertDialog).dismiss()
+            MessageImpl.Toast -> (implementation?.get() as Toast).cancel()
+            MessageImpl.Snackbar -> if ((implementation?.get() as Snackbar).isShown) (implementation?.get() as Snackbar).dismiss()
+            else -> Log.e(TAG, "Cannot understand the implementation type of the message. Skipping dismiss")
         }
-        Log.e(TAG, "Cannot understand the implementation type of the message. Skipping dismiss")
     }
 
 
@@ -461,21 +443,12 @@ class Messages private constructor(
         mAlert.setTitle(title)
         mAlert.setMessage(message)
 
-        mAlert.setPositiveButton(positive) { dialogInterface: DialogInterface, _ ->
-            onOk?.invoke()
-            dialogInterface.dismiss()
-        }
-        mAlert.setNegativeButton(negative) { dialogInterface: DialogInterface, _ ->
-            onNo?.invoke()
-            dialogInterface.dismiss()
-        }
+        mAlert.setPositiveButton(positive) { dialog, _ -> onOk?.invoke(); dialog.dismiss() }
+        mAlert.setNegativeButton(negative) { dialog, _ -> onNo?.invoke(); dialog.dismiss() }
 
-        if (!TextUtils.isEmpty(neutral)) {
-            mAlert.setNeutralButton(neutral) { dialogInterface: DialogInterface, _ ->
-                onCancel?.invoke()
-                dialogInterface.dismiss()
-            }
-        }
+        if (!TextUtils.isEmpty(neutral))
+            mAlert.setNeutralButton(neutral) { dialog, _ -> onCancel?.invoke(); dialog.dismiss() }
+
 
         implementation = WeakReference(mAlert.create())
         return this
@@ -490,10 +463,7 @@ class Messages private constructor(
         mAlert.setTitle(title)
         mAlert.setMessage(message)
 
-        mAlert.setPositiveButton(android.R.string.ok) { dialog: DialogInterface, _: Int ->
-            onOk?.invoke()
-            dialog.dismiss()
-        }
+        mAlert.setPositiveButton(positive) { dialog, _ -> onOk?.invoke(); dialog.dismiss() }
 
         implementation = WeakReference(mAlert.create())
         return this
