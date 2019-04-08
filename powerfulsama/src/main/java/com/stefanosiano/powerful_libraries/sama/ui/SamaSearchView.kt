@@ -25,7 +25,7 @@ open class SamaSearchView : SearchView {
     private var currentQuery = ""
 
     /** Set of observable strings to update when the query changes */
-    private var obserablesSet: MutableSet<WeakPair<ObservableField<String>, Observable.OnPropertyChangedCallback>> = HashSet()
+    private val obserablesSet: MutableSet<WeakPair<ObservableField<String>, Observable.OnPropertyChangedCallback>> = HashSet()
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, R.attr.searchViewStyle)
@@ -78,6 +78,7 @@ open class SamaSearchView : SearchView {
                     searchView.get()?.setQuery(obs.get(), false)
             }
         }
+        queryObs.set(currentQuery)
 
         obserablesSet.add(WeakPair(weakObs.get() ?: return, callback))
     }
