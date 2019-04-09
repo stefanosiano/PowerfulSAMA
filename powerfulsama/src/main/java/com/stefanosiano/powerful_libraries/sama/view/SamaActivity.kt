@@ -59,30 +59,6 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         return true
     }
 
-    /**
-     * Handles the error of the ViewModel, in case something went wrong.
-     *
-     *
-     *
-     * NOTE: Here you should check the error of the response, because there was an error.
-     * <br></br> <br></br>
-     * It's perfectly safe to check only the error and not the action: the whole response is returned
-     * just to access more info, or to use action to group different errors together.
-     * <br></br> <br></br>
-     * The error and the action of the response will never be null!
-     * <br></br>
-     * The data of the response can be null!
-     *
-     *
-     * @param vmResponse Response sent from the ViewModel. It will never be null.
-     * @return True to clear the response after being sent to the observer. False to retain it.
-     * If false, the response should be cleared using [com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel.clearVmResponse] method.
-     *//*
-    protected fun handleVmResponseError(vmResponse: VmResponse<out VmResponse.VmAction, out VmResponse.VmError, Any>): Boolean {
-        //This method does nothing. It's here just to have a reference to the javadoc used by extending activities
-        return true
-    }*/
-
 
 
     val samaIntent

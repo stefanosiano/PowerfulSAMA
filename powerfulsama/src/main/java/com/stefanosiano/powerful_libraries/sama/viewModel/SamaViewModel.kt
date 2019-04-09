@@ -1,7 +1,5 @@
 package com.stefanosiano.powerful_libraries.sama.viewModel
 
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import androidx.databinding.*
 import androidx.lifecycle.*
@@ -17,12 +15,11 @@ import kotlinx.coroutines.*
  * It will contain the fields used by the databinding and all the logic of the data contained into the layouts.
  *
  * @param <A> Enum extending [VmResponse.VmAction]. It indicates the action of the response the activity/fragment should handle.
- * @param <E> Enum extending [VmResponse.VmError]. It indicates the error of the response the activity/fragment should handle.
 </E></A>
  */
-open class SamaViewModel<A, E>
+open class SamaViewModel<A>
 /** Initializes the LiveData of the response */
-protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAction, E : VmResponse.VmError {
+protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAction {
     private val loggingExceptionHandler = CoroutineExceptionHandler { _, t -> t.printStackTrace() }
     override val coroutineContext = SupervisorJob() + loggingExceptionHandler
 
@@ -30,7 +27,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     private var lastSentAction: A? = null
 
     /** LiveData of the response the ViewModel sends to the observer (activity/fragment) */
-    private var liveResponse: MediatorLiveData<VmResponse<A, E, Any>> = MediatorLiveData()
+    private var liveResponse: MediatorLiveData<VmResponse<A>> = MediatorLiveData()
 
     /** List of liveData that will be observed until the viewModel is destroyed */
     private val observedLiveData = ArrayList<LiveData<out Any?>>()
@@ -54,10 +51,10 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * @param error Id of the error to send (default null). If null, it means no error is sent to the observer
      * @param data Data to send (default null). Can be null
      */
-    protected fun postVmResponse(actionId: A, error: E? = null, data: Any? = null) = liveResponse.postValue(VmResponse(actionId, error, error == null, data))
+    protected fun postVmResponse(actionId: A, data: Any? = null) = postVmResponse(VmResponse(actionId, data))
 
     /** Sends the response to the active observer */
-    protected fun postVmResponse(vmResponse: VmResponse<A, E, Any>) = liveResponse.postValue(vmResponse)
+    protected fun postVmResponse(vmResponse: VmResponse<A>) = liveResponse.postValue(vmResponse)
 
     /**
      * Observes a liveData until the ViewModel is destroyed, using a custom observer
@@ -193,22 +190,8 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      *      @param vmData Data sent from the ViewModel. It can be null.
      *      @return True to clear the response after being sent to the observer. False to retain it.
      *      If false, the response should be cleared using [clearVmResponse][SamaViewModel.clearVmResponse] method.
-     *
-     *
-     * @param errorObserver
-     *      Observes changes of the VmResponse, in case something went wrong.
-     *
-     *      NOTE: Here you should check the error of the response, because there was an error.
-     *      It's perfectly safe to check only the error and not the action: the whole response is returned
-     *      just to access more info, or to use action to group different errors together.
-     *      The error and the action of the response will never be null!
-     *      The data of the response can be null!
-     *
-     *      @param vmResponse Response sent from the ViewModel. It will never be null.
-     *      @return True to clear the response after being sent to the observer. False to retain it.
-     *      If false, the response should be cleared using [clearVmResponse][SamaViewModel.clearVmResponse] method.
      */
-    fun observeVmResponse(lifecycleOwner: LifecycleOwner, observer: ((vmAction: A, vmData: Any?) -> Boolean)? = null, errorObserver: ((vmResponse: VmResponse<A, E, Any>) -> Boolean)? = null) {
+    fun observeVmResponse(lifecycleOwner: LifecycleOwner, observer: ((vmAction: A, vmData: Any?) -> Boolean)? = null) {
         liveResponse.observeLd(lifecycleOwner) {
 
             //If i clear the response, I clear the lastSentAction, too
@@ -226,18 +209,22 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
 
             Log.v(javaClass.simpleName, "Sending to activity: $it")
 
-            if (it.isSuccessful) {
-                if (observer?.invoke(it.action, it.data) != false)
-                    liveResponse.postValue(null)
-            } else {
-                //error is annotated as NonNull, but it can be null here. So i'm making this check, just to be sure it will never be null outside this class
-                it.error ?: throw IllegalArgumentException("Vm response error cannot be null, if isSuccessful is false!")
-
-                if (errorObserver?.invoke(it) != false)
-                    liveResponse.postValue(null)
-            }
-
+            if (observer?.invoke(it.action, it.data) != false)
+                liveResponse.postValue(null)
         }
     }
+}
+
+/** Class containing action and data sent from the ViewModel to its observers */
+open class VmResponse<A> (
+    /** Specifies what the response is about  */
+    val action: A,
+    /** Optional data provided by the action  */
+    val data: Any?) where A : VmResponse.VmAction {
+
+    override fun toString() = "VmResponse{ action= $action, data=$data }"
+
+    /** Interface that indicates the action of the VmResponse sent by the ViewModel */
+    interface VmAction
 }
 
