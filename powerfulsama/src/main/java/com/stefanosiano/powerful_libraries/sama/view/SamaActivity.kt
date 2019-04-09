@@ -53,11 +53,11 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
      * @param vmData Data sent from the ViewModel. It can be null.
      * @return True to clear the response after being sent to the observer. False to retain it.
      * If false, the response should be cleared using [com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel.clearVmResponse] method.
-     */
+     *//*
     open fun handleVmResponse(vmAction: VmResponse.VmAction, vmData: Any?): Boolean {
         //This method does nothing. It's here just to have a reference to the javadoc used by extending activities
         return true
-    }
+    }*/
 
 
 
