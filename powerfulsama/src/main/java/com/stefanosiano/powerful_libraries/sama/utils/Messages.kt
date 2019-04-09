@@ -98,6 +98,8 @@ class Messages private constructor(
     /** Implementation of the message */
     private var implementation: WeakReference<Any>? = null
 
+    /** Job of the auto dismiss feature. When the message is dismissed, the job should be canceled */
+    private var autoDismissJob: Job? = null
 
 
 
@@ -368,8 +370,15 @@ class Messages private constructor(
         initStrings(context.applicationContext)
 
         //Auto-dismiss message after x seconds
-        if(autoDismissDelay > 0)
-            launch { delay(autoDismissDelay); dismiss() }
+        if(autoDismissDelay > 0) {
+            autoDismissJob = launch {
+                delay(autoDismissDelay)
+                if(isShowing()) {
+                    Log.e(TAG, "Message has been auto dismissed after $autoDismissDelay milliseconds!")
+                    dismiss()
+                }
+            }
+        }
 
         when (messageImpl) {
             MessageImpl.ProgressDialog -> {
@@ -431,7 +440,19 @@ class Messages private constructor(
             MessageImpl.Snackbar -> if ((implementation?.get() as Snackbar).isShown) (implementation?.get() as Snackbar).dismiss()
             else -> Log.e(TAG, "Cannot understand the implementation type of the message. Skipping dismiss")
         }
+        autoDismissJob?.cancel()
     }
+
+    /** Returns if the message is showing (Toast will always return false) */
+    fun isShowing() =
+        when (messageImpl) {
+            MessageImpl.ProgressDialog -> (implementation?.get() as ProgressDialog).isShowing
+            MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> (implementation?.get() as AlertDialog).isShowing
+            MessageImpl.Toast -> false
+            MessageImpl.Snackbar -> (implementation?.get() as Snackbar).isShown
+            else -> { Log.e(TAG, "Cannot understand the implementation type of the message. Skipping isShowing"); false }
+        }
+
 
 
     /** Retrieves the strings from the ids.  */
