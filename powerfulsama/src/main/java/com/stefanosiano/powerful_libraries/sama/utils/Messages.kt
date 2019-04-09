@@ -14,6 +14,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.stefanosiano.powerful_libraries.sama.mainThreadHandler
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
 
@@ -100,6 +101,11 @@ class Messages private constructor(
 
     /** Job of the auto dismiss feature. When the message is dismissed, the job should be canceled */
     private var autoDismissJob: Job? = null
+
+    /** Job of the message building. Dismissing the message should wait for the job to finish */
+    private var isBuilding = AtomicBoolean(false)
+
+    private var isBuildingRetryCount = 0
 
 
 
@@ -369,81 +375,87 @@ class Messages private constructor(
 
         initStrings(context.applicationContext)
 
+        autoDismissJob?.cancel()
         //Auto-dismiss message after x seconds
         if(autoDismissDelay > 0) {
             autoDismissJob = launch {
                 delay(autoDismissDelay)
-                if(isShowing() == true) {
-                    Log.e(TAG, "Message has been auto dismissed after $autoDismissDelay milliseconds!")
-                    dismiss()
-                }
+                dismiss()
             }
         }
 
+        isBuildingRetryCount = 0
+        isBuilding.set(true)
+
         when (messageImpl) {
             MessageImpl.ProgressDialog -> {
-                mainThreadHandler.post { buildAsProgressDialog(context); (implementation?.get() as ProgressDialog).show() }
-                return this
+                mainThreadHandler.post { buildAsProgressDialog(context); (implementation?.get() as ProgressDialog).show(); isBuilding.set(false) }
             }
 
             MessageImpl.AlertDialogOneButton -> {
                 val activity: Activity? = retrieveActivityFromContext(context)
                 if(activity != null)
-                    mainThreadHandler.post { buildAsAlertDialogOneButton(activity); (implementation?.get() as AlertDialog).show() }
+                    mainThreadHandler.post { buildAsAlertDialogOneButton(activity); (implementation?.get() as AlertDialog).show(); isBuilding.set(false) }
                 else
-                    mainThreadHandler.post { buildAsToast(context); (implementation?.get() as Toast).show() }
-                return this
+                    mainThreadHandler.post { buildAsToast(context); (implementation?.get() as Toast).show(); isBuilding.set(false) }
             }
 
             MessageImpl.AlertDialog -> {
                 val activity: Activity? = retrieveActivityFromContext(context)
                 if(activity != null)
-                    mainThreadHandler.post { buildAsAlertDialog(activity); (implementation?.get() as AlertDialog).show() }
+                    mainThreadHandler.post { buildAsAlertDialog(activity); (implementation?.get() as AlertDialog).show(); isBuilding.set(false) }
                 else
-                    mainThreadHandler.post { buildAsToast(context); (implementation?.get() as Toast).show() }
-                return this
+                    mainThreadHandler.post { buildAsToast(context); (implementation?.get() as Toast).show(); isBuilding.set(false) }
             }
 
             MessageImpl.Toast -> {
-                mainThreadHandler.post { buildAsToast(context); (implementation?.get() as Toast).show() }
-                return this
+                mainThreadHandler.post { buildAsToast(context); (implementation?.get() as Toast).show(); isBuilding.set(false) }
             }
 
             MessageImpl.Snackbar -> {
                 if(snackbarView != null) {
-                    mainThreadHandler.post { buildAsSnackbar(snackbarView!!); (implementation?.get() as Snackbar).show() }
+                    mainThreadHandler.post { buildAsSnackbar(snackbarView!!); (implementation?.get() as Snackbar).show(); isBuilding.set(false) }
                 }
                 else {
                     val activity: Activity? = retrieveActivityFromContext(context)
                     if(activity != null) {
                         val v: View = activity.window.decorView.findViewById(android.R.id.content)
-                        mainThreadHandler.post { buildAsSnackbar(v); (implementation?.get() as Snackbar).show() }
+                        mainThreadHandler.post { buildAsSnackbar(v); (implementation?.get() as Snackbar).show(); isBuilding.set(false) }
                     }
                     else
-                        mainThreadHandler.post { buildAsToast(context); (implementation?.get() as Toast).show() }
+                        mainThreadHandler.post { buildAsToast(context); (implementation?.get() as Toast).show(); isBuilding.set(false) }
                 }
-
-                return this
+            }
+            else -> {
+                isBuilding.set(false)
+                Log.e(TAG, "Cannot understand the implementation type of the message. Skipping show")
             }
         }
-        Log.e(TAG, "Cannot understand the implementation type of the message. Skipping show")
         return this
     }
 
-    /** Dismisses the message  */
+    /** Dismisses the message */
     fun dismiss() {
 
-        when (messageImpl) {
-            MessageImpl.ProgressDialog -> (implementation?.get() as? ProgressDialog?)?.let { if (it.isShowing) it.dismiss() }
-            MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> (implementation?.get() as? AlertDialog?)?.let { if (it.isShowing) it.dismiss() }
-            MessageImpl.Toast -> (implementation?.get() as? Toast?)?.cancel()
-            MessageImpl.Snackbar -> (implementation?.get() as? Snackbar?)?.let { if (it.isShown) it.dismiss() }
-            else -> Log.e(TAG, "Cannot understand the implementation type of the message. Skipping dismiss")
+        if(isBuilding.get() && isBuildingRetryCount < 10) {
+            isBuildingRetryCount++
+            launch { delay(150); dismiss() }
+            return
         }
-        autoDismissJob?.cancel()
+
+        mainThreadHandler.post {
+            when (messageImpl) {
+                MessageImpl.ProgressDialog -> (implementation?.get() as? ProgressDialog?)?.let { if (it.isShowing) it.dismiss() }
+                MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> (implementation?.get() as? AlertDialog?)?.let { if (it.isShowing) it.dismiss() }
+                MessageImpl.Toast -> (implementation?.get() as? Toast?)?.cancel()
+                MessageImpl.Snackbar -> (implementation?.get() as? Snackbar?)?.let { if (it.isShown) it.dismiss() }
+                else -> Log.e(TAG, "Cannot understand the implementation type of the message. Skipping dismiss")
+            }
+            autoDismissJob?.cancel()
+        }
     }
 
-    /** Returns if the message is showing (Toast will always return false) */
+    /** Returns if the message is showing (Toasts will always return false) */
     fun isShowing() =
         when (messageImpl) {
             MessageImpl.ProgressDialog -> (implementation?.get() as? ProgressDialog?)?.isShowing
