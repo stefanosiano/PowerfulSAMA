@@ -373,7 +373,7 @@ class Messages private constructor(
         if(autoDismissDelay > 0) {
             autoDismissJob = launch {
                 delay(autoDismissDelay)
-                if(isShowing()) {
+                if(isShowing() == true) {
                     Log.e(TAG, "Message has been auto dismissed after $autoDismissDelay milliseconds!")
                     dismiss()
                 }
@@ -434,10 +434,10 @@ class Messages private constructor(
     fun dismiss() {
 
         when (messageImpl) {
-            MessageImpl.ProgressDialog -> if ((implementation?.get() as ProgressDialog).isShowing) (implementation?.get() as ProgressDialog).dismiss()
-            MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> if ((implementation?.get() as AlertDialog).isShowing) (implementation?.get() as AlertDialog).dismiss()
-            MessageImpl.Toast -> (implementation?.get() as Toast).cancel()
-            MessageImpl.Snackbar -> if ((implementation?.get() as Snackbar).isShown) (implementation?.get() as Snackbar).dismiss()
+            MessageImpl.ProgressDialog -> (implementation?.get() as? ProgressDialog?)?.let { if (it.isShowing) it.dismiss() }
+            MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> (implementation?.get() as? AlertDialog?)?.let { if (it.isShowing) it.dismiss() }
+            MessageImpl.Toast -> (implementation?.get() as? Toast?)?.cancel()
+            MessageImpl.Snackbar -> (implementation?.get() as? Snackbar?)?.let { if (it.isShown) it.dismiss() }
             else -> Log.e(TAG, "Cannot understand the implementation type of the message. Skipping dismiss")
         }
         autoDismissJob?.cancel()
@@ -446,10 +446,10 @@ class Messages private constructor(
     /** Returns if the message is showing (Toast will always return false) */
     fun isShowing() =
         when (messageImpl) {
-            MessageImpl.ProgressDialog -> (implementation?.get() as ProgressDialog).isShowing
-            MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> (implementation?.get() as AlertDialog).isShowing
+            MessageImpl.ProgressDialog -> (implementation?.get() as? ProgressDialog?)?.isShowing
+            MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> (implementation?.get() as? AlertDialog?)?.isShowing
             MessageImpl.Toast -> false
-            MessageImpl.Snackbar -> (implementation?.get() as Snackbar).isShown
+            MessageImpl.Snackbar -> (implementation?.get() as? Snackbar?)?.isShown
             else -> { Log.e(TAG, "Cannot understand the implementation type of the message. Skipping isShowing"); false }
         }
 
