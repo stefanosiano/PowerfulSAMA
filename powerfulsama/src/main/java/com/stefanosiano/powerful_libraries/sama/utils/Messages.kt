@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.snackbar.Snackbar
 import com.stefanosiano.powerful_libraries.sama.mainThreadHandler
+import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicLong
 
@@ -32,6 +33,7 @@ private const val TAG = "Messages"
  *      cancelRunnable = null
  *      indeterminate = true
  *      cancelable = false
+ *      autoDismissDelay = 0 (doesn't dismiss)
  */
 class Messages private constructor(
 
@@ -84,7 +86,10 @@ class Messages private constructor(
     private var messageImpl: MessageImpl? = null,
 
     /** View to bind the snackbar to (when showing it) */
-    private var snackbarView: View? = null) {
+    private var snackbarView: View? = null,
+
+    /** Delay in milliseconds after which the message will automatically dismiss */
+    private var autoDismissDelay: Long = 0) {
 
 
     /** Unique id used to check equality with other messages  */
@@ -112,7 +117,11 @@ class Messages private constructor(
      *      indeterminate = true
      *      cancelable = false
      */
-    companion object {
+    companion object : CoroutineScope {
+
+        private val loggingExceptionHandler = CoroutineExceptionHandler { _, t -> t.printStackTrace() }
+        override val coroutineContext = SupervisorJob() + loggingExceptionHandler
+
         /** Shared unique id used to check equality with other messages  */
         private val uniqueId: AtomicLong = AtomicLong(0)
 
@@ -315,6 +324,12 @@ class Messages private constructor(
         return this
     }
 
+    /** Sets the delay in milliseconds after which the message will automatically dismiss */
+    fun autoDismissDelay(autoDismissDelay: Long): Messages {
+        this.autoDismissDelay = autoDismissDelay
+        return this
+    }
+
 
 
     /** Retrieves the activity name by the context. If the activity is not found, it returns the current activity reference */
@@ -330,16 +345,16 @@ class Messages private constructor(
 
 
     /** Shows the message and returns it. Always prefer show(Activity) if possible, especially for Dialogs */
-    fun show(context: Context, showMessage: Boolean = true) = if(showMessage) showMessage(context) else { onOk?.invoke(); null }
+    fun show(context: Context, showMessage: Boolean = true): Messages? = if(showMessage) showMessage(context) else { onOk?.invoke(); null }
 
     /** Shows the message and returns it. Always prefer show(Activity) if possible, especially for Dialogs */
-    fun <T> showAs(context: Context, showMessage: Boolean = true) = show(context, showMessage)?.implementation?.get() as? T?
+    fun <T> showAs(context: Context, showMessage: Boolean = true): T? = show(context, showMessage)?.implementation?.get() as? T?
 
     /** Shows the message and returns it */
-    fun show(activity: Activity, showMessage: Boolean = true) = if(showMessage) showMessage(activity) else { onOk?.invoke(); null }
+    fun show(activity: Activity, showMessage: Boolean = true): Messages? = if(showMessage) showMessage(activity) else { onOk?.invoke(); null }
 
     /** Shows the message and returns it */
-    fun <T> showAs(activity: Activity, showMessage: Boolean = true) = show(activity, showMessage)?.implementation?.get() as? T?
+    fun <T> showAs(activity: Activity, showMessage: Boolean = true): T? = show(activity, showMessage)?.implementation?.get() as? T?
 
     /** Tries to show the message on the currently open activity. If [showMessage] is met (true, default), then [onOk] will be called */
     fun show(showMessage: Boolean = true): Messages? = currentActivity?.get()?.let { activity -> if(showMessage) showMessage(activity) else { onOk?.invoke(); null } }
@@ -349,7 +364,12 @@ class Messages private constructor(
 
 
     private fun showMessage(context: Context): Messages {
+
         initStrings(context.applicationContext)
+
+        //Auto-dismiss message after x seconds
+        if(autoDismissDelay > 0)
+            launch { delay(autoDismissDelay); dismiss() }
 
         when (messageImpl) {
             MessageImpl.ProgressDialog -> {
