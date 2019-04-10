@@ -15,7 +15,6 @@ import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 
 
 /**
@@ -51,7 +50,7 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
 
     init {
         currentKey.addOnChangedAndNow { key -> obserablesKeySet.forEach { it.first()?.set(key) } }
-        currentValue.addOnChangedAndNow { key -> obserablesValueSet.forEach { it.first()?.set(key) } }
+        currentValue.addOnChangedAndNow { value -> obserablesValueSet.forEach { it.first()?.set(value) } }
     }
 
     /**
@@ -66,6 +65,7 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
     fun init(spinnerLayoutId: Int, items: Collection<SamaSpinnerItem>, showValue: Boolean = true, key: String? = null, value: String? = null) {
         arrayAdapter = ArrayAdapter(context, spinnerLayoutId)
         valuesOnly = false
+        this.showValue = showValue
         itemMap.clear()
 
         if(key != null && value != null) {
@@ -127,13 +127,15 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         onItemSelectedListener = object: OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                currentKey.set(getSelectedKey())
-                currentValue.set(getSelectedValue())
+                val key = getSelectedKey()
+                currentKey.set(key)
+                currentValue.set(itemMap[key])
             }
         }
 
-        currentKey.set(getSelectedKey())
-        currentValue.set(getSelectedValue())
+        val key = getSelectedKey()
+        currentKey.set(key)
+        currentValue.set(itemMap[key])
     }
 
 
@@ -144,21 +146,15 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
     fun getSelection(): String = selectedItem as String
 
     /** Sets the selection of the spinner to the first occurrence of [value]. If it was initialized with a collection of strings, it calls [setSelection] */
-    fun setValueSelected(value: String) {
+    fun setSelectedValue(value: String) {
         if(valuesOnly) return setSelection(value)
-        if(showValue)
-            (0 until adapter.count).firstOrNull { adapter.getItem(it) == value }?.let { setSelection(it) }
-        else
-            setKeySelected(itemMap.getKey(value) ?: "")
+        (0 until adapter.count).firstOrNull { adapter.getItem(it) == if(showValue) value else itemMap.getKey(value) }?.let { setSelection(it) }
     }
 
     /** Sets the selection of the spinner to the first occurrence of [key]. If it was initialized with a collection of strings, it calls [setSelection] */
-    fun setKeySelected(key: String) {
+    fun setSelectedKey(key: String) {
         if(valuesOnly) return setSelection(key)
-        if(showValue)
-            setValueSelected(itemMap.get(key) ?: "")
-        else
-            (0 until adapter.count).firstOrNull { adapter.getItem(it) == key }?.let { setSelection(it) }
+        (0 until adapter.count).firstOrNull { adapter.getItem(it) == if(showValue) itemMap[key] else key }?.let { setSelection(it) }
     }
 
     /** Gets the value associated to the currently shown item. If it was initialized with a collection of strings, it calls [getSelection] */
@@ -185,12 +181,12 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         val callback = obs.addOnChangedAndNow {
             weakObs.get()?.also { obs ->
                 if (obserablesKeySet.firstOrNull { set -> set.first() == obs } != null && obs.get() != currentKey.get())
-                    obs.get()?.let { spinner.get()?.setKeySelected(it) }
+                    obs.get()?.let { spinner.get()?.setSelectedKey(it) }
             }
         }
 
+        weakObs.get()?.let { obserablesKeySet.add(WeakPair(it, callback)) }
         currentKey.get()?.let { obs.set(it) }
-        obserablesKeySet.add(WeakPair(weakObs.get() ?: return, callback))
     }
 
     /**
@@ -204,20 +200,12 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         val callback = obs.addOnChangedAndNow {
             weakObs.get()?.also { obs ->
                 if (obserablesValueSet.firstOrNull { set -> set.first() == obs } != null && obs.get() != currentValue.get())
-                    obs.get()?.let { spinner.get()?.setValueSelected(it) }
+                    obs.get()?.let { spinner.get()?.setSelectedValue(it) }
             }
         }
 
+        weakObs.get()?.let { obserablesValueSet.add(WeakPair(it, callback)) }
         currentValue.get()?.let { obs.set(it) }
-        obserablesValueSet.add(WeakPair(weakObs.get() ?: return, callback))
-    }
-
-    override fun onViewRemoved(child: View?) {
-        super.onViewRemoved(child)
-        obserablesKeySet.forEach { it.first()?.removeOnPropertyChangedCallback(it.second() ?: return@forEach) }
-        obserablesKeySet.clear()
-        obserablesValueSet.forEach { it.first()?.removeOnPropertyChangedCallback(it.second() ?: return@forEach) }
-        obserablesValueSet.clear()
     }
 
 
