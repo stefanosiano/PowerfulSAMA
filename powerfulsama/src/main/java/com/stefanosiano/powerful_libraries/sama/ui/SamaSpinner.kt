@@ -42,6 +42,10 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
     /** Set of observable strings to update when an item is selected. It will contain the value */
     private val obserablesValueSet: MutableSet<WeakPair<ObservableField<String>, Observable.OnPropertyChangedCallback>> = HashSet()
 
+    private var isInitialized = false
+
+    private var tempItems: Collection<String>? = null
+
     constructor(context: Context) : super(context) {}
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {}
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {}
@@ -52,6 +56,7 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         onItemSelectedListener = object: OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if(!isInitialized) return
                 val key = getSelectedKey()
                 currentKey.set(key)
                 currentValue.set(itemMap[key])
@@ -61,15 +66,18 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         val key = getSelectedKey()
         currentKey.set(key)
         currentValue.set(itemMap[key])
-        currentKey.addOnChangedAndNow { k -> obserablesKeySet.forEach { it.first()?.set(k) } }
-        currentValue.addOnChangedAndNow { v -> obserablesValueSet.forEach { it.first()?.set(v) } }
+        currentKey.addOnChangedAndNow { k -> if(!isInitialized) return@addOnChangedAndNow; obserablesKeySet.forEach { it.first()?.set(k) } }
+        currentValue.addOnChangedAndNow { v -> if(!isInitialized) return@addOnChangedAndNow; obserablesValueSet.forEach { it.first()?.set(v) } }
     }
 
 
     /** Initializes the spinner, using [spinnerLayoutId] for the spinner items */
     fun init(spinnerLayoutId: Int) {
+        isInitialized = false
         arrayAdapter = ArrayAdapter(context, spinnerLayoutId)
         super.setAdapter(arrayAdapter)
+        isInitialized = true
+        tempItems?.let { arrayAdapter.addAll(it) }
     }
 
 
@@ -114,8 +122,9 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
 
     /** Clear map and adapter, add new items and refresh adapter changes */
     private fun refreshItems(items: Collection<String>) {
-        arrayAdapter.clear()
         itemMap.clear()
+        if(!isInitialized) { tempItems = items; return }
+        arrayAdapter.clear()
         arrayAdapter.addAll(items)
         arrayAdapter.notifyDataSetChanged()
     }
