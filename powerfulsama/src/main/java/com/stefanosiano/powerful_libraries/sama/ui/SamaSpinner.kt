@@ -47,83 +47,8 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {}
 
 
-
-    init {
-        currentKey.addOnChangedAndNow { key -> obserablesKeySet.forEach { it.first()?.set(key) } }
-        currentValue.addOnChangedAndNow { value -> obserablesValueSet.forEach { it.first()?.set(value) } }
-    }
-
-    /**
-     * Initializes the spinner
-     *
-     * @param spinnerLayoutId layout id of the spinner items
-     * @param items collection of [SamaSpinnerItem] to show
-     * @param showValue if true it shows the value, otherwise it shows the key
-     * @param key key of the first default item to show (ignored if null)
-     * @param value value of the first default item to show (ignored if null)
-     */
-    fun init(spinnerLayoutId: Int, items: Collection<SamaSpinnerItem>, showValue: Boolean = true, key: String? = null, value: String? = null) {
-        arrayAdapter = ArrayAdapter(context, spinnerLayoutId)
-        valuesOnly = false
-        this.showValue = showValue
-        itemMap.clear()
-
-        if(key != null && value != null) {
-            arrayAdapter.add(if(showValue) value else key)
-            itemMap.put(key, value)
-        }
-
-        arrayAdapter.addAll(items.map { if(showValue) it.value() else it.key() })
-        items.map { itemMap.put(it.key(), it.value()) }
-
-        super.setAdapter(arrayAdapter)
-        init()
-    }
-
-    /**
-     * Initializes the spinner
-     *
-     * @param spinnerLayoutId layout id of the spinner items
-     * @param items array of [SamaSpinnerItem] to show
-     * @param showValue if true it shows the value, otherwise it shows the key
-     * @param key key of the first default item to show (ignored if null)
-     * @param value value of the first default item to show (ignored if null)
-     */
-    fun init(spinnerLayoutId: Int, items: Array<out SamaSpinnerItem>, showValue: Boolean = true, key: String? = null, value: String? = null) =
-        init(spinnerLayoutId, items.toList(), showValue, key, value)
-
-
-
-    /**
-     * Initializes the spinner
-     *
-     * @param spinnerLayoutId layout id of the spinner items
-     * @param items collection of [String] to show
-     * @param value value of the first default item to show (ignored if null)
-     */
-    fun init(spinnerLayoutId: Int, items: Collection<String>, value: String? = null) {
-        showValue = false
-        valuesOnly = true
-        arrayAdapter = ArrayAdapter(context, spinnerLayoutId)
-        itemMap.clear()
-
-        if(value != null) arrayAdapter.add(value)
-
-        arrayAdapter.addAll(items)
-        super.setAdapter(arrayAdapter)
-        init()
-    }
-    /**
-     * Initializes the spinner
-     *
-     * @param spinnerLayoutId layout id of the spinner items
-     * @param items array of [String] to show
-     * @param value value of the first default item to show (ignored if null)
-     */
-    fun init(spinnerLayoutId: Int, items: Array<out String>, value: String? = null) = init(spinnerLayoutId, items.toList(), value)
-
     /** Common initialization of the spinner */
-    private fun init() {
+    init {
         onItemSelectedListener = object: OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -136,6 +61,63 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         val key = getSelectedKey()
         currentKey.set(key)
         currentValue.set(itemMap[key])
+        currentKey.addOnChangedAndNow { k -> obserablesKeySet.forEach { it.first()?.set(k) } }
+        currentValue.addOnChangedAndNow { v -> obserablesValueSet.forEach { it.first()?.set(v) } }
+    }
+
+
+    /** Initializes the spinner, using [spinnerLayoutId] for the spinner items */
+    fun init(spinnerLayoutId: Int) {
+        arrayAdapter = ArrayAdapter(context, spinnerLayoutId)
+        super.setAdapter(arrayAdapter)
+    }
+
+
+
+    /** Sets [items] as the array of [SamaSpinnerItem] to show in the spinner, whenever it changes */
+    fun bindItemsArray(items: ObservableField<Array<out SamaSpinnerItem>>, showValue: Boolean = true) = items.addOnChangedAndNow { if (it != null) setItems(it.toList(), showValue) }
+
+    /** Sets [items] as the collection of [SamaSpinnerItem] to show in the spinner, whenever it changes */
+    fun bindItems(items: ObservableField<Collection<SamaSpinnerItem>>, showValue: Boolean = true) = items.addOnChangedAndNow { if (it != null) setItems(it.toList(), showValue) }
+
+    /** Sets [items] as the array of [String] to show in the spinner, whenever it changes */
+    fun bindItemsArray(items: ObservableField<Array<out String>>) = items.addOnChangedAndNow { if (it != null) setItems(it.toList()) }
+
+    /** Sets [items] as the collection of [String] to show in the spinner, whenever it changes */
+    fun bindItems(items: ObservableField<Collection<String>>) = items.addOnChangedAndNow { if (it != null) setItems(it.toList()) }
+
+
+    /** Sets [items] as the array of [SamaSpinnerItem] to show in the spinner */
+    fun setItems(items: Array<out SamaSpinnerItem>, showValue: Boolean = true) = setItems(items.toList(), showValue)
+
+    /** Sets [items] as the collection of [SamaSpinnerItem] to show in the spinner */
+    fun setItems(items: Collection<SamaSpinnerItem>, showValue: Boolean = true) {
+        val old = selectedItem as? String? ?: ""
+        refreshItems( items.map { if(showValue) it.value() else it.key() } )
+        valuesOnly = false
+        this.showValue = showValue
+        items.map { itemMap.put(it.key(), it.value()) }
+        if(showValue) setSelectedValue(old) else setSelectedKey(old)
+    }
+
+    /** Sets [items] as the array of [String] to show in the spinner */
+    fun setItems(items: Array<out String>) = setItems(items.toList())
+
+    /** Sets [items] as the collection of [String] to show in the spinner */
+    fun setItems(items: Collection<String>) {
+        val old = selectedItem as? String? ?: ""
+        refreshItems(items)
+        showValue = false
+        valuesOnly = true
+        setSelection(old)
+    }
+
+    /** Clear map and adapter, add new items and refresh adapter changes */
+    private fun refreshItems(items: Collection<String>) {
+        arrayAdapter.clear()
+        itemMap.clear()
+        arrayAdapter.addAll(items)
+        arrayAdapter.notifyDataSetChanged()
     }
 
 
