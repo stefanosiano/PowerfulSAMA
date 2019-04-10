@@ -100,7 +100,7 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
 
     /** Sets [items] as the collection of [SamaSpinnerItem] to show in the spinner */
     fun setItems(items: Collection<SamaSpinnerItem>, showValue: Boolean = true) {
-        val old = selectedItem as? String? ?: ""
+        val old = selectedItem as? String? ?: (if(showValue) currentValue.get() else currentKey.get()) ?: ""
         refreshItems( items.map { if(showValue) it.value() else it.key() } )
         valuesOnly = false
         this.showValue = showValue
@@ -113,7 +113,7 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
 
     /** Sets [items] as the collection of [String] to show in the spinner */
     fun setItems(items: Collection<String>) {
-        val old = selectedItem as? String? ?: ""
+        val old = selectedItem as? String? ?: currentKey.get() ?: ""
         refreshItems(items)
         showValue = false
         valuesOnly = true
@@ -172,7 +172,7 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         val callback = obs.addOnChangedAndNow {
             weakObs.get()?.also { obs ->
                 if (obserablesKeySet.firstOrNull { set -> set.first() == obs } != null && obs.get() != currentKey.get())
-                    obs.get()?.let { spinner.get()?.setSelectedKey(it) }
+                    obs.get()?.let { currentKey.set(it); spinner.get()?.setSelectedKey(it) }
             }
         }
 
