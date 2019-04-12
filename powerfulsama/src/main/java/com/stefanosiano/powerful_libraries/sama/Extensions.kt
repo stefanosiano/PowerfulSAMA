@@ -20,13 +20,13 @@ internal val mainThreadHandler by lazy { Handler(Looper.getMainLooper()) }
 class LiveDataExtensions
 
 /** Calls addSource on main thread. useful when using background threads/coroutines: Calling it in the background throws an exception! */
-fun <T, S> MediatorLiveData<T>.addSourceLd(liveData: LiveData<S>, source: (S) -> Unit) where S: Any? = mainThreadHandler.post { this.addSource(liveData, source) }
+fun <T, S> MediatorLiveData<T>.addSourceLd(liveData: LiveData<S>, source: (S) -> Unit) where S: Any? = runOnUi { this.addSource(liveData, source) }
 
 /** Calls removeSource on main thread. useful when using background threads/coroutines: Calling it in the background throws an exception! */
-fun <T, S> MediatorLiveData<T>.removeSourceLd(liveData: LiveData<S>) where S: Any? = mainThreadHandler.post { this.removeSource(liveData) }
+fun <T, S> MediatorLiveData<T>.removeSourceLd(liveData: LiveData<S>) where S: Any? = runOnUi { this.removeSource(liveData) }
 
 /** Observes a live data using a lambda function instead of an Observer (use this only if you don't need a reference to the observer */
-internal inline fun <T> LiveData<T>.observeLd(lifecycleOwner: LifecycleOwner, crossinline observerFunction: (data: T) -> Unit) = this.observe(lifecycleOwner, Observer { observerFunction.invoke(it) })
+internal inline fun <T> LiveData<T>.observeLd(lifecycleOwner: LifecycleOwner, crossinline observerFunction: (data: T) -> Unit) = runOnUi { this.observe(lifecycleOwner, Observer { observerFunction.invoke(it) }) }
 
 /** Returns a liveData which returns values only when they change. You can optionally pass a CoroutineContext [context] to execute it in the background */
 fun <T> LiveData<T>.getDistinct(context: CoroutineScope? = null): LiveData<T> = getDistinctBy(context) { it as Any }
@@ -142,6 +142,21 @@ inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline o
     launchIfActiveOrNull(context) { filterLiveData.addSource(this) { obj -> filterLiveData.postValue(onValue.invoke(obj)) } }
     return filterLiveData
 }
+
+
+/** Run [f] on ui thread, waits for its completion and return its value */
+fun <T> runOnUiAndWait(f: suspend () -> T): T? {
+    var ret: T? = null
+    var finished = false
+    runBlocking {
+        runOnUi { runBlocking { ret = f.invoke(); finished = true } }
+        while (!finished) delay(10)
+    }
+    return ret
+}
+
+/** Run [f] on ui thread */
+fun runOnUi(f: () -> Unit) = mainThreadHandler.post { f.invoke() }
 
 
 

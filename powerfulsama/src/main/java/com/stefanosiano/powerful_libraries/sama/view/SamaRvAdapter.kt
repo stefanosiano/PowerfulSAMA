@@ -17,10 +17,7 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.stefanosiano.powerful_libraries.sama.iterate
-import com.stefanosiano.powerful_libraries.sama.mainThreadHandler
-import com.stefanosiano.powerful_libraries.sama.runAndWait
-import com.stefanosiano.powerful_libraries.sama.tryOrNull
+import com.stefanosiano.powerful_libraries.sama.*
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
@@ -183,7 +180,7 @@ open class SamaRvAdapter(
             contexts.clear()
             items = list as ObservableList<SamaListItem>
             items.addOnListChangedCallback(onListChangedCallback)
-            mainThreadHandler.post { itemRangeInserted(0, list.size) }
+            runOnUiAndWait { itemRangeInserted(0, list.size) }
             startLazyInits()
         }
         return this
@@ -204,7 +201,7 @@ open class SamaRvAdapter(
             if (!isActive) return@launch
             if (forceReload) {
                 if (!isActive) return@launch
-                mainThreadHandler.post {
+                runOnUiAndWait {
                     items.clear()
                     contexts.clear()
                     items.addAll(list)
@@ -223,7 +220,7 @@ open class SamaRvAdapter(
                     }
                 }
                 if (!isActive) return@launch
-                mainThreadHandler.post {
+                runOnUiAndWait {
                     items.clear()
                     items.addAll(list)
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
@@ -270,7 +267,7 @@ open class SamaRvAdapter(
      */
     @Synchronized fun bindItems(list: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
         //remove the observer from the optional current liveData
-        mainThreadHandler.post {
+        runOnUi {
             liveDataItems?.removeObserver(liveDataObserver)
             liveDataItems = list
             liveDataItems?.observeForever(liveDataObserver)
@@ -302,7 +299,7 @@ open class SamaRvAdapter(
         this.recyclerView = null
 
         //remove the observer from the optional current liveData
-        mainThreadHandler.post{ liveDataItems?.removeObserver(liveDataObserver) }
+        runOnUiAndWait { liveDataItems?.removeObserver(liveDataObserver) }
         items.forEach { it.onStop() }
         items.forEach { it.onDestroy() }
         contexts.values.forEach { it.cancel() }
@@ -314,13 +311,13 @@ open class SamaRvAdapter(
         this.recyclerView?.clear()
         this.recyclerView = WeakReference(recyclerView)
         //remove the observer from the optional current liveData
-        mainThreadHandler.post{ liveDataItems?.observeForever(liveDataObserver) }
+        runOnUi { liveDataItems?.observeForever(liveDataObserver) }
     }
 
     /** Clears all data from the adapter (call it only if you know the adapter is not needed anymore!) */
     fun clear() {
         //remove the observer from the optional current liveData
-        mainThreadHandler.post{ liveDataItems?.removeObserver(liveDataObserver) }
+        runOnUiAndWait { liveDataItems?.removeObserver(liveDataObserver) }
         items.forEach { it.onStop() }
         items.forEach { it.onDestroy() }
         contexts.values.forEach { it.cancel() }
@@ -364,13 +361,13 @@ open class SamaRvAdapter(
 
     //list observer stuff
     /** Function to be called when some items change */
-    private fun itemRangeChanged(positionStart: Int, itemCount: Int) = mainThreadHandler.post {
+    private fun itemRangeChanged(positionStart: Int, itemCount: Int) = runOnUi {
         this.saveAll()
         notifyItemRangeChanged(positionStart, itemCount)
     }
 
     /** Function to be called when some items are added */
-    private fun itemRangeInserted(positionStart: Int, itemCount: Int) = mainThreadHandler.post { notifyItemRangeInserted(positionStart, itemCount) }
+    private fun itemRangeInserted(positionStart: Int, itemCount: Int) = runOnUi { notifyItemRangeInserted(positionStart, itemCount) }
 
     /** Function to be called when some items are moved */
     private fun itemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int){
@@ -379,7 +376,7 @@ open class SamaRvAdapter(
     }
 
     /** Function to be called when some items are removed */
-    private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = mainThreadHandler.post {
+    private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = runOnUi {
         this.saveAll()
         for(i in positionStart until positionStart+itemCount) {
             getItem(i)?.onStop()

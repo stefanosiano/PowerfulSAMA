@@ -19,7 +19,7 @@ import com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
 
 
-class DataBindingUtil
+class SamaDataBindingUtils
 
 /** Puts the [drawable] into the [imageView] */
 @BindingAdapter("app:src")
@@ -106,7 +106,7 @@ fun setTextInputLayoutError(textInputLayoutError: TextInputLayout, error: String
 
 /** Binds a key string to the spinner */
 @BindingAdapter("app:bindKey")
-fun bindSpinnerKey(spinner: SamaSpinner, key: ObservableField<String>) { spinner.bindKey(key) }
+fun bindSpinnerKey(spinner: SamaSpinner, key: ObservableField<String>?) { spinner.bindKey(key) }
 
 /** Binds a value string to the spinner */
 @BindingAdapter("app:bindValue")
@@ -114,33 +114,33 @@ fun bindSpinnerValue(spinner: SamaSpinner, value: ObservableField<String>) { spi
 
 /** Sets the items of the spinner */
 @BindingAdapter("app:items")
-fun bindSpinnerItemsString(spinner: SamaSpinner, value: ObservableField<Collection<String>>) { spinner.bindItems(value) }
+fun bindSpinnerItemsString(spinner: SamaSpinner, value: ObservableField<Collection<String>>?) { spinner.bindItems(value) }
 
 /** Binds a key string to the spinner */
 @BindingAdapter("app:items")
-fun bindSpinnerItemsArrayString(spinner: SamaSpinner, value: ObservableField<Array<out String>>) { spinner.bindItemsArray(value) }
+fun bindSpinnerItemsArrayString(spinner: SamaSpinner, value: ObservableField<Array<out String>>?) { spinner.bindItemsArray(value) }
 
 /** Binds a key string to the spinner */
 @BindingAdapter("app:items")
-fun bindSpinnerItems(spinner: SamaSpinner, value: ObservableField<Collection<SamaSpinner.SamaSpinnerItem>>) { spinner.bindItems(value) }
+fun bindSpinnerItems(spinner: SamaSpinner, value: ObservableField<Collection<SamaSpinner.SamaSpinnerItem>>?) { spinner.bindItems(value) }
 
 /** Binds a key string to the spinner */
 @BindingAdapter("app:items")
-fun bindSpinnerItemsArray(spinner: SamaSpinner, value: ObservableField<Array<out SamaSpinner.SamaSpinnerItem>>) { spinner.bindItemsArray(value) }
+fun bindSpinnerItemsArray(spinner: SamaSpinner, value: ObservableField<Array<out SamaSpinner.SamaSpinnerItem>>?) { spinner.bindItemsArray(value) }
 
 /** Binds a key string to the spinner */
 @BindingAdapter("app:items")
-fun bindSpinnerItemsString(spinner: SamaSpinner, value: Collection<String>) { spinner.setItems(value) }
+fun bindSpinnerItemsString(spinner: SamaSpinner, value: Collection<String>?) { spinner.setItems(value) }
 
 /** Binds a key string to the spinner */
 @BindingAdapter("app:items")
-fun bindSpinnerItemsArrayString(spinner: SamaSpinner, value: Array<out String>) { spinner.setItems(value) }
+fun bindSpinnerItemsArrayString(spinner: SamaSpinner, value: Array<out String>?) { spinner.setItems(value) }
 
 /** Binds a key string to the spinner */
 @BindingAdapter("app:items")
-fun bindSpinnerItems(spinner: SamaSpinner, value: Collection<SamaSpinner.SamaSpinnerItem>) { spinner.setItems(value) }
+fun bindSpinnerItems(spinner: SamaSpinner, value: Collection<SamaSpinner.SamaSpinnerItem>?) { spinner.setItems(value) }
 
 /** Binds a key string to the spinner */
 @BindingAdapter("app:items")
-fun bindSpinnerItemsArray(spinner: SamaSpinner, value: Array<out SamaSpinner.SamaSpinnerItem>) { spinner.setItems(value) }
+fun bindSpinnerItemsArray(spinner: SamaSpinner, value: Array<out SamaSpinner.SamaSpinnerItem>?) { spinner.setItems(value) }
 

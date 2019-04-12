@@ -25,7 +25,7 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
 
     override val coroutineContext = SupervisorJob() + CoroutineExceptionHandler { _, t -> t.printStackTrace() }
 
-    private lateinit var arrayAdapter: ArrayAdapter<String>
+    private var arrayAdapter: ArrayAdapter<String>? = null
     private val itemMap = HashMap<String, String>()
     private var showValue = false
 
@@ -70,51 +70,43 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         arrayAdapter = ArrayAdapter(context, spinnerLayoutId)
         super.setAdapter(arrayAdapter)
         isInitialized = true
-        tempItems?.let { arrayAdapter.addAll(it) }
+        tempItems?.let { arrayAdapter?.addAll(it) }
     }
 
 
     /** Sets [items] as the array of [SamaSpinnerItem] to show in the spinner, whenever it changes */
-    fun bindItemsArray(items: ObservableField<Array<out SamaSpinnerItem>>, showValue: Boolean = true) = items.addOnChangedAndNow { if (it != null) setItems(it.toList(), showValue) }
+    fun bindItemsArray(items: ObservableField<Array<out SamaSpinnerItem>>?, showValue: Boolean = true) = items?.addOnChangedAndNow { if (it != null) setItems(it.toList(), showValue) }
 
     /** Sets [items] as the collection of [SamaSpinnerItem] to show in the spinner, whenever it changes */
-    fun bindItems(items: ObservableField<Collection<SamaSpinnerItem>>, showValue: Boolean = true) = items.addOnChangedAndNow { if (it != null) setItems(it.toList(), showValue) }
+    fun bindItems(items: ObservableField<Collection<SamaSpinnerItem>>?, showValue: Boolean = true) = items?.addOnChangedAndNow { if (it != null) setItems(it.toList(), showValue) }
 
     /** Sets [items] as the array of [String] to show in the spinner, whenever it changes */
-    fun bindItemsArray(items: ObservableField<Array<out String>>) = items.addOnChangedAndNow { if (it != null) setItems(it.toList()) }
+    fun bindItemsArray(items: ObservableField<Array<out String>>?) = items?.addOnChangedAndNow { if (it != null) setItems(it.toList()) }
 
     /** Sets [items] as the collection of [String] to show in the spinner, whenever it changes */
-    fun bindItems(items: ObservableField<Collection<String>>) = items.addOnChangedAndNow { if (it != null) setItems(it.toList()) }
+    fun bindItems(items: ObservableField<Collection<String>>?) = items?.addOnChangedAndNow { if (it != null) setItems(it.toList()) }
 
 
     /** Sets [items] as the array of [String] to show in the spinner */
-    fun setItems(items: Array<out String>) = setItems(items.map { SimpleSpinnerItem(it, it) }, false)
+    fun setItems(items: Array<out String>?) = setItems(items?.map { SimpleSpinnerItem(it, it) }, false)
 
     /** Sets [items] as the collection of [String] to show in the spinner */
-    fun setItems(items: Collection<String>) = setItems(items.map { SimpleSpinnerItem(it, it) }, false)
+    fun setItems(items: Collection<String>?) = setItems(items?.map { SimpleSpinnerItem(it, it) }, false)
 
     /** Sets [items] as the array of [SamaSpinnerItem] to show in the spinner */
-    fun setItems(items: Array<out SamaSpinnerItem>, showValue: Boolean = true) = setItems(items.toList(), showValue)
+    fun setItems(items: Array<out SamaSpinnerItem>?, showValue: Boolean = true) = setItems(items?.toList(), showValue)
 
     /** Sets [items] as the collection of [SamaSpinnerItem] to show in the spinner */
-    fun setItems(items: Collection<SamaSpinnerItem>, showValue: Boolean = true) {
+    fun setItems(items: Collection<SamaSpinnerItem>?, showValue: Boolean = true) {
+        if(items == null) return
         itemMap.clear()
         items.map { itemMap.put(it.key(), it.value()) }
         val old = selectedItem as? String? ?: currentItem.get()?.let { (if(showValue) it.value ?: itemMap[it.key] else it.key ?: itemMap.getKey(it.value)) } ?: ""
-        refreshItems( items.map { if(showValue) it.value() else it.key() } )
+        arrayAdapter?.clear()
+        arrayAdapter?.addAll( items.map { if(showValue) it.value() else it.key() } )
+        arrayAdapter?.notifyDataSetChanged()
         this.showValue = showValue
         if(showValue) setSelectedValue(old) else setSelectedKey(old)
-    }
-
-
-
-
-    /** Clear map and adapter, add new items and refresh adapter changes */
-    private fun refreshItems(items: Collection<String>) {
-        if(!isInitialized) { tempItems = items; return }
-        arrayAdapter.clear()
-        arrayAdapter.addAll(items)
-        arrayAdapter.notifyDataSetChanged()
     }
 
 
@@ -137,7 +129,8 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
      * When an item is selected, all registered observables are updated. When one observable changes, the item is selected.
      * If it was initialized with a collection of strings, it will contain the current shown value, otherwise the key associated to it
      */
-    fun bindKey(obs: ObservableField<String>) {
+    fun bindKey(obs: ObservableField<String>?) {
+        if (obs == null) return
         val spinner = this.toWeakReference()
         val weakObs = obs.toWeakReference()
         val callback = obs.addOnChangedAndNow {
@@ -155,7 +148,8 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
      * When an item is selected, all registered observables are updated. When one observable changes, the item is selected.
      * If it was initialized with a collection of strings, it will contain the current shown value, otherwise the value associated to it
      */
-    fun bindValue(obs: ObservableField<String>) {
+    fun bindValue(obs: ObservableField<String>?) {
+        if (obs == null) return
         val spinner = this.toWeakReference()
         val weakObs = obs.toWeakReference()
         val callback = obs.addOnChangedAndNow {

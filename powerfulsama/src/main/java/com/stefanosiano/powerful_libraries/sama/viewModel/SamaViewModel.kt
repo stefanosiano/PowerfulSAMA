@@ -3,9 +3,7 @@ package com.stefanosiano.powerful_libraries.sama.viewModel
 import android.util.Log
 import androidx.databinding.*
 import androidx.lifecycle.*
-import com.stefanosiano.powerful_libraries.sama.addOnChangedAndNow
-import com.stefanosiano.powerful_libraries.sama.launchIfActiveOrNull
-import com.stefanosiano.powerful_libraries.sama.mainThreadHandler
+import com.stefanosiano.powerful_libraries.sama.*
 import com.stefanosiano.powerful_libraries.sama.observeLd
 import kotlinx.coroutines.*
 
@@ -62,7 +60,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      */
     protected fun <T> observe(liveData: LiveData<T>): LiveData<T> {
         observedLiveData.add(liveData)
-        mainThreadHandler.post{ liveData.observeForever(persistentObserver) }
+        runOnUiAndWait { liveData.observeForever(persistentObserver) }
         return liveData
     }
 
@@ -74,7 +72,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     protected fun <T> observe(liveData: LiveData<T>, forceOnCurrentThread: Boolean = false, observerFunction: suspend (data: T) -> Unit): LiveData<T> {
         val observer: Observer<Any?> = Observer { launchIfActiveOrNull(if(forceOnCurrentThread) null else this) { observerFunction.invoke(it as? T ?: return@launchIfActiveOrNull) } }
         customObservedLiveData.add(Pair(liveData as LiveData<Any?>, observer))
-        mainThreadHandler.post{ liveData.observeForever(observer) }
+        runOnUiAndWait { liveData.observeForever(observer) }
         return liveData
     }
 
@@ -170,9 +168,9 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
         super.onCleared()
         observables.forEach { it.first.removeOnPropertyChangedCallback(it.second) }
         observables.clear()
-        observedLiveData.forEach { mainThreadHandler.post{ it.removeObserver(persistentObserver) } }
+        runOnUiAndWait { observedLiveData.forEach { it.removeObserver(persistentObserver) } }
         observedLiveData.clear()
-        customObservedLiveData.forEach { mainThreadHandler.post{ it.first.removeObserver(it.second) } }
+        runOnUiAndWait { customObservedLiveData.forEach { it.first.removeObserver(it.second) } }
         customObservedLiveData.clear()
         coroutineContext.cancel()
     }
