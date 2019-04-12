@@ -168,9 +168,9 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
         super.onCleared()
         observables.forEach { it.first.removeOnPropertyChangedCallback(it.second) }
         observables.clear()
-        runOnUiAndWait { observedLiveData.forEach { it.removeObserver(persistentObserver) } }
+        runOnUi { observedLiveData.forEach { it.removeObserver(persistentObserver) } }
         observedLiveData.clear()
-        runOnUiAndWait { customObservedLiveData.forEach { it.first.removeObserver(it.second) } }
+        runOnUi { customObservedLiveData.forEach { it.first.removeObserver(it.second) } }
         customObservedLiveData.clear()
         coroutineContext.cancel()
     }
