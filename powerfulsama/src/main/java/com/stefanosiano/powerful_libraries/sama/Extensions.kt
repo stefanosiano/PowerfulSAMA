@@ -145,11 +145,11 @@ inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline o
 
 
 /** Run [f] on ui thread, waits for its completion and return its value */
-fun <T> runOnUiAndWait(f: suspend () -> T): T? {
+fun <T> runOnUiAndWait(f: () -> T): T? {
     var ret: T? = null
     var finished = false
     runBlocking {
-        runOnUi { runBlocking { ret = f.invoke(); finished = true } }
+        runOnUi { ret = f.invoke(); finished = true }
         while (!finished) delay(10)
     }
     return ret

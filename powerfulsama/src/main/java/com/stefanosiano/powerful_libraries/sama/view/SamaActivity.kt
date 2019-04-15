@@ -4,6 +4,7 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel
 import com.stefanosiano.powerful_libraries.sama.viewModel.VmResponse
 import kotlinx.coroutines.*
 
@@ -59,7 +60,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         return true
     }*/
 
-
+    protected fun <A> observeVmResponse(vm: SamaViewModel<A>, f: (A, Any?) -> Boolean) where A: VmResponse.VmAction = vm.observeVmResponse(this, f)
 
     val samaIntent
         /** Returns the intent that started this activity as [SamaIntent], allowing the use of [SamaIntent.getExtraStatic] */
