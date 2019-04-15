@@ -8,9 +8,7 @@ import android.widget.ArrayAdapter
 import androidx.appcompat.widget.AppCompatSpinner
 import androidx.databinding.Observable
 import androidx.databinding.ObservableField
-import com.stefanosiano.powerful_libraries.sama.addOnChangedAndNow
-import com.stefanosiano.powerful_libraries.sama.getKey
-import com.stefanosiano.powerful_libraries.sama.toWeakReference
+import com.stefanosiano.powerful_libraries.sama.*
 import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -38,10 +36,6 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
     /** Set of observable strings to update when an item is selected. It will contain the value */
     private val obserablesValueSet: MutableSet<WeakPair<ObservableField<String>, Observable.OnPropertyChangedCallback>> = HashSet()
 
-    private var isInitialized = false
-
-    private var tempItems: Collection<String>? = null
-
     constructor(context: Context) : super(context) {}
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {}
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {}
@@ -52,25 +46,34 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         onItemSelectedListener = object: OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                if(!isInitialized) return
-                val key = getSelectedKey()
+                val key = tryOrNull { getSelectedKey() } ?: return
                 currentItem.set(SimpleSpinnerItem(key, itemMap[key]))
             }
         }
 
         val key = getSelectedKey()
         currentItem.set(SimpleSpinnerItem(key, itemMap[key]))
-        currentItem.addOnChangedAndNow { item -> if(!isInitialized || item == null) return@addOnChangedAndNow; item.key?.let { k -> obserablesKeySet.forEach { it.first()?.set(k) } } ; item.value?.let { v -> obserablesValueSet.forEach { it.first()?.set(v) } } }
+        currentItem.addOnChangedAndNow { item -> if(item == null) return@addOnChangedAndNow; item.key?.let { k -> obserablesKeySet.forEach { it.first()?.set(k) } } ; item.value?.let { v -> obserablesValueSet.forEach { it.first()?.set(v) } } }
+
+
+        arrayAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item)
+        super.setAdapter(arrayAdapter)
     }
 
 
     /** Initializes the spinner, using [spinnerLayoutId] for the spinner items */
     fun init(spinnerLayoutId: Int) {
-        isInitialized = false
-        arrayAdapter = ArrayAdapter(context, spinnerLayoutId)
-        super.setAdapter(arrayAdapter)
-        isInitialized = true
-        tempItems?.let { arrayAdapter?.addAll(it) }
+        val temp = ArrayList<String>()
+        val old = selectedItem
+        (0 until (arrayAdapter?.count ?: 0)).forEach { i -> arrayAdapter?.getItem(i)?.let { temp.add(it) } }
+        runOnUiAndWait {
+            arrayAdapter?.clear()
+            arrayAdapter = ArrayAdapter(context, spinnerLayoutId)
+            arrayAdapter?.addAll(temp)
+            super.setAdapter(arrayAdapter)
+            arrayAdapter?.notifyDataSetChanged()
+        }
+        (0 until adapter.count).firstOrNull { adapter.getItem(it) == old }?.let { setSelection(it) }
     }
 
 
@@ -170,6 +173,7 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         override fun value() = value ?:""
         override fun key() = key ?:""
     }
+
 
 
 
