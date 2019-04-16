@@ -63,7 +63,7 @@ fun showTooltip(view: View, tooltip: Int) = view.setOnLongClickListener { Toast.
 
 
 /** Sets the tint color of the ImageView */
-@BindingAdapter("app:dbuImgTint")
+@BindingAdapter("app:tint")
 fun setImageViewTint(imageView: ImageView, color: Int) { ImageViewCompat.setImageTintList(imageView, ColorStateList.valueOf(color)) }
 
 /** Sets the layoutManager of the [recyclerView] based on the [columns] */
@@ -91,14 +91,14 @@ fun setQuery(searchView: SamaSearchView, query: String, millis: Long?) {
     searchView.setQuery(query, false)
 }
 /** Sets the error id to the TextInputLayout  */
-@BindingAdapter("app:dbuTilError")
+@BindingAdapter("app:tilError")
 fun setTextInputLayoutError(textInputLayoutError: TextInputLayout, error: Int) {
     val stringError = try {textInputLayoutError.context.getString(error)} catch (e: Exception) {""}
     setTextInputLayoutError(textInputLayoutError, stringError)
 }
 
 /** Sets the error string to the TextInputLayout  */
-@BindingAdapter("app:dbuTilError")
+@BindingAdapter("app:tilError")
 fun setTextInputLayoutError(textInputLayoutError: TextInputLayout, error: String) {
     textInputLayoutError.error = error
     textInputLayoutError.isErrorEnabled = !TextUtils.isEmpty(error)

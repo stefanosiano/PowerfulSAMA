@@ -156,7 +156,7 @@ fun <T> runOnUiAndWait(f: () -> T): T? {
 }
 
 /** Run [f] on ui thread */
-fun runOnUi(f: () -> Unit) { if(Looper.myLooper() == Looper.getMainLooper()) f.invoke() else mainThreadHandler.post { f.invoke() } }
+fun runOnUi(f: () -> Unit) { if(Looper.myLooper() == mainThreadHandler.looper) f.invoke() else mainThreadHandler.post { f.invoke() } }
 
 
 
