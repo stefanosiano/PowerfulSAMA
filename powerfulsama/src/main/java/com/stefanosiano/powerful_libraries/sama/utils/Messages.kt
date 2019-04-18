@@ -37,6 +37,9 @@ private const val TAG = "Messages"
  */
 class Messages private constructor(
 
+    /** Theme of the message (if available) */
+    private var theme: Int? = null,
+
     /** Title of the message (if available) */
     private var title: String? = null,
 
@@ -101,6 +104,9 @@ class Messages private constructor(
     /** Job of the auto dismiss feature. When the message is dismissed, the job should be canceled */
     private var autoDismissJob: Job? = null
 
+    /** Flag to know if the buildAs function has been called */
+    private var isBuilt = false
+
 
 
     /**
@@ -137,7 +143,7 @@ class Messages private constructor(
         internal var defaultNo : Int = android.R.string.no
 
         /**
-         * Creates an alertDialog with one button.
+         * Creates an alertDialog with one button, with an optional [theme].
          *
          *  NOTE: it dismisses when clicking on the button.
          *
@@ -147,27 +153,28 @@ class Messages private constructor(
          *      cancelable = false
          *      messageImpl = MessageImpl.AlertDialogOneButton
          */
-        fun asAlertDialogOneButton() = Messages(
+        fun asAlertDialogOneButton(theme: Int? = null) = Messages(
+            theme = theme,
             iPositive = android.R.string.ok,
             cancelable = false,
             messageImpl = MessageImpl.AlertDialogOneButton)
 
         /**
-         * Creates a ProgressDialog with specified options.
+         * Creates a ProgressDialog with specified options, with an optional [theme].
          *
          * Default values:
          *
          *      messageImpl = MessageImpl.ProgressDialog
          */
-        fun asProgressDialog() = Messages(messageImpl = MessageImpl.ProgressDialog)
+        fun asProgressDialog(theme: Int? = null) = Messages(theme = theme, messageImpl = MessageImpl.ProgressDialog)
 
         /**
-         * Creates an alertDialog with specified options.
+         * Creates an alertDialog with specified options, with an optional [theme].
          * Default values:
          *
          *      messageImpl = MessageImpl.AlertDialog
          */
-        fun asAlertDialog() = Messages(messageImpl = MessageImpl.AlertDialog)
+        fun asAlertDialog(theme: Int? = null) = Messages(theme = theme, messageImpl = MessageImpl.AlertDialog)
 
         /**
          * Creates a Toast with specified message.
@@ -335,7 +342,7 @@ class Messages private constructor(
 
 
     /** Retrieves the activity name by the context. If the activity is not found, it returns the current activity reference */
-    private fun retrieveActivityFromContext(context: Context): Activity? {
+    private fun getActivityFromCtx(context: Context): Activity? {
         var c = context
         while (c is ContextWrapper) {
             if (c is Activity) return c
@@ -346,17 +353,11 @@ class Messages private constructor(
     }
 
 
-    /** Shows the message and returns it. Always prefer show(Activity) if possible, especially for Dialogs */
+    /** Shows the message and returns it. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
     fun show(context: Context, showMessage: Boolean = true): Messages? = if(showMessage) showMessage(context) else { onOk?.invoke(); null }
 
-    /** Shows the message and returns it. Always prefer show(Activity) if possible, especially for Dialogs */
+    /** Shows the message and returns it. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
     fun <T> showAs(context: Context, showMessage: Boolean = true): T? = show(context, showMessage)?.implementation?.get() as? T?
-
-    /** Shows the message and returns it */
-    fun show(activity: Activity, showMessage: Boolean = true): Messages? = if(showMessage) showMessage(activity) else { onOk?.invoke(); null }
-
-    /** Shows the message and returns it */
-    fun <T> showAs(activity: Activity, showMessage: Boolean = true): T? = show(activity, showMessage)?.implementation?.get() as? T?
 
     /** Tries to show the message on the currently open activity. If [showMessage] is met (true, default), then [onOk] will be called */
     fun show(showMessage: Boolean = true): Messages? = currentActivity?.get()?.let { activity -> if(showMessage) showMessage(activity) else { onOk?.invoke(); null } }
@@ -364,10 +365,36 @@ class Messages private constructor(
     /** Tries to show the message on the currently open activity and returns the implementation (e.g. AlertDialog). If [showMessage] is met (true), then [onOk] will be called */
     fun <T> showAs(showMessage: Boolean = true): T? = show(showMessage)?.implementation?.get() as? T?
 
+    /**  */
+    fun <T> customize(f: (T?) -> Unit): Messages { f.invoke(implementation?.get() as? T?); return this }
 
-    private fun showMessage(context: Context): Messages {
+    /** Build the message and returns it. Optionally calls [f] right after building the message. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
+    fun <T> buildAs(ctx: Context, f: ((T?) -> Unit)?): T? { val m = build(ctx).implementation?.get() as? T?; f?.invoke(m); return m }
 
-        initStrings(context.applicationContext)
+    /** Build the message and returns it. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
+    fun build(ctx: Context): Messages {
+
+        initStrings(ctx.applicationContext)
+
+        when (messageImpl) {
+            MessageImpl.ProgressDialog -> runOnUiAndWait { buildAsProgressDialog(ctx) }
+            MessageImpl.AlertDialogOneButton -> runOnUiAndWait { getActivityFromCtx(ctx)?.let { buildAsAlertDialogOneButton(it) } ?: buildAsToast(ctx) }
+            MessageImpl.AlertDialog -> runOnUiAndWait { getActivityFromCtx(ctx)?.let { buildAsAlertDialog(it) } ?: buildAsToast(ctx) }
+            MessageImpl.Toast -> runOnUiAndWait { buildAsToast(ctx) }
+            MessageImpl.Snackbar -> {
+                snackbarView?.let { runOnUiAndWait { buildAsSnackbar(it) } } ?: runOnUiAndWait {
+                    (getActivityFromCtx(ctx)?.window?.decorView?.findViewById(android.R.id.content) as? View?)?.let { buildAsSnackbar(it) } ?: buildAsToast(ctx)
+                }
+            }
+            else -> Log.e(TAG, "Cannot understand the implementation type of the message. Skipping show")
+        }
+        return this
+    }
+
+
+    private fun showMessage(ctx: Context): Messages {
+
+        initStrings(ctx.applicationContext)
 
         autoDismissJob?.cancel()
         //Auto-dismiss message after x seconds
@@ -378,48 +405,15 @@ class Messages private constructor(
             }
         }
 
+        runOnUiAndWait { if(!isBuilt) build(ctx) }
+
         when (messageImpl) {
-            MessageImpl.ProgressDialog -> {
-                runOnUiAndWait { buildAsProgressDialog(context); (implementation?.get() as ProgressDialog).show() }
-            }
-
-            MessageImpl.AlertDialogOneButton -> {
-                val activity: Activity? = retrieveActivityFromContext(context)
-                if(activity != null)
-                    runOnUiAndWait { buildAsAlertDialogOneButton(activity); (implementation?.get() as AlertDialog).show() }
-                else
-                    runOnUiAndWait { buildAsToast(context); (implementation?.get() as Toast).show() }
-            }
-
-            MessageImpl.AlertDialog -> {
-                val activity: Activity? = retrieveActivityFromContext(context)
-                if(activity != null)
-                    runOnUiAndWait { buildAsAlertDialog(activity); (implementation?.get() as AlertDialog).show() }
-                else
-                    runOnUiAndWait { buildAsToast(context); (implementation?.get() as Toast).show() }
-            }
-
-            MessageImpl.Toast -> {
-                runOnUiAndWait { buildAsToast(context); (implementation?.get() as Toast).show() }
-            }
-
-            MessageImpl.Snackbar -> {
-                if(snackbarView != null) {
-                    runOnUiAndWait { buildAsSnackbar(snackbarView!!); (implementation?.get() as Snackbar).show() }
-                }
-                else {
-                    val activity: Activity? = retrieveActivityFromContext(context)
-                    if(activity != null) {
-                        val v: View = activity.window.decorView.findViewById(android.R.id.content)
-                        runOnUiAndWait { buildAsSnackbar(v); (implementation?.get() as Snackbar).show() }
-                    }
-                    else
-                        runOnUiAndWait { buildAsToast(context); (implementation?.get() as Toast).show() }
-                }
-            }
-            else -> {
-                Log.e(TAG, "Cannot understand the implementation type of the message. Skipping show")
-            }
+            MessageImpl.ProgressDialog -> runOnUiAndWait { (implementation?.get() as ProgressDialog).show() }
+            MessageImpl.AlertDialogOneButton -> runOnUiAndWait { (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
+            MessageImpl.AlertDialog -> runOnUiAndWait { (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
+            MessageImpl.Toast -> runOnUiAndWait { (implementation?.get() as Toast).show() }
+            MessageImpl.Snackbar -> runOnUiAndWait { (implementation?.get() as? Snackbar?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
+            else -> { Log.e(TAG, "Cannot understand the implementation type of the message. Skipping show") }
         }
         return this
     }
@@ -462,12 +456,13 @@ class Messages private constructor(
 
 
     private fun buildAsProgressDialog(context: Context): Messages {
-        val progressDialog = ProgressDialog(context)
+        val progressDialog = ProgressDialog(context, theme ?: 0)
         progressDialog.setTitle(title)
         progressDialog.setMessage(message)
         progressDialog.isIndeterminate = indeterminate
         progressDialog.setCancelable(cancelable)
         implementation = WeakReference(progressDialog)
+        isBuilt = true
         return this
     }
 
@@ -475,7 +470,7 @@ class Messages private constructor(
 
         initStrings(activity)
 
-        val mAlert = AlertDialog.Builder(activity)
+        val mAlert = AlertDialog.Builder(activity, theme ?: 0)
         mAlert.setCancelable(cancelable)
         mAlert.setTitle(title)
         mAlert.setMessage(message)
@@ -488,13 +483,14 @@ class Messages private constructor(
 
 
         implementation = WeakReference(mAlert.create())
+        isBuilt = true
         return this
     }
 
 
     private fun buildAsAlertDialogOneButton(activity: Activity): Messages {
 
-        val mAlert = AlertDialog.Builder(activity)
+        val mAlert = AlertDialog.Builder(activity, theme ?: 0)
 
         mAlert.setCancelable(cancelable)
         mAlert.setTitle(title)
@@ -503,11 +499,13 @@ class Messages private constructor(
         mAlert.setPositiveButton(positive) { dialog, _ -> onOk?.invoke(); dialog.dismiss() }
 
         implementation = WeakReference(mAlert.create())
+        isBuilt = true
         return this
     }
 
     private fun buildAsToast(context: Context): Messages {
         implementation = WeakReference(Toast.makeText(context, message, Toast.LENGTH_SHORT))
+        isBuilt = true
         return this
     }
 
