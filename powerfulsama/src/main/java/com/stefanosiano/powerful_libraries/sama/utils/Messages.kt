@@ -142,6 +142,9 @@ class Messages private constructor(
         /** Default "No" string id */
         internal var defaultNo : Int = android.R.string.no
 
+        /** Default theme used by messages */
+        internal var defaultTheme : Int? = null
+
         /**
          * Creates an alertDialog with one button, with an optional [theme].
          *
@@ -154,7 +157,7 @@ class Messages private constructor(
          *      messageImpl = MessageImpl.AlertDialogOneButton
          */
         fun asAlertDialogOneButton(theme: Int? = null) = Messages(
-            theme = theme,
+            theme = theme ?: defaultTheme,
             iPositive = android.R.string.ok,
             cancelable = false,
             messageImpl = MessageImpl.AlertDialogOneButton)
@@ -166,7 +169,7 @@ class Messages private constructor(
          *
          *      messageImpl = MessageImpl.ProgressDialog
          */
-        fun asProgressDialog(theme: Int? = null) = Messages(theme = theme, messageImpl = MessageImpl.ProgressDialog)
+        fun asProgressDialog(theme: Int? = null) = Messages(theme = theme ?: defaultTheme, messageImpl = MessageImpl.ProgressDialog)
 
         /**
          * Creates an alertDialog with specified options, with an optional [theme].
@@ -174,7 +177,7 @@ class Messages private constructor(
          *
          *      messageImpl = MessageImpl.AlertDialog
          */
-        fun asAlertDialog(theme: Int? = null) = Messages(theme = theme, messageImpl = MessageImpl.AlertDialog)
+        fun asAlertDialog(theme: Int? = null) = Messages(theme = theme ?: defaultTheme, messageImpl = MessageImpl.AlertDialog)
 
         /**
          * Creates a Toast with specified message.
@@ -367,6 +370,12 @@ class Messages private constructor(
 
     /**  */
     fun <T> customize(f: (T?) -> Unit): Messages { f.invoke(implementation?.get() as? T?); return this }
+
+    /** Build the message and returns it. Optionally calls [f] right after building the message. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
+    fun <T> buildAs(f: ((T?) -> Unit)?): T? = currentActivity?.get()?.let { buildAs(it, f) }
+
+    /** Build the message and returns it. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
+    fun build(): Messages? = currentActivity?.get()?.let { build(it) }
 
     /** Build the message and returns it. Optionally calls [f] right after building the message. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
     fun <T> buildAs(ctx: Context, f: ((T?) -> Unit)?): T? { val m = build(ctx).implementation?.get() as? T?; f?.invoke(m); return m }

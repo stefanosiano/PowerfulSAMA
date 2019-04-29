@@ -9,17 +9,19 @@ import com.stefanosiano.powerful_libraries.sama.view.SamaIntent
 object SamaInitializer {
 
     /** Initializes the SAMA library */
-    fun init(application: Application, defaultYeslabel: Int = android.R.string.yes, defaultNolabel: Int = android.R.string.no) {
+    fun init(application: Application, defaultMessagesTheme: Int? = null, defaultYeslabel: Int = android.R.string.yes, defaultNolabel: Int = android.R.string.no) {
+
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPaused(activity: Activity?) {}
             override fun onActivityResumed(activity: Activity?) { setMessages(activity) }
-            override fun onActivityStarted(activity: Activity?) {}
+            override fun onActivityStarted(activity: Activity?) { setMessages(activity) }
             override fun onActivityDestroyed(activity: Activity?) { clearIntent(activity) }
             override fun onActivitySaveInstanceState(activity: Activity?, outState: Bundle?) {}
             override fun onActivityStopped(activity: Activity?) {}
             override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) { setMessages(activity) }
         })
 
+        Messages.defaultTheme = defaultMessagesTheme
         Messages.defaultYes = defaultYeslabel
         Messages.defaultNo = defaultNolabel
     }
