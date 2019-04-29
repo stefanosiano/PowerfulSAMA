@@ -17,7 +17,7 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicLong
 
 
-private const val TAG = "Messages"
+private const val TAG = "Msg"
 /**
  * Class that manages common messages in the app, like ProgressDialogs, AlertDialog, Snackbar, etc.
  *
@@ -35,7 +35,7 @@ private const val TAG = "Messages"
  *      cancelable = false
  *      autoDismissDelay = 0 (doesn't dismiss)
  */
-class Messages private constructor(
+class Msg private constructor(
 
     /** Theme of the message (if available) */
     private var theme: Int? = null,
@@ -156,7 +156,7 @@ class Messages private constructor(
          *      cancelable = false
          *      messageImpl = MessageImpl.AlertDialogOneButton
          */
-        fun asAlertDialogOneButton(theme: Int? = null) = Messages(
+        fun alertDialogOneButton(theme: Int? = null) = Msg(
             theme = theme ?: defaultTheme,
             iPositive = android.R.string.ok,
             cancelable = false,
@@ -169,7 +169,7 @@ class Messages private constructor(
          *
          *      messageImpl = MessageImpl.ProgressDialog
          */
-        fun asProgressDialog(theme: Int? = null) = Messages(theme = theme ?: defaultTheme, messageImpl = MessageImpl.ProgressDialog)
+        fun progressDialog(theme: Int? = null) = Msg(theme = theme ?: defaultTheme, messageImpl = MessageImpl.ProgressDialog)
 
         /**
          * Creates an alertDialog with specified options, with an optional [theme].
@@ -177,7 +177,7 @@ class Messages private constructor(
          *
          *      messageImpl = MessageImpl.AlertDialog
          */
-        fun asAlertDialog(theme: Int? = null) = Messages(theme = theme ?: defaultTheme, messageImpl = MessageImpl.AlertDialog)
+        fun alertDialog(theme: Int? = null) = Msg(theme = theme ?: defaultTheme, messageImpl = MessageImpl.AlertDialog)
 
         /**
          * Creates a Toast with specified message.
@@ -186,7 +186,7 @@ class Messages private constructor(
          *
          *      messageImpl = MessageImpl.Toast
          */
-        fun asToast() = Messages(messageImpl = MessageImpl.Toast)
+        fun toast() = Msg(messageImpl = MessageImpl.Toast)
 
 
         /**
@@ -196,7 +196,7 @@ class Messages private constructor(
          *
          *      messageImpl = MessageImpl.Snackbar
          */
-        fun asSnackbar(view: View) = Messages(messageImpl = MessageImpl.Snackbar, snackbarView = view)
+        fun snackbar(view: View) = Msg(messageImpl = MessageImpl.Snackbar, snackbarView = view)
 
         internal fun setCurrentActivity(activity: Activity) { currentActivity?.clear(); currentActivity = WeakReference(activity) }
     }
@@ -207,140 +207,70 @@ class Messages private constructor(
 
     /** Sets the title. Default is null.
      * Method that takes the text id overrides the one with string, if both are specified.  */
-    fun title(id: Int): Messages {
-        this.iTitle = id
-        this.title = null
-        return this
-    }
+    fun title(id: Int): Msg { this.iTitle = id; this.title = null; return this }
 
     /** Sets the title. Default is null.
      * Method that takes the text id overrides the one with string, if both are specified.  */
-    fun title(title: String): Messages {
-        this.title = title
-        this.iTitle = 0
-        return this
-    }
+    fun title(title: String): Msg { this.title = title; this.iTitle = 0; return this }
 
     /** Sets the positive button label. Default is R.string.lbl_yes.
      * Method that takes the text id overrides the one with string, if both are specified.  */
-    fun positive(id: Int): Messages {
-        this.iPositive = id
-        this.positive = null
-        return this
-    }
+    fun positive(id: Int): Msg { this.iPositive = id; this.positive = null; return this }
 
     /** Sets the positive button label. Default is R.string.lbl_yes.
      * Method that takes the text id overrides the one with string, if both are specified.  */
-    fun positive(positive: String): Messages {
-        this.positive = positive
-        this.iPositive = 0
-        return this
-    }
+    fun positive(positive: String): Msg { this.positive = positive; this.iPositive = 0; return this }
 
     /** Sets the negative button label. Default is R.string.lbl_no.
      * Method that takes the text id overrides the one with string, if both are specified.  */
-    fun negative(id: Int): Messages {
-        this.iNegative = id
-        this.negative = null
-        return this
-    }
+    fun negative(id: Int): Msg { this.iNegative = id; this.negative = null; return this }
 
     /** Sets the negative button label. Default is R.string.lbl_no.
      * Method that takes the text id overrides the one with string, if both are specified.  */
-    fun negative(negative: String): Messages {
-        this.negative = negative
-        this.iNegative = 0
-        return this
-    }
+    fun negative(negative: String): Msg { this.negative = negative; this.iNegative = 0; return this }
 
     /** Sets the neutral button label. Default is null. If set, the neutral button is added to the AlertDialog.
      * Method that takes the text id overrides the one with string, if both are specified.  */
-    fun neutral(id: Int): Messages {
-        this.iNeutral = id
-        this.neutral = null
-        return this
-    }
+    fun neutral(id: Int): Msg { this.iNeutral = id; this.neutral = null; return this }
 
     /** Sets the neutral button label. Default is null. If set, the neutral button is added to the AlertDialog.
      * Method that takes the text id overrides the one with string, if both are specified.  */
-    fun neutral(neutral: String): Messages {
-        this.neutral = neutral
-        this.iNeutral = 0
-        return this
-    }
+    fun neutral(neutral: String): Msg { this.neutral = neutral; this.iNeutral = 0; return this }
 
     /** Sets the message label. Default is null.
      * Method that takes the text id overrides the one with string, if both are specified.  */
-    fun message(id: Int): Messages {
-        this.iMessage = id
-        this.message = ""
-        return this
-    }
+    fun message(id: Int): Msg { this.iMessage = id; this.message = ""; return this }
 
     /** Sets the message label. Default is null.
      * Method that takes the text id overrides the one with string, if both are specified.  */
-    fun message(message: String): Messages {
-        this.message = message
-        this.iMessage = 0
-        return this
-    }
+    fun message(message: String): Msg { this.message = message; this.iMessage = 0; return this }
 
     /** Sets the indeterminate flag. Default is true  */
-    fun indeterminate(indeterminate: Boolean): Messages {
-        this.indeterminate = indeterminate
-        return this
-    }
+    fun indeterminate(indeterminate: Boolean): Msg { this.indeterminate = indeterminate; return this }
 
     /** Sets the cancelable flag. Default is false  */
-    fun cancelable(cancelable: Boolean): Messages {
-        this.cancelable = cancelable
-        return this
-    }
+    fun cancelable(cancelable: Boolean): Msg { this.cancelable = cancelable; return this }
 
     /** Sets the runnable to run when positive button is clicked  */
-    fun onOk(onOk: () -> Unit): Messages {
-        this.onOk = onOk
-        return this
-    }
+    fun onOk(onOk: () -> Unit): Msg { this.onOk = onOk; return this }
 
     /** Sets the positive button label and the runnable to run when it's clicked  */
-    fun onOk(positive: Int, onOk: () -> Unit): Messages {
-        this.iPositive = positive
-        this.onOk = onOk
-        return this
-    }
+    fun onOk(positive: Int, onOk: () -> Unit): Msg { this.iPositive = positive; this.onOk = onOk; return this }
 
     /** Sets the runnable to run when negative button is clicked  */
-    fun onNo(onNo: () -> Unit): Messages {
-        this.onNo = onNo
-        return this
-    }
+    fun onNo(onNo: () -> Unit): Msg { this.onNo = onNo; return this }
 
     /** Sets the negative button label and the runnable to run when it's clicked  */
-    fun onNo(negative: Int, onNo: () -> Unit): Messages {
-        this.iNegative = negative
-        this.onNo = onNo
-        return this
-    }
+    fun onNo(negative: Int, onNo: () -> Unit): Msg { this.iNegative = negative; this.onNo = onNo; return this }
 
     /** Sets the runnable to run when neutral button is clicked  */
-    fun onCancel(onCancel: () -> Unit): Messages {
-        this.onCancel = onCancel
-        return this
-    }
+    fun onCancel(onCancel: () -> Unit): Msg { this.onCancel = onCancel; return this }
 
     /** Sets the neutral button label and the runnable to run when it's clicked  */
-    fun onCancel(neutral: Int, onCancel: () -> Unit): Messages {
-        this.iNeutral = neutral
-        this.onCancel = onCancel
-        return this
-    }
+    fun onCancel(neutral: Int, onCancel: () -> Unit): Msg { this.iNeutral = neutral; this.onCancel = onCancel; return this }
 
     /** Sets the delay in milliseconds after which the message will automatically dismiss */
-    fun autoDismissDelay(autoDismissDelay: Long): Messages {
-        this.autoDismissDelay = autoDismissDelay
-        return this
-    }
+    fun autoDismissDelay(autoDismissDelay: Long): Msg { this.autoDismissDelay = autoDismissDelay; return this }
 
 
 
@@ -357,31 +287,28 @@ class Messages private constructor(
 
 
     /** Shows the message and returns it. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
-    fun show(context: Context, showMessage: Boolean = true): Messages? = if(showMessage) showMessage(context) else { onOk?.invoke(); null }
+    fun show(context: Context, showMessage: Boolean = true): Msg? = if(showMessage) showMessage(context) else { onOk?.invoke(); null }
 
     /** Shows the message and returns it. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
     fun <T> showAs(context: Context, showMessage: Boolean = true): T? = show(context, showMessage)?.implementation?.get() as? T?
 
     /** Tries to show the message on the currently open activity. If [showMessage] is met (true, default), then [onOk] will be called */
-    fun show(showMessage: Boolean = true): Messages? = currentActivity?.get()?.let { activity -> if(showMessage) showMessage(activity) else { onOk?.invoke(); null } }
+    fun show(showMessage: Boolean = true): Msg? = currentActivity?.get()?.let { activity -> if(showMessage) showMessage(activity) else { onOk?.invoke(); null } }
 
     /** Tries to show the message on the currently open activity and returns the implementation (e.g. AlertDialog). If [showMessage] is met (true), then [onOk] will be called */
     fun <T> showAs(showMessage: Boolean = true): T? = show(showMessage)?.implementation?.get() as? T?
 
-    /**  */
-    fun <T> customize(f: (T?) -> Unit): Messages { f.invoke(implementation?.get() as? T?); return this }
-
     /** Build the message and returns it. Optionally calls [f] right after building the message. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
-    fun <T> buildAs(f: ((T?) -> Unit)?): T? = currentActivity?.get()?.let { buildAs(it, f) }
+    fun <T> buildAs(f: ((T?) -> Unit)? = null): T? = currentActivity?.get()?.let { buildAs(it, f) }
 
     /** Build the message and returns it. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
-    fun build(): Messages? = currentActivity?.get()?.let { build(it) }
+    fun build(): Msg? = currentActivity?.get()?.let { build(it) }
 
     /** Build the message and returns it. Optionally calls [f] right after building the message. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
-    fun <T> buildAs(ctx: Context, f: ((T?) -> Unit)?): T? { val m = build(ctx).implementation?.get() as? T?; f?.invoke(m); return m }
+    fun <T> buildAs(ctx: Context, f: ((T?) -> Unit)? = null): T? { val m = build(ctx).implementation?.get() as? T?; f?.invoke(m); return m }
 
     /** Build the message and returns it. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
-    fun build(ctx: Context): Messages {
+    fun build(ctx: Context): Msg {
 
         initStrings(ctx.applicationContext)
 
@@ -401,7 +328,7 @@ class Messages private constructor(
     }
 
 
-    private fun showMessage(ctx: Context): Messages {
+    private fun showMessage(ctx: Context): Msg {
 
         initStrings(ctx.applicationContext)
 
@@ -464,7 +391,7 @@ class Messages private constructor(
     }
 
 
-    private fun buildAsProgressDialog(context: Context): Messages {
+    private fun buildAsProgressDialog(context: Context): Msg {
         val progressDialog = ProgressDialog(context, theme ?: 0)
         progressDialog.setTitle(title)
         progressDialog.setMessage(message)
@@ -475,7 +402,7 @@ class Messages private constructor(
         return this
     }
 
-    private fun buildAsAlertDialog(activity: Activity): Messages {
+    private fun buildAsAlertDialog(activity: Activity): Msg {
 
         initStrings(activity)
 
@@ -497,7 +424,7 @@ class Messages private constructor(
     }
 
 
-    private fun buildAsAlertDialogOneButton(activity: Activity): Messages {
+    private fun buildAsAlertDialogOneButton(activity: Activity): Msg {
 
         val mAlert = AlertDialog.Builder(activity, theme ?: 0)
 
@@ -512,13 +439,13 @@ class Messages private constructor(
         return this
     }
 
-    private fun buildAsToast(context: Context): Messages {
+    private fun buildAsToast(context: Context): Msg {
         implementation = WeakReference(Toast.makeText(context, message, Toast.LENGTH_SHORT))
         isBuilt = true
         return this
     }
 
-    private fun buildAsSnackbar(view: View): Messages {
+    private fun buildAsSnackbar(view: View): Msg {
         val snackbar = Snackbar.make(view, message, Snackbar.LENGTH_SHORT)
         if (onOk != null) snackbar.setAction(positive) { onOk?.invoke() }
         implementation = WeakReference(snackbar)
@@ -540,7 +467,7 @@ class Messages private constructor(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || javaClass != other.javaClass) return false
-        return uid == (other as Messages?)?.uid
+        return uid == (other as Msg?)?.uid
     }
 
     override fun hashCode(): Int {

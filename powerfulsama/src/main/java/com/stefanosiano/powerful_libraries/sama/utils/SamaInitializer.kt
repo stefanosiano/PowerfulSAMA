@@ -21,15 +21,15 @@ object SamaInitializer {
             override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) { setMessages(activity) }
         })
 
-        Messages.defaultTheme = defaultMessagesTheme
-        Messages.defaultYes = defaultYeslabel
-        Messages.defaultNo = defaultNolabel
+        Msg.defaultTheme = defaultMessagesTheme
+        Msg.defaultYes = defaultYeslabel
+        Msg.defaultNo = defaultNolabel
     }
 
     /** Clears the intent used to start an activity */
     private fun clearIntent(activity: Activity?) = activity?.let { if(it is SamaActivity) SamaIntent.clear("${it.samaIntent.uid} ") }
 
     /** Sets the current activity on which to show the messages */
-    private fun setMessages(activity: Activity?) = activity?.let { Messages.setCurrentActivity(it) }
+    private fun setMessages(activity: Activity?) = activity?.let { Msg.setCurrentActivity(it) }
 
 }
