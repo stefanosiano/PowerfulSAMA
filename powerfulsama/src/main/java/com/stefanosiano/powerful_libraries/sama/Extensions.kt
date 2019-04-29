@@ -22,6 +22,9 @@ class LiveDataExtensions
 /** Calls addSource on main thread. useful when using background threads/coroutines: Calling it in the background throws an exception! */
 fun <T, S> MediatorLiveData<T>.addSourceLd(liveData: LiveData<S>, source: (S) -> Unit) where S: Any? = runOnUi { this.addSource(liveData, source) }
 
+/** Calls addSource on main thread. useful when using background threads/coroutines: Calling it in the background throws an exception! */
+fun <T, S> MediatorLiveData<T>.addSourceLd(liveData: LiveData<S>, source: Observer<S>) where S: Any? = runOnUi { this.addSource(liveData, source) }
+
 /** Calls removeSource on main thread. useful when using background threads/coroutines: Calling it in the background throws an exception! */
 fun <T, S> MediatorLiveData<T>.removeSourceLd(liveData: LiveData<S>) where S: Any? = runOnUi { this.removeSource(liveData) }
 
@@ -35,7 +38,7 @@ fun <T> LiveData<T>.getDistinct(context: CoroutineScope? = null): LiveData<T> = 
 inline fun <T> LiveData<T>.getDistinctBy(context: CoroutineScope? = null, crossinline function: (T) -> Any): LiveData<T> {
     val distinctLiveData = MediatorLiveData<T>()
 
-    distinctLiveData.addSource(this, object : Observer<T> {
+    distinctLiveData.addSourceLd(this, object : Observer<T> {
         private var lastObj: T? = null
 
         override fun onChanged(obj: T?) {
@@ -84,14 +87,14 @@ inline fun <T> LiveData<List<T>>.getListDistinctBy(context: CoroutineScope? = nu
 /** Returns a live data that prints its values to log and then returns itself. Useful for debugging (remove it if not needed!). You can optionally pass a CoroutineContext [context] to execute it in the background */
 fun <T> LiveData<List<T>>.print(context: CoroutineScope? = null): LiveData<List<T>> {
     val printLiveData = MediatorLiveData<List<T>>()
-    printLiveData.addSource(this) { obj -> launchIfActiveOrNull(context) { obj?.forEach { Log.d("LiveData", it.toString()) }; printLiveData.postValue(obj ?: ArrayList()) } }
+    printLiveData.addSourceLd(this) { obj -> launchIfActiveOrNull(context) { obj.forEach { Log.d("LiveData", it.toString()) }; printLiveData.postValue(obj) } }
     return printLiveData
 }
 
 /** Returns a list containing only elements matching the given [filterBy]. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun <T> LiveData<List<T>>.filter(context: CoroutineScope? = null, crossinline filterBy: (t: T) -> Boolean): LiveData<List<T>> {
     val filterLiveData = MediatorLiveData<List<T>>()
-    filterLiveData.addSource(this) { obj -> launchIfActiveOrNull(context) { filterLiveData.postValue(obj?.filter { filterBy.invoke(it) } ?: ArrayList()) } }
+    filterLiveData.addSourceLd(this) { obj -> launchIfActiveOrNull(context) { filterLiveData.postValue(obj.filter { filterBy.invoke(it) }) } }
     return filterLiveData
 }
 
@@ -111,7 +114,7 @@ inline fun <T> LiveData<List<T>>.filter(context: CoroutineScope? = null, observa
     var lastFullValue: List<T>? = null
     val filterLiveData = MediatorLiveData<List<T>>()
 
-    filterLiveData.addSource(this) { obj ->
+    filterLiveData.addSourceLd(this) { obj ->
         launchIfActiveOrNull(context) {
             lastFullValue = obj ?: ArrayList()
             lastValue = lastFullValue?.filter { filterBy.invoke(it) } ?: ArrayList()
@@ -132,14 +135,14 @@ inline fun <T> LiveData<List<T>>.filter(context: CoroutineScope? = null, observa
 /** Returns a list of all elements sorted according to natural sort order of the value returned by specified [sortedBy] function. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun <T, R> LiveData<List<T>>.sortedBy(context: CoroutineScope? = null, crossinline sortedBy: (t: T) -> R): LiveData<List<T>> where R:Comparable<R> {
     val filterLiveData = MediatorLiveData<List<T>>()
-    launchIfActiveOrNull(context) { filterLiveData.addSource(this) { obj -> filterLiveData.postValue(obj?.sortedBy { sortedBy.invoke(it) } ?: ArrayList()) } }
+    launchIfActiveOrNull(context) { filterLiveData.addSourceLd(this) { obj -> filterLiveData.postValue(obj.sortedBy { sortedBy.invoke(it) }) } }
     return filterLiveData
 }
 
 /** Transforms the liveData using the function [onValue] every time it changes, returning another liveData. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline onValue: (t: T) -> D): LiveData<D> {
     val filterLiveData = MediatorLiveData<D>()
-    launchIfActiveOrNull(context) { filterLiveData.addSource(this) { obj -> filterLiveData.postValue(onValue.invoke(obj)) } }
+    launchIfActiveOrNull(context) { filterLiveData.addSourceLd(this) { obj -> filterLiveData.postValue(onValue.invoke(obj)) } }
     return filterLiveData
 }
 
