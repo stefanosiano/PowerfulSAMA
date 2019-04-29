@@ -8,8 +8,15 @@ import com.stefanosiano.powerful_libraries.sama.view.SamaIntent
 
 object SamaInitializer {
 
-    /** Initializes the SAMA library */
-    fun init(application: Application, defaultMessagesTheme: Int? = null, defaultYeslabel: Int = android.R.string.yes, defaultNolabel: Int = android.R.string.no) {
+    /** Initializes the SAMA library
+     *
+     * [application] needed to initialize the library
+     * [defaultMessagesTheme] is used as theme for all messages
+     * [defaultMessageCustomization] is used as customization function called after the message has been shown. Note: It will be called on UI thread
+     * [defaultYeslabel] Default "Yes" text
+     * [defaultNolabel] Default "No" text
+     */
+    fun init(application: Application, defaultMessagesTheme: Int? = null, defaultMessageCustomization: ((Any) -> Unit)? = null, defaultYeslabel: Int = android.R.string.yes, defaultNolabel: Int = android.R.string.no) {
 
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPaused(activity: Activity?) {}
@@ -22,6 +29,7 @@ object SamaInitializer {
         })
 
         Msg.defaultTheme = defaultMessagesTheme
+        Msg.defaultCustomization = defaultMessageCustomization
         Msg.defaultYes = defaultYeslabel
         Msg.defaultNo = defaultNolabel
     }

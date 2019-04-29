@@ -92,7 +92,10 @@ class Msg private constructor(
     private var snackbarView: View? = null,
 
     /** Delay in milliseconds after which the message will automatically dismiss */
-    private var autoDismissDelay: Long = 0) {
+    private var autoDismissDelay: Long = 0,
+
+    /** Customization function of the message. Note: It will be called on UI thread */
+    private var customize: ((Any) -> Unit)? = null) {
 
 
     /** Unique id used to check equality with other messages  */
@@ -145,6 +148,9 @@ class Msg private constructor(
         /** Default theme used by messages */
         internal var defaultTheme : Int? = null
 
+        /** Default customization function. Note: It will be called on UI thread */
+        internal var defaultCustomization : ((Any) -> Unit)? = null
+
         /**
          * Creates an alertDialog with one button, with an optional [theme].
          *
@@ -160,7 +166,8 @@ class Msg private constructor(
             theme = theme ?: defaultTheme,
             iPositive = android.R.string.ok,
             cancelable = false,
-            messageImpl = MessageImpl.AlertDialogOneButton)
+            messageImpl = MessageImpl.AlertDialogOneButton,
+            customize = defaultCustomization)
 
         /**
          * Creates a ProgressDialog with specified options, with an optional [theme].
@@ -169,7 +176,7 @@ class Msg private constructor(
          *
          *      messageImpl = MessageImpl.ProgressDialog
          */
-        fun progressDialog(theme: Int? = null) = Msg(theme = theme ?: defaultTheme, messageImpl = MessageImpl.ProgressDialog)
+        fun progressDialog(theme: Int? = null) = Msg(theme = theme ?: defaultTheme, messageImpl = MessageImpl.ProgressDialog, customize = defaultCustomization)
 
         /**
          * Creates an alertDialog with specified options, with an optional [theme].
@@ -177,7 +184,7 @@ class Msg private constructor(
          *
          *      messageImpl = MessageImpl.AlertDialog
          */
-        fun alertDialog(theme: Int? = null) = Msg(theme = theme ?: defaultTheme, messageImpl = MessageImpl.AlertDialog)
+        fun alertDialog(theme: Int? = null) = Msg(theme = theme ?: defaultTheme, messageImpl = MessageImpl.AlertDialog, customize = defaultCustomization)
 
         /**
          * Creates a Toast with specified message.
@@ -186,7 +193,7 @@ class Msg private constructor(
          *
          *      messageImpl = MessageImpl.Toast
          */
-        fun toast() = Msg(messageImpl = MessageImpl.Toast)
+        fun toast() = Msg(messageImpl = MessageImpl.Toast, customize = defaultCustomization)
 
 
         /**
@@ -196,7 +203,7 @@ class Msg private constructor(
          *
          *      messageImpl = MessageImpl.Snackbar
          */
-        fun snackbar(view: View) = Msg(messageImpl = MessageImpl.Snackbar, snackbarView = view)
+        fun snackbar(view: View) = Msg(messageImpl = MessageImpl.Snackbar, snackbarView = view, customize = defaultCustomization)
 
         internal fun setCurrentActivity(activity: Activity) { currentActivity?.clear(); currentActivity = WeakReference(activity) }
     }
@@ -341,16 +348,21 @@ class Msg private constructor(
             }
         }
 
-        runOnUiAndWait { if(!isBuilt) build(ctx) }
+        runOnUiAndWait {
+            if (!isBuilt) build(ctx)
 
-        when (messageImpl) {
-            MessageImpl.ProgressDialog -> runOnUiAndWait { (implementation?.get() as ProgressDialog).show() }
-            MessageImpl.AlertDialogOneButton -> runOnUiAndWait { (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
-            MessageImpl.AlertDialog -> runOnUiAndWait { (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
-            MessageImpl.Toast -> runOnUiAndWait { (implementation?.get() as Toast).show() }
-            MessageImpl.Snackbar -> runOnUiAndWait { (implementation?.get() as? Snackbar?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
-            else -> { Log.e(TAG, "Cannot understand the implementation type of the message. Skipping show") }
+            when (messageImpl) {
+                MessageImpl.ProgressDialog -> (implementation?.get() as ProgressDialog).show()
+                MessageImpl.AlertDialogOneButton -> (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show()
+                MessageImpl.AlertDialog -> (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show()
+                MessageImpl.Toast -> (implementation?.get() as Toast).show()
+                MessageImpl.Snackbar -> (implementation?.get() as? Snackbar?)?.show() ?: (implementation?.get() as? Toast?)?.show()
+                else -> { Log.e(TAG, "Cannot understand the implementation type of the message. Skipping show") }
+            }
+
+            implementation?.get()?.let { customize?.invoke(it) }
         }
+
         return this
     }
 
