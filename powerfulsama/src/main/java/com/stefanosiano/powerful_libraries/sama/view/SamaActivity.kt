@@ -45,7 +45,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     }
 
     /** Observes the liveData using this activity as lifecycle owner */
-    protected fun <T> observe(liveData: LiveData<T>, observerFunction: (data: T?) -> Unit) = liveData.observeLd(this) { observerFunction.invoke(it) }
+    protected fun <T> observe(liveData: LiveData<T>, observerFunction: (data: T?) -> Unit) = liveData.observeLd(this) { observerFunction(it) }
 
 
     /**

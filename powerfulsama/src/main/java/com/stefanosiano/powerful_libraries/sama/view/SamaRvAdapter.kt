@@ -52,7 +52,7 @@ open class SamaRvAdapter(
     private var items: ObservableList<SamaListItem> = ObservableArrayList()
 
     /** Coroutine contexts bound to each adapter item */
-    private val contexts: HashMap<Long, CoroutineContext> = HashMap()
+    private val contexts = ConcurrentHashMap<Long, CoroutineContext>()
 
     /** items implemented through live data */
     private var liveDataItems: LiveData<out List<SamaListItem>>? = null
@@ -300,8 +300,7 @@ open class SamaRvAdapter(
 
         //remove the observer from the optional current liveData
         runOnUiAndWait { liveDataItems?.removeObserver(liveDataObserver) }
-        items.forEach { it.onStop() }
-        items.forEach { it.onDestroy() }
+        items.forEach { it.onStop(); it.onDestroy() }
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancelChildren()
     }
@@ -317,10 +316,12 @@ open class SamaRvAdapter(
     /** Clears all data from the adapter (call it only if you know the adapter is not needed anymore!) */
     fun clear() {
         //remove the observer from the optional current liveData
-        runOnUiAndWait { liveDataItems?.removeObserver(liveDataObserver) }
-        items.forEach { it.onStop() }
-        items.forEach { it.onDestroy() }
-        contexts.values.forEach { it.cancel() }
+        runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
+
+        items.forEach { it.onStop(); it.onDestroy() }
+        val i = contexts.values.iterator()
+        while(i.hasNext()) { i.next().cancel() }
+        contexts.values.iterate { it.cancel() }
         coroutineContext.cancel()
     }
 
@@ -379,8 +380,7 @@ open class SamaRvAdapter(
     private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = runOnUi {
         this.saveAll()
         for(i in positionStart until positionStart+itemCount) {
-            getItem(i)?.onStop()
-            getItem(i)?.onDestroy()
+            getItem(i)?.let { it.onStop(); it.onDestroy() }
             getItemContext(i).cancel()
         }
 
@@ -390,8 +390,7 @@ open class SamaRvAdapter(
     /** Function to be called when the whole list changes */
     private fun dataSetChanged() {
         this.saveAll()
-        items.forEach { it.onStop() }
-        items.forEach { it.onDestroy() }
+        items.forEach { it.onStop(); it.onDestroy() }
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancelChildren()
         notifyDataSetChanged()
