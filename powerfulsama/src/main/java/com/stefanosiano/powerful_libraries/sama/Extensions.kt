@@ -159,7 +159,7 @@ inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline o
 
 
 /** Run [f] on ui thread, waits for its completion and return its value */
-inline fun <T> runOnUiAndWait(crossinline f: suspend () -> T): T? {
+inline fun <T> runOnUiAndWait(crossinline f: () -> T): T? {
     var ret: T? = null
     var finished = false
     runBlocking { runOnUi { ret = f(); finished = true }; while (!finished) delay(10) }
@@ -167,7 +167,9 @@ inline fun <T> runOnUiAndWait(crossinline f: suspend () -> T): T? {
 }
 
 /** Run [f] on ui thread */
-inline fun runOnUi(crossinline f: suspend () -> Unit) { GlobalScope.launch(Dispatchers.Main) { f() } }
+fun runOnUi(f: () -> Unit) { if(Looper.myLooper() == mainThreadHandler.looper) f.invoke() else mainThreadHandler.post { f.invoke() } }
+
+
 
 
 
