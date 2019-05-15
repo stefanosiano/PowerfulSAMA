@@ -192,23 +192,27 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     fun observeVmResponse(lifecycleOwner: LifecycleOwner, observer: ((vmAction: A, vmData: Any?) -> Boolean)? = null) {
         liveResponse.observeLd(lifecycleOwner) {
 
-            //If i clear the response, I clear the lastSentAction, too
-            if (it == null) {
-                lastSentAction = null
-                return@observeLd
+            launch {
+                if(!isActive) return@launch
+
+                //If i clear the response, I clear the lastSentAction, too
+                if (it == null) {
+                    lastSentAction = null
+                    return@launch
+                }
+
+                //If the lastSentAction is different from the action of this response, it means the user pressed on 2 buttons together, so I block it
+                if (lastSentAction != null && lastSentAction != it.action) {
+                    Log.e(javaClass.simpleName, "VmResponse blocked! Should clear previous response: ${lastSentAction.toString()} \nbefore sending: $it")
+                    return@launch
+                }
+                lastSentAction = it.action
+
+                Log.v(javaClass.simpleName, "Sending to activity: $it")
+
+                if (observer?.invoke(it.action, it.data) != false)
+                    liveResponse.postValue(null)
             }
-
-            //If the lastSentAction is different from the action of this response, it means the user pressed on 2 buttons together, so I block it
-            if (lastSentAction != null && lastSentAction != it.action) {
-                Log.e(javaClass.simpleName, "VmResponse blocked! Should clear previous response: ${lastSentAction.toString()} \nbefore sending: $it")
-                return@observeLd
-            }
-            lastSentAction = it.action
-
-            Log.v(javaClass.simpleName, "Sending to activity: $it")
-
-            if (observer?.invoke(it.action, it.data) != false)
-                liveResponse.postValue(null)
         }
     }
 }

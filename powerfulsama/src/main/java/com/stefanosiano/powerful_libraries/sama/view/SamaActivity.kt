@@ -4,6 +4,7 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import com.stefanosiano.powerful_libraries.sama.launchOrNow
 import com.stefanosiano.powerful_libraries.sama.observeLd
 import com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel
 import com.stefanosiano.powerful_libraries.sama.viewModel.VmResponse
@@ -45,7 +46,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     }
 
     /** Observes the liveData using this activity as lifecycle owner */
-    protected fun <T> observe(liveData: LiveData<T>, observerFunction: (data: T?) -> Unit) = liveData.observeLd(this) { observerFunction(it) }
+    protected fun <T> observe(liveData: LiveData<T>, observerFunction: suspend (data: T?) -> Unit) = liveData.observeLd(this) { launchOrNow(this) { observerFunction(it) } }
 
 
     /**

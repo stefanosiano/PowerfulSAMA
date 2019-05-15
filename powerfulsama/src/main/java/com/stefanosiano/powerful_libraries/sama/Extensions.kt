@@ -19,6 +19,30 @@ internal val mainThreadHandler by lazy { Handler(Looper.getMainLooper()) }
 
 class LiveDataExtensions
 
+
+
+
+/** Returns a liveData that will be updated with the values of the liveData returned by [f] (executed through [launch]) */
+inline fun <T> CoroutineScope.liveData(crossinline f: suspend () -> LiveData<T>): LiveData<T> =
+    MediatorLiveData<T>().also { mld -> this.launch { f().let { ld -> mld.addSourceLd(ld) { mld.postValue(it) } } } }
+
+
+
+/** Returns a liveData that will be updated with the values of the liveData returned by [f].
+ * If [ob] has a null value, the liveData will be empty until it's set with a non-null value */
+suspend fun <T> CoroutineScope.waitFor(ob: ObservableField<out Any>, f: suspend () -> LiveData<T>): LiveData<T> {
+    if(ob.get() != null) return f()
+
+    val mediatorLiveData = MediatorLiveData<T>()
+    val cb = ob.addOnChangedAndNow(this) {
+        if(ob.get() == null) return@addOnChangedAndNow
+        f().let { ld -> mediatorLiveData.addSourceLd(ld) { mediatorLiveData.postValue(it) } }
+    }
+    mediatorLiveData.addSourceLd(mediatorLiveData) { ob.removeOnPropertyChangedCallback(cb); mediatorLiveData.removeSourceLd(mediatorLiveData) }
+    return mediatorLiveData
+}
+
+
 /** Calls addSource on main thread. useful when using background threads/coroutines: Calling it in the background throws an exception! */
 fun <T, S> MediatorLiveData<T>.addSourceLd(liveData: LiveData<S>, source: (S) -> Unit) where S: Any? = runOnUi { this.addSource(liveData, source) }
 
@@ -35,7 +59,7 @@ internal inline fun <T> LiveData<T>.observeLd(lifecycleOwner: LifecycleOwner, cr
 fun <T> LiveData<T>.getDistinct(context: CoroutineScope? = null): LiveData<T> = getDistinctBy(context) { it as Any }
 
 /** Returns a liveData which returns values only when they change. You can optionally pass a CoroutineContext [context] to execute it in the background */
-inline fun <T> LiveData<T>.getDistinctBy(context: CoroutineScope? = null, crossinline function: (T) -> Any): LiveData<T> {
+inline fun <T> LiveData<T>.getDistinctBy(context: CoroutineScope? = null, crossinline function: suspend (T) -> Any): LiveData<T> {
     val distinctLiveData = MediatorLiveData<T>()
 
     distinctLiveData.addSourceLd(this, object : Observer<T> {
@@ -57,7 +81,7 @@ inline fun <T> LiveData<T>.getDistinctBy(context: CoroutineScope? = null, crossi
 fun <T> LiveData<List<T>>.getListDistinct(context: CoroutineScope? = null): LiveData<List<T>> = this.getListDistinctBy(context) { it as Any }
 
 /** Returns a liveData which returns values only when they change. You can optionally pass a CoroutineContext [context] to execute it in the background */
-inline fun <T> LiveData<List<T>>.getListDistinctBy(context: CoroutineScope? = null, crossinline function: (T) -> Any): LiveData<List<T>> {
+fun <T> LiveData<List<T>>.getListDistinctBy(context: CoroutineScope? = null, function: suspend (T) -> Any): LiveData<List<T>> {
     val distinctLiveData = MediatorLiveData<List<T>>()
 
     distinctLiveData.addSource(this, object : Observer<List<T>> {
@@ -75,7 +99,7 @@ inline fun <T> LiveData<List<T>>.getListDistinctBy(context: CoroutineScope? = nu
             }
         }
 
-        private inline fun compareListsContent(list1: List<T>, list2: List<T>, compare: (T) -> Any): Boolean {
+        private suspend inline fun compareListsContent(list1: List<T>, list2: List<T>, crossinline compare: suspend (T) -> Any): Boolean {
             for(i in 0 until list1.size) tryOrNull { if(compare( list1[i] ) != compare( list2[i] )) return false } ?: return false; return true
         }
     })
@@ -87,10 +111,10 @@ fun <T> LiveData<List<T>>.print(c: CoroutineScope? = null): LiveData<List<T>> =
     MediatorLiveData<List<T>>().also { ld -> ld.addSourceLd(this) { launchOrNow(c) { it.forEach { ob -> Log.d("LiveData", ob.toString()) }; ld.postValue(it) } } }
 
 /** Returns a list containing only elements matching the given [filterBy]. You can optionally pass a CoroutineContext [c] to execute it in the background */
-inline fun <T> LiveData<List<T>>.filter(c: CoroutineScope? = null, crossinline filterBy: (t: T) -> Boolean): LiveData<List<T>> =
+inline fun <T> LiveData<List<T>>.filter(c: CoroutineScope? = null, crossinline filterBy: suspend (t: T) -> Boolean): LiveData<List<T>> =
     MediatorLiveData<List<T>>().also { ld -> ld.addSourceLd(this) { launchOrNow(c) { ld.postValue(it.filter { ob -> filterBy(ob) }) } } }
 
-/** Calls [f] with [launch] using passed scope, if it's active. If no scope is passed (it's null), [f] is called directly. You can optionally pass a CoroutineScope [c] to execute it in the background */
+/** Calls [f] with [launch] using passed scope, if it's active. If no scope is passed (it's null), [f] is called directly through [runBlocking] */
 inline fun launchOrNow(c: CoroutineScope?, crossinline f: suspend () -> Unit) { if(c?.isActive == false) return; c?.launch { f() } ?: runBlocking { f() } }
 
 /**
@@ -98,14 +122,14 @@ inline fun launchOrNow(c: CoroutineScope?, crossinline f: suspend () -> Unit) { 
  * When [observableField] changes, the list is calculated again.
  * You can optionally pass a CoroutineContext [context] to execute it in the background
  */
-inline fun <T> LiveData<List<T>>.filter(context: CoroutineScope? = null, observableField: ObservableField<*>, crossinline filterBy: (t: T) -> Boolean): LiveData<List<T>> {
+fun <T> LiveData<List<T>>.filter(context: CoroutineScope? = null, observableField: ObservableField<*>, filterBy: suspend (t: T) -> Boolean): LiveData<List<T>> {
     var lastValue: List<T>?
     var lastFullValue: List<T>? = null
     val filterLiveData = MediatorLiveData<List<T>>()
 
     filterLiveData.addSourceLd(this) { obj ->
         launchOrNow(context) {
-            lastFullValue = obj ?: ArrayList()
+            lastFullValue = obj
             lastValue = lastFullValue?.filter { filterBy(it) } ?: ArrayList()
             filterLiveData.postValue(obj)
         }
@@ -123,30 +147,27 @@ inline fun <T> LiveData<List<T>>.filter(context: CoroutineScope? = null, observa
 
 /** Returns a list of all elements sorted according to natural sort order of the value returned by specified [sortedBy] function. You can optionally pass a CoroutineContext [context] to execute it in the background */
 inline fun <T, R> LiveData<List<T>>.sortedBy(context: CoroutineScope? = null, crossinline sortedBy: (t: T) -> R): LiveData<List<T>> where R:Comparable<R> =
-    MediatorLiveData<List<T>>().also { ld -> launchOrNow(context) { ld.addSourceLd(this) { obj -> ld.postValue(obj.sortedBy { sortedBy(it) }) } } }
+    MediatorLiveData<List<T>>().also { ld -> ld.addSourceLd(this) { obj -> launchOrNow(context) { ld.postValue(obj.sortedBy { sortedBy(it) }) } } }
 
 
 /** Transforms the liveData using the function [onValue] every time it changes, returning another liveData. You can optionally pass a CoroutineContext [context] to execute it in the background */
-inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline onValue: (t: T) -> D): LiveData<D> {
+inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline onValue: suspend (t: T) -> D): LiveData<D> {
     val filterLiveData = MediatorLiveData<D>()
-    launchOrNow(context) { filterLiveData.addSourceLd(this) { obj -> filterLiveData.postValue(onValue(obj)) } }
+    filterLiveData.addSourceLd(this) { obj -> launchOrNow(context) { filterLiveData.postValue(onValue(obj)) } }
     return filterLiveData
 }
 
 
 /** Run [f] on ui thread, waits for its completion and return its value */
-fun <T> runOnUiAndWait(f: () -> T): T? {
+inline fun <T> runOnUiAndWait(crossinline f: suspend () -> T): T? {
     var ret: T? = null
     var finished = false
-    runBlocking {
-        runOnUi { ret = f(); finished = true }
-        while (!finished) delay(10)
-    }
+    runBlocking { runOnUi { ret = f(); finished = true }; while (!finished) delay(10) }
     return ret
 }
 
 /** Run [f] on ui thread */
-fun runOnUi(f: () -> Unit) { if(Looper.myLooper() == mainThreadHandler.looper) f() else mainThreadHandler.post { f() } }
+inline fun runOnUi(crossinline f: suspend () -> Unit) { GlobalScope.launch(Dispatchers.Main) { f() } }
 
 
 
@@ -204,10 +225,10 @@ class Extensions
 
 
 /** Run a function for each element and wait for the completion of all of them, using coroutines */
-inline fun <T> Iterable<T>.runAndWait(crossinline run: (x: T) -> Unit) = runBlocking { map { async {run(it)} }.map { it.await() } }
+inline fun <T> Iterable<T>.runAndWait(crossinline run: suspend (x: T) -> Unit) = runBlocking { map { async {run(it)} }.map { it.await() } }
 
 /** Run a function for each element, using coroutines */
-inline fun <T> Iterable<T>.launch(coroutineScope: CoroutineScope, crossinline run: (x: T) -> Unit) = coroutineScope.launch { map { async {run(it)} } }
+inline fun <T> Iterable<T>.launch(coroutineScope: CoroutineScope, crossinline run: suspend (x: T) -> Unit) = coroutineScope.launch { map { async {run(it)} } }
 
 /** Try to execute [toTry] in a try catch block, return null if an exception is raised */
 inline fun <T> tryOrNull(toTry: () -> T): T? = tryOr(null, toTry)
