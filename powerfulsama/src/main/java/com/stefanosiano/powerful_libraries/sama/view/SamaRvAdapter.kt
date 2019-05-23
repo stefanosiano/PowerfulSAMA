@@ -1,10 +1,8 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
-import android.os.Handler
-import android.os.Looper
+import android.util.LongSparseArray
 import android.util.SparseArray
 import android.util.SparseIntArray
-import android.util.SparseLongArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -30,11 +28,15 @@ import kotlin.coroutines.CoroutineContext
  * @param itemLayoutId Id of the layout of each row
  * @param itemBindingId Id of the dataBinding variable in the row layout
  * @param hasStableId Whether the adapter has stableIds (The items of the adapter must implement getStableId() or getStableIdString(), or it won't have any effect)
+ * @param preserveLazyInitializedItemCache Whether the adapter preserves its internal item cache for lazy initialized items. It's used only if [hasStableId] is true.
+ *      Setting true will increase memory usage, but improve performance when filtering, since it won't call [lazyInit] on items removed from the adapter and then added to it again
  */
 open class SamaRvAdapter(
     private var itemLayoutId: Int,
     private val itemBindingId: Int,
-    private val hasStableId: Boolean
+    private val hasStableId: Boolean,
+    private val preserveLazyInitializedItemCache: Boolean
+
 ): RecyclerView.Adapter<SamaRvAdapter.SimpleViewHolder>(), CoroutineScope {
 
     private val coroutineJob: Job = SupervisorJob()
@@ -60,6 +62,9 @@ open class SamaRvAdapter(
     /** map that saves variables of each row and reload them when the items are reloaded (available only if hasStableId = true) */
     private val savedItems: HashMap<Long, SparseArray<Any>> = HashMap()
 
+    /** map that saves initialized variables to avoid to reinitialize them when reloaded */
+    private val lazyInitializedItemCacheMap = LongSparseArray<SamaListItem>()
+
     /** Map that link string ids to unique long numbers, to use as stableId */
     private val idsMap: ConcurrentHashMap<String, Long> = ConcurrentHashMap()
 
@@ -80,18 +85,22 @@ open class SamaRvAdapter(
 
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
-     * hasStableId defaults to true
+     * [hasStableId] defaults to true
+     * [preserveLazyInitializedItemCache] defaults to true
      *
      * @param itemLayoutId Id of the layout of each row
      * @param itemBindingId Id of the dataBinding variable in the row layout
      */
-    constructor(itemLayoutId: Int, itemBindingId: Int): this(itemLayoutId, itemBindingId, true)
+    constructor(itemLayoutId: Int, itemBindingId: Int): this(itemLayoutId, itemBindingId, true, true)
 
     init {
         setHasStableIds(hasStableId)
         itemLayoutIds.put(-1, itemLayoutId)
     }
 
+    /** Clear the cache of the lazy initialized items (Used only if [hasStableId] is true).
+     * Use it when setting [preserveLazyInitializedItemCache] as true to be sure to clear the cache */
+    fun clearLazyInitializedCache() = lazyInitializedItemCacheMap.clear()
 
 
     /** Set a different [layoutId] for different [viewType] (viewTypes should be used in [SamaListItem.getViewType] of the items) */
@@ -172,6 +181,7 @@ open class SamaRvAdapter(
      */
     @Suppress("unchecked_cast")
     @Synchronized fun bindItems(list: ObservableList<out SamaListItem>) : SamaRvAdapter {
+        lazyInitializedItemCacheMap.clear()
         bindListJob?.cancel()
         bindListJob = launch {
             items.removeOnListChangedCallback(onListChangedCallback)
@@ -222,7 +232,13 @@ open class SamaRvAdapter(
                 if (!isActive) return@launch
                 runOnUiAndWait {
                     items.clear()
-                    items.addAll(list)
+                    for(item in list) {
+                        val itemCached = lazyInitializedItemCacheMap[getItemStableId(item)]
+                        if(itemCached?.contentEquals(item) == true)
+                            items.add(itemCached)
+                        else
+                            items.add(item)
+                    }
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                 }
             }
@@ -236,6 +252,10 @@ open class SamaRvAdapter(
     @Synchronized private fun startLazyInits() {
         lazyInitsJob?.cancel()
         lazyInitsJob = launch {
+            if(!isActive) return@launch
+            if(!preserveLazyInitializedItemCache)
+                lazyInitializedItemCacheMap.clear()
+            items.filter { it.isLazyInitialized() }.forEach { lazyInitializedItemCacheMap.put(getItemStableId(it), it) }
             delay(170)
             val lazyItems = items.filter { !it.isLazyInitialized() }
             lazyItems.iterate{
@@ -252,6 +272,7 @@ open class SamaRvAdapter(
             launch(getItemContext(item)!!) {
                 if (!lazyInitSet.add(getItemStableId(item))) return@launch
                 item.onLazyInit()
+                lazyInitializedItemCacheMap.put(getItemStableId(item), item)
                 lazyInitSet.remove(getItemStableId(item))
             }
             return true
@@ -266,6 +287,7 @@ open class SamaRvAdapter(
      * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
      */
     @Synchronized fun bindItems(list: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
+        lazyInitializedItemCacheMap.clear()
         //remove the observer from the optional current liveData
         runOnUi {
             liveDataItems?.removeObserver(liveDataObserver)
@@ -301,6 +323,7 @@ open class SamaRvAdapter(
         //remove the observer from the optional current liveData
         runOnUiAndWait { liveDataItems?.removeObserver(liveDataObserver) }
         items.forEach { it.onStop(); it.onDestroy() }
+        lazyInitializedItemCacheMap.clear()
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancelChildren()
     }
@@ -322,6 +345,7 @@ open class SamaRvAdapter(
         val i = contexts.values.iterator()
         while(i.hasNext()) { i.next().cancel() }
         contexts.values.iterate { it.cancel() }
+        lazyInitializedItemCacheMap.clear()
         coroutineContext.cancel()
     }
 
@@ -391,6 +415,7 @@ open class SamaRvAdapter(
     private fun dataSetChanged() {
         this.saveAll()
         items.forEach { it.onStop(); it.onDestroy() }
+        lazyInitializedItemCacheMap.clear()
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancelChildren()
         notifyDataSetChanged()
@@ -404,7 +429,7 @@ open class SamaRvAdapter(
     }
 
     /** Class that listens for changes of the passed list and calls the methods of the adapter */
-    inner class WeakReferenceOnListChangedCallback( bindingRvAdapter: SamaRvAdapter ): ObservableList.OnListChangedCallback<ObservableList<SamaListItem>>() {
+    inner class WeakReferenceOnListChangedCallback( bindingRvAdapter: SamaRvAdapter): ObservableList.OnListChangedCallback<ObservableList<SamaListItem>>() {
 
         private val adapterReference = WeakReference(bindingRvAdapter)
 
