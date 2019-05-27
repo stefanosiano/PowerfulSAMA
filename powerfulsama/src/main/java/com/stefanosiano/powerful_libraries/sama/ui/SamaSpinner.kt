@@ -66,14 +66,14 @@ class SamaSpinner : AppCompatSpinner, CoroutineScope {
         val temp = ArrayList<String>()
         val old = selectedItem
         (0 until (arrayAdapter?.count ?: 0)).forEach { i -> arrayAdapter?.getItem(i)?.let { temp.add(it) } }
-        runOnUiAndWait {
+        runOnUi {
             arrayAdapter?.clear()
             arrayAdapter = ArrayAdapter(context, spinnerLayoutId)
             arrayAdapter?.addAll(temp)
             super.setAdapter(arrayAdapter)
             arrayAdapter?.notifyDataSetChanged()
+            (0 until adapter.count).firstOrNull { adapter.getItem(it) == old }?.let { setSelection(it) }
         }
-        (0 until adapter.count).firstOrNull { adapter.getItem(it) == old }?.let { setSelection(it) }
     }
 
 

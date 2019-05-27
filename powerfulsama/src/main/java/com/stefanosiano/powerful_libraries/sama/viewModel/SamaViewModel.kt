@@ -60,7 +60,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      */
     protected fun <T> observe(liveData: LiveData<T>): LiveData<T> {
         observedLiveData.add(liveData)
-        runOnUiAndWait { liveData.observeForever(persistentObserver) }
+        runOnUi { liveData.observeForever(persistentObserver) }
         return liveData
     }
 
@@ -72,7 +72,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     protected fun <T> observe(liveData: LiveData<T>, forceOnCurrentThread: Boolean = false, observerFunction: suspend (data: T) -> Unit): LiveData<T> {
         val observer: Observer<Any?> = Observer { launchOrNow(if(forceOnCurrentThread) null else this) { observerFunction(it as? T ?: return@launchOrNow) } }
         customObservedLiveData.add(Pair(liveData as LiveData<Any?>, observer))
-        runOnUiAndWait { liveData.observeForever(observer) }
+        runOnUi { liveData.observeForever(observer) }
         return liveData
     }
 

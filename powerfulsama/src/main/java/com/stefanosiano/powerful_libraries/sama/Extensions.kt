@@ -162,7 +162,7 @@ inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline o
 inline fun <T> runOnUiAndWait(crossinline f: () -> T): T? {
     var ret: T? = null
     var finished = false
-    runBlocking { runOnUi { ret = f(); finished = true }; while (isActive && !finished) delay(10) }
+    runBlocking { runOnUi { if(isActive) ret = f(); finished = true }; while (isActive && !finished) delay(10) }
     return ret
 }
 
