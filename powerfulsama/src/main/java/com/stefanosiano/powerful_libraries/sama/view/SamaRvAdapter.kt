@@ -190,7 +190,7 @@ open class SamaRvAdapter(
             contexts.clear()
             items = list as ObservableList<SamaListItem>
             items.addOnListChangedCallback(onListChangedCallback)
-            runOnUiAndWait { itemRangeInserted(0, list.size) }
+            runOnUi { itemRangeInserted(0, list.size) }
             startLazyInits()
         }
         return this
@@ -211,7 +211,7 @@ open class SamaRvAdapter(
             if (!isActive) return@launch
             if (forceReload) {
                 if (!isActive) return@launch
-                runOnUiAndWait {
+                runOnUi {
                     items.clear()
                     contexts.clear()
                     items.addAll(list)
@@ -230,7 +230,7 @@ open class SamaRvAdapter(
                     }
                 }
                 if (!isActive) return@launch
-                runOnUiAndWait {
+                runOnUi {
                     items.clear()
                     for(item in list) {
                         val itemCached = lazyInitializedItemCacheMap[getItemStableId(item)]
@@ -242,7 +242,7 @@ open class SamaRvAdapter(
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                 }
             }
-            startLazyInits()
+            runOnUi { startLazyInits() }
         }
 
         return this
@@ -321,7 +321,7 @@ open class SamaRvAdapter(
         this.recyclerView = null
 
         //remove the observer from the optional current liveData
-        runOnUiAndWait { liveDataItems?.removeObserver(liveDataObserver) }
+        runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
         items.forEach { it.onStop(); it.onDestroy() }
         lazyInitializedItemCacheMap.clear()
         contexts.values.forEach { it.cancel() }
