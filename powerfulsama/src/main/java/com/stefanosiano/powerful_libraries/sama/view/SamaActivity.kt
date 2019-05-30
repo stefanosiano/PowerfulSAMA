@@ -12,13 +12,15 @@ import kotlinx.coroutines.*
 
 /** Abstract Activity for all Activities to extend */
 abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
-    private val loggingExceptionHandler = CoroutineExceptionHandler { _, t -> t.printStackTrace() }
+    private val loggingExceptionHandler = CoroutineExceptionHandler { _, t -> t.printStackTrace() ; handleCoroutineException(t) }
     override val coroutineContext = SupervisorJob() + loggingExceptionHandler
 
     override fun onDestroy() {
         super.onDestroy()
         coroutineContext.cancel()
     }
+
+    protected open fun handleCoroutineException(t: Throwable) {}
 
     /** Initializes the toolbar leaving the default title */
     protected fun initActivity() = initActivity("")
