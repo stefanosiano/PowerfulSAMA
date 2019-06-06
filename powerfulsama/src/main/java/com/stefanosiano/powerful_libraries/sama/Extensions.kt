@@ -206,7 +206,6 @@ inline fun Observable.onChange(c: CoroutineScope? = null, crossinline f: suspend
 
 
 
-
 class AndroidExtensions
 
 /** Returns the drawable associated with the id */
