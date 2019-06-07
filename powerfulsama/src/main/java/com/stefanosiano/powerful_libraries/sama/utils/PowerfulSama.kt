@@ -6,7 +6,7 @@ import android.os.Bundle
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaIntent
 
-object SamaInitializer {
+object PowerfulSama {
 
     /** Initializes the SAMA library
      *
@@ -20,14 +20,15 @@ object SamaInitializer {
 
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPaused(activity: Activity?) {}
-            override fun onActivityResumed(activity: Activity?) { setMessages(activity) }
-            override fun onActivityStarted(activity: Activity?) { setMessages(activity) }
+            override fun onActivityResumed(activity: Activity?) { setMsgActivity(activity); setResActivity(activity) }
+            override fun onActivityStarted(activity: Activity?) { setMsgActivity(activity); setResActivity(activity) }
             override fun onActivityDestroyed(activity: Activity?) { clearIntent(activity) }
             override fun onActivitySaveInstanceState(activity: Activity?, outState: Bundle?) {}
             override fun onActivityStopped(activity: Activity?) {}
-            override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) { setMessages(activity) }
+            override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) { setMsgActivity(activity); setResActivity(activity) }
         })
 
+        Res.setApplicationContext(application)
         Msg.defaultTheme = defaultMessagesTheme
         Msg.defaultCustomization = defaultMessageCustomization
         Msg.defaultYes = defaultYeslabel
@@ -38,6 +39,9 @@ object SamaInitializer {
     private fun clearIntent(activity: Activity?) = activity?.let { if(it is SamaActivity) SamaIntent.clear("${it.samaIntent.uid} ") }
 
     /** Sets the current activity on which to show the messages */
-    private fun setMessages(activity: Activity?) = activity?.let { Msg.setCurrentActivity(it) }
+    private fun setMsgActivity(activity: Activity?) = activity?.let { Msg.setCurrentActivity(it) }
+
+    /** Sets the current activity on which to show the messages */
+    private fun setResActivity(activity: Activity?) = activity?.let { Res.setCurrentActivity(it) }
 
 }
