@@ -182,6 +182,9 @@ inline fun <T> ObservableField<T>.addOnChangedAndNow(c: CoroutineScope? = null, 
 inline fun ObservableBoolean.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Boolean) -> Unit ) = onChange(c) { f(get()) }.also { launchOrNow(c) { f(get()) } }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineScope [c] to execute it in the background */
+inline fun ObservableByte.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Byte) -> Unit ) = onChange(c) { f(get()) }.also { launchOrNow(c) { f(get()) } }
+
+/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineScope [c] to execute it in the background */
 inline fun ObservableInt.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Int) -> Unit ) = onChange(c) { f(get()) }.also { launchOrNow(c) { f(get()) } }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineScope [c] to execute it in the background */
