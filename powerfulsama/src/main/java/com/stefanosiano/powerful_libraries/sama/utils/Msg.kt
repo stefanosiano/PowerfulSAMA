@@ -293,40 +293,34 @@ class Msg private constructor(
     }
 
 
-    /** Shows the message and returns it. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
-    fun show(context: Context, showMessage: Boolean = true): Msg? = if(showMessage) showMessage(context) else { onOk?.invoke(); null }
+    /** Shows the message and returns it. Always prefer to pass [context] (an Activity if possible, especially for AlertDialogs and ProgressDialogs).
+     * If [showMessage] is met (true, default), then the message will be shown, otherwise [onOk] will be called */
+    fun show(context: Context? = null, showMessage: Boolean = true): Msg? = if(showMessage) showMessage(context) else { onOk?.invoke(); null }
 
-    /** Shows the message and returns it. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
-    fun <T> showAs(context: Context, showMessage: Boolean = true): T? = show(context, showMessage)?.implementation?.get() as? T?
+    /** Shows the message and returns its implementation (e.g. AlertDialog). Always prefer to pass [context] (an Activity if possible, especially for AlertDialogs and ProgressDialogs).
+     * Optionally calls [f] right after building the message and before showing it.
+     * If [showMessage] is met (true, default), then the message will be shown, otherwise [onOk] will be called */
+    fun <T> showAs(context: Context? = null, f: ((T?) -> Unit)? = null, showMessage: Boolean = true): Msg?
+            = build(context)?.also { f?.invoke(it.implementation?.get() as? T?) }?.show(context, showMessage)
 
-    /** Tries to show the message on the currently open activity. If [showMessage] is met (true, default), then [onOk] will be called */
-    fun show(showMessage: Boolean = true): Msg? = currentActivity?.get()?.let { activity -> if(showMessage) showMessage(activity) else { onOk?.invoke(); null } }
+    /** Build the message and returns it. Optionally calls [f] right after building the message and before showing it.
+     * Always prefer to pass [ctx] (an Activity if possible, especially for AlertDialogs and ProgressDialogs) */
+    fun <T> buildAs(ctx: Context? = null, f: ((T?) -> Unit)? = null): T? = build(ctx)?.also { f?.invoke(it.implementation?.get() as? T?) }?.implementation?.get() as? T?
 
-    /** Tries to show the message on the currently open activity and returns the implementation (e.g. AlertDialog). If [showMessage] is met (true), then [onOk] will be called */
-    fun <T> showAs(showMessage: Boolean = true): T? = show(showMessage)?.implementation?.get() as? T?
+    /** Build the message and returns it. Always prefer to pass [ctx] (an Activity if possible, especially for AlertDialogs and ProgressDialogs) */
+    fun build(ctx: Context?): Msg? {
 
-    /** Build the message and returns it. Optionally calls [f] right after building the message. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
-    fun <T> buildAs(f: ((T?) -> Unit)? = null): T? = currentActivity?.get()?.let { buildAs(it, f) }
-
-    /** Build the message and returns it. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
-    fun build(): Msg? = currentActivity?.get()?.let { build(it) }
-
-    /** Build the message and returns it. Optionally calls [f] right after building the message. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
-    fun <T> buildAs(ctx: Context, f: ((T?) -> Unit)? = null): T? { val m = build(ctx).implementation?.get() as? T?; f?.invoke(m); return m }
-
-    /** Build the message and returns it. Always prefer an Activity to a Context if possible, especially for AlertDialogs and ProgressDialog */
-    fun build(ctx: Context): Msg {
-
-        initStrings(ctx.applicationContext)
+        val context = ctx ?: currentActivity?.get() ?: return null
+        initStrings(context.applicationContext)
 
         when (messageImpl) {
-            MessageImpl.ProgressDialog -> runOnUiAndWait { buildAsProgressDialog(ctx) }
-            MessageImpl.AlertDialogOneButton -> runOnUiAndWait { getActivityFromCtx(ctx)?.let { buildAsAlertDialogOneButton(it) } ?: buildAsToast(ctx) }
-            MessageImpl.AlertDialog -> runOnUiAndWait { getActivityFromCtx(ctx)?.let { buildAsAlertDialog(it) } ?: buildAsToast(ctx) }
-            MessageImpl.Toast -> runOnUiAndWait { buildAsToast(ctx) }
+            MessageImpl.ProgressDialog -> runOnUiAndWait { buildAsProgressDialog(context) }
+            MessageImpl.AlertDialogOneButton -> runOnUiAndWait { getActivityFromCtx(context)?.let { buildAsAlertDialogOneButton(it) } ?: buildAsToast(context) }
+            MessageImpl.AlertDialog -> runOnUiAndWait { getActivityFromCtx(context)?.let { buildAsAlertDialog(it) } ?: buildAsToast(context) }
+            MessageImpl.Toast -> runOnUiAndWait { buildAsToast(context) }
             MessageImpl.Snackbar -> {
                 snackbarView?.let { runOnUiAndWait { buildAsSnackbar(it) } } ?: runOnUiAndWait {
-                    (getActivityFromCtx(ctx)?.window?.decorView?.findViewById(android.R.id.content) as? View?)?.let { buildAsSnackbar(it) } ?: buildAsToast(ctx)
+                    (getActivityFromCtx(context)?.window?.decorView?.findViewById(android.R.id.content) as? View?)?.let { buildAsSnackbar(it) } ?: buildAsToast(context)
                 }
             }
             else -> Log.e(TAG, "Cannot understand the implementation type of the message. Skipping show")
@@ -335,9 +329,10 @@ class Msg private constructor(
     }
 
 
-    private fun showMessage(ctx: Context): Msg {
+    private fun showMessage(ctx: Context?): Msg? {
 
-        initStrings(ctx.applicationContext)
+        val context = ctx ?: currentActivity?.get() ?: return null
+        initStrings(context.applicationContext)
 
         autoDismissJob?.cancel()
         //Auto-dismiss message after x seconds
@@ -349,7 +344,7 @@ class Msg private constructor(
         }
 
         runOnUiAndWait {
-            if (!isBuilt) build(ctx)
+            if (!isBuilt) build(context)
 
             when (messageImpl) {
                 MessageImpl.ProgressDialog -> (implementation?.get() as ProgressDialog).show()
