@@ -233,7 +233,7 @@ open class SamaRvAdapter(
                 runOnUi {
                     items.clear()
                     for(item in list) {
-                        val itemCached = lazyInitializedItemCacheMap[getItemStableId(item)]
+                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(item))
                         if(itemCached?.contentEquals(item) == true)
                             items.add(itemCached)
                         else
