@@ -15,7 +15,7 @@ def gitUrl = 'https://github.com/stefanosiano/PowerfulSAMA.git'                 
 def libDescription = 'Simplified Android Mvvm Architecture'                         // Library description
 
 //data to change on updates
-def libVersion = "0.1.80" // This is the library version used when deploying the artifact
+def libVersion = "0.1.81" // This is the library version used when deploying the artifact
 def gitTag = "$libVersion"
 
 group = libGroupId //bintray org/group name
@@ -23,13 +23,13 @@ version = libVersion //version
 
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
 
 
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 28
+        targetSdkVersion 29
         versionCode 1
         versionName "1.0"
         consumerProguardFiles 'sama-proguard-rules.txt'

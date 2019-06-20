@@ -232,13 +232,10 @@ open class SamaRvAdapter(
                 if (!isActive) return@launch
                 runOnUi {
                     items.clear()
-                    for(item in list) {
-                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(item))
-                        if(itemCached?.contentEquals(item) == true)
-                            items.add(itemCached)
-                        else
-                            items.add(item)
-                    }
+                    items = list.mapTo(ObservableArrayList(), {
+                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
+                        if(itemCached?.contentEquals(it) == true) itemCached else it
+                    })
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                 }
             }
