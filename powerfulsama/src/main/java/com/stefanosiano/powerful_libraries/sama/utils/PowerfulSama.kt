@@ -5,9 +5,11 @@ import android.app.Application
 import android.os.Bundle
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaIntent
+import java.lang.Exception
 
 object PowerfulSama {
 
+    internal var onExceptionWorkarounded: ((clazz: Class<*>, e: Exception) -> Unit)? = null
     /** Initializes the SAMA library
      *
      * [application] needed to initialize the library
@@ -44,4 +46,5 @@ object PowerfulSama {
     /** Sets the current activity on which to show the messages */
     private fun setResActivity(activity: Activity?) = activity?.let { Res.setCurrentActivity(it) }
 
+    fun onExceptionWorkarounded(f: (clazz: Class<*>, e: Exception) -> Unit) { onExceptionWorkarounded = f }
 }

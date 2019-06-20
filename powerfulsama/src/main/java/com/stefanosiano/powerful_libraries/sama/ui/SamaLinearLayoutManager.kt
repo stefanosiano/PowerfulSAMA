@@ -2,8 +2,10 @@ package com.stefanosiano.powerful_libraries.sama.ui
 
 import android.content.Context
 import android.util.AttributeSet
+import android.util.Log
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 
 /**
  * Simple [LinearLayoutManager] that catches the [IndexOutOfBoundsException] occurring with inconsistency detected.
@@ -19,6 +21,9 @@ class SamaLinearLayoutManager : LinearLayoutManager {
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler?, state: RecyclerView.State) {
         try { super.onLayoutChildren(recycler, state) }
-        catch (e: IndexOutOfBoundsException) { e.printStackTrace() }
+        catch (e: IndexOutOfBoundsException) {
+            Log.e(this::class.java.simpleName, e.localizedMessage ?: e.message ?: e.toString())
+            PowerfulSama.onExceptionWorkarounded?.invoke(this::class.java, e) ?: Log.e(this::class.java.simpleName, "Exception is not handled! You can use PowerfulSama.onExceptionWorkarounded to catch it!")
+        }
     }
 }
