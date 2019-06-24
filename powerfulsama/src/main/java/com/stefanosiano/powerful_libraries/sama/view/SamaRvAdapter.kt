@@ -319,7 +319,7 @@ open class SamaRvAdapter(
 
         //remove the observer from the optional current liveData
         runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
-        items.forEach { it.onStop(); it.onDestroy() }
+        items.forEach { it.onStop() }
         lazyInitializedItemCacheMap.clear()
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancelChildren()
@@ -401,7 +401,7 @@ open class SamaRvAdapter(
     private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = runOnUi {
         this.saveAll()
         for(i in positionStart until positionStart+itemCount) {
-            getItem(i)?.let { it.onStop(); it.onDestroy() }
+            getItem(i)?.let { it.onStop() }
             getItemContext(i).cancel()
         }
 
@@ -411,7 +411,7 @@ open class SamaRvAdapter(
     /** Function to be called when the whole list changes */
     private fun dataSetChanged() {
         this.saveAll()
-        items.forEach { it.onStop(); it.onDestroy() }
+        items.forEach { it.onStop() }
         lazyInitializedItemCacheMap.clear()
         contexts.values.forEach { it.cancel() }
         coroutineContext.cancelChildren()
