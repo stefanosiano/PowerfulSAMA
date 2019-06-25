@@ -20,6 +20,7 @@ import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentSkipListSet
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -67,6 +68,9 @@ open class SamaRvAdapter(
 
     /** Map that link string ids to unique long numbers, to use as stableId */
     private val idsMap: ConcurrentHashMap<String, Long> = ConcurrentHashMap()
+
+    /** Map that link string ids to unique long numbers, to use as stableId */
+    private val maxId = AtomicLong(0)
 
     /** Job used to bind the item list in the background */
     private var bindListJob: Job? = null
@@ -306,7 +310,7 @@ open class SamaRvAdapter(
             listItem.getStableId()
         else {
             val id = idsMap[listItem.getStableIdString()] ?: RecyclerView.NO_ID
-            if(id == RecyclerView.NO_ID) idsMap[listItem.getStableIdString()] = idsMap.size.toLong()
+            if(id == RecyclerView.NO_ID) idsMap[listItem.getStableIdString()] = maxId.incrementAndGet()
             idsMap[listItem.getStableIdString()] ?: RecyclerView.NO_ID
         }
     }
