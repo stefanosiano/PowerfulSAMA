@@ -34,8 +34,11 @@ object Res {
     /** Retrieve a color based on the current theme. NOTE: calling this method when there is no visible activity will use application context, losing theme information */
     fun color(resourceId: Int, context: Context? = null): Int = (context ?: currentActivity?.get() ?: appContext).let { ContextCompat.getColor(it, resourceId) }
 
+    /** Retrieve a string from resources using application context, passing [args]. Can be used anywhere */
+    fun string(resourceId: Int, vararg args: Any): String = appContext.getString(resourceId, *args)
+
     /** Retrieve a string from resources using application context. Can be used anywhere */
-    fun string(resourceId: Int, vararg args: Any): String = appContext.getString(resourceId, args)
+    fun string(resourceId: Int): String = appContext.getString(resourceId)
 
     /** Retrieve a drawable from resources based on the current theme. NOTE: calling this method when there is no visible activity will use application context, losing theme information */
     fun drawable(resourceId: Int, context: Context? = null): Drawable? = (context ?: currentActivity?.get() ?: appContext).let { AppCompatResources.getDrawable(it, resourceId) }
