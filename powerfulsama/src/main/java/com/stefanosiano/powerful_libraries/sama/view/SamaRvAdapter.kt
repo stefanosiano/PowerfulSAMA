@@ -113,7 +113,7 @@ open class SamaRvAdapter(
     /** Changes the layout of the rows and reload the list */
     fun setItemLayoutId(itemLayoutId: Int) {
         this.itemLayoutId = itemLayoutId
-        dataSetChanged()
+        runOnUi { dataSetChanged() }
     }
 
     override fun getItemCount():Int = items.size
@@ -190,12 +190,14 @@ open class SamaRvAdapter(
         bindListJob = launch {
             items.removeOnListChangedCallback(onListChangedCallback)
             saveAll()
-            items.clear()
-            contexts.clear()
-            items = list as ObservableList<SamaListItem>
-            items.addOnListChangedCallback(onListChangedCallback)
-            runOnUi { itemRangeInserted(0, list.size) }
-            startLazyInits()
+            runOnUi {
+                items.clear()
+                contexts.clear()
+                items = list as ObservableList<SamaListItem>
+                items.addOnListChangedCallback(onListChangedCallback)
+                itemRangeInserted(0, list.size)
+                startLazyInits()
+            }
         }
         return this
     }
@@ -220,6 +222,7 @@ open class SamaRvAdapter(
                     contexts.clear()
                     items.addAll(list)
                     dataSetChanged()
+                    startLazyInits()
                 }
             } else {
                 val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
@@ -241,9 +244,9 @@ open class SamaRvAdapter(
                         if(itemCached?.contentEquals(it) == true) itemCached else it
                     })
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+                    startLazyInits()
                 }
             }
-            runOnUi { startLazyInits() }
         }
 
         return this
@@ -434,11 +437,11 @@ open class SamaRvAdapter(
 
         private val adapterReference = WeakReference(bindingRvAdapter)
 
-        @Synchronized override fun onChanged(sender: ObservableList<SamaListItem>?) { adapterReference.get()?.dataSetChanged() }
-        @Synchronized override fun onItemRangeRemoved(sender: ObservableList<SamaListItem>?, positionStart: Int, itemCount: Int) { adapterReference.get()?.itemRangeRemoved(positionStart, itemCount) }
-        @Synchronized override fun onItemRangeMoved(sender: ObservableList<SamaListItem>?, fromPosition: Int, toPosition: Int, itemCount: Int) { adapterReference.get()?.itemRangeMoved(fromPosition, toPosition, itemCount) }
-        @Synchronized override fun onItemRangeInserted(sender: ObservableList<SamaListItem>?, positionStart: Int, itemCount: Int) { adapterReference.get()?.itemRangeInserted(positionStart, itemCount) }
-        @Synchronized override fun onItemRangeChanged(sender: ObservableList<SamaListItem>?, positionStart: Int, itemCount: Int) { adapterReference.get()?.itemRangeChanged(positionStart, itemCount) }
+        @Synchronized override fun onChanged(sender: ObservableList<SamaListItem>?) { runOnUi { adapterReference.get()?.dataSetChanged() } }
+        @Synchronized override fun onItemRangeRemoved(sender: ObservableList<SamaListItem>?, positionStart: Int, itemCount: Int) { runOnUi { adapterReference.get()?.itemRangeRemoved(positionStart, itemCount) } }
+        @Synchronized override fun onItemRangeMoved(sender: ObservableList<SamaListItem>?, fromPosition: Int, toPosition: Int, itemCount: Int) { runOnUi { adapterReference.get()?.itemRangeMoved(fromPosition, toPosition, itemCount) } }
+        @Synchronized override fun onItemRangeInserted(sender: ObservableList<SamaListItem>?, positionStart: Int, itemCount: Int) { runOnUi { adapterReference.get()?.itemRangeInserted(positionStart, itemCount) } }
+        @Synchronized override fun onItemRangeChanged(sender: ObservableList<SamaListItem>?, positionStart: Int, itemCount: Int) { runOnUi { adapterReference.get()?.itemRangeChanged(positionStart, itemCount) } }
     }
 
 
