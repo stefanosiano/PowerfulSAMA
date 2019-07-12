@@ -10,6 +10,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.snackbar.Snackbar
+import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
 import com.stefanosiano.powerful_libraries.sama.runOnUi
 import com.stefanosiano.powerful_libraries.sama.runOnUiAndWait
 import kotlinx.coroutines.*
@@ -130,8 +131,7 @@ class Msg private constructor(
      */
     companion object : CoroutineScope {
 
-        private val loggingExceptionHandler = CoroutineExceptionHandler { _, t -> t.printStackTrace() }
-        override val coroutineContext = SupervisorJob() + loggingExceptionHandler
+        override val coroutineContext = coroutineSamaHandler(SupervisorJob())
 
         /** Shared unique id used to check equality with other messages  */
         private val uniqueId: AtomicLong = AtomicLong(0)

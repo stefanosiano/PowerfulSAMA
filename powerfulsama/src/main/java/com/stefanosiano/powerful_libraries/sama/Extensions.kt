@@ -11,8 +11,10 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
+import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
+import kotlin.coroutines.CoroutineContext
 
 
 internal val mainThreadHandler by lazy { Handler(Looper.getMainLooper()) }
@@ -276,3 +278,5 @@ inline fun <E, M> M.removeWhen(filter: (E) -> Boolean): M where M: MutableCollec
 /** For loop that uses iterator item (useful to modify elements in a list without concurrentModification exceptions) */
 inline fun <T,S> T.iterate(f: (S) -> Unit): T where T: Iterable<S> { val i = iterator(); while(i.hasNext()) { f(i.next()) }; return this }
 
+/** Creates a [CoroutineExceptionHandler] that calls [PowerfulSama.onCoroutineException] in case of error and logs the stackTrace */
+internal fun CoroutineScope.coroutineSamaHandler(job: Job): CoroutineContext = job + CoroutineExceptionHandler { _, t -> t.printStackTrace(); PowerfulSama.onCoroutineException?.invoke(this::class.java, t) }

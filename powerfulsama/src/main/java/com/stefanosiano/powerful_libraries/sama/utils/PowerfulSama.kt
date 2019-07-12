@@ -9,7 +9,9 @@ import java.lang.Exception
 
 object PowerfulSama {
 
-    internal var onExceptionWorkarounded: ((clazz: Class<*>, e: Exception) -> Unit)? = null
+    internal var onExceptionWorkarounded: ((clazz: Class<*>, e: Throwable) -> Unit)? = null
+    internal var onCoroutineException: ((clazz: Class<*>, e: Throwable) -> Unit)? = null
+
     /** Initializes the SAMA library
      *
      * [application] needed to initialize the library
@@ -46,5 +48,9 @@ object PowerfulSama {
     /** Sets the current activity on which to show the messages */
     private fun setResActivity(activity: Activity?) = activity?.let { Res.setCurrentActivity(it) }
 
-    fun onExceptionWorkarounded(f: (clazz: Class<*>, e: Exception) -> Unit) { onExceptionWorkarounded = f }
+    /** Function to be called when a workaround for a problem is detected (try/catch empty blocks) */
+    fun onExceptionWorkarounded(f: (clazz: Class<*>, e: Throwable) -> Unit) { onExceptionWorkarounded = f }
+
+    /** Function to be called when a coroutine fails and throws an exception */
+    fun onCoroutineException(f: (clazz: Class<*>, e: Throwable) -> Unit) { onCoroutineException = f }
 }

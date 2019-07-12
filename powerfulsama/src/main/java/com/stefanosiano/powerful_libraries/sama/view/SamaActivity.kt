@@ -6,6 +6,7 @@ import androidx.databinding.*
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import com.stefanosiano.powerful_libraries.sama.*
+import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel
 import com.stefanosiano.powerful_libraries.sama.viewModel.VmResponse
 import kotlinx.coroutines.*
@@ -14,8 +15,8 @@ import java.util.concurrent.atomic.AtomicLong
 
 /** Abstract Activity for all Activities to extend */
 abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
-    private val loggingExceptionHandler = CoroutineExceptionHandler { _, t -> t.printStackTrace() ; handleCoroutineException(t) }
-    override val coroutineContext = SupervisorJob() + loggingExceptionHandler
+    private val coroutineJob: Job = SupervisorJob()
+    override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
     /** List of observable callbacks that will be observed until the viewModel is destroyed */
     private val observables = ArrayList<Pair<Observable, Observable.OnPropertyChangedCallback>>()
@@ -29,8 +30,6 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         observables.clear()
         coroutineContext.cancel()
     }
-
-    protected open fun handleCoroutineException(t: Throwable) {}
 
     /** Initializes the toolbar leaving the default title */
     protected fun initActivity() = initActivity("")

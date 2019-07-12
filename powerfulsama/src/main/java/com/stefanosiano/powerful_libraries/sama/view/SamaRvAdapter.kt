@@ -1,6 +1,5 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
-import android.util.LongSparseArray
 import android.util.SparseArray
 import android.util.SparseIntArray
 import android.view.LayoutInflater
@@ -16,6 +15,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.*
+import com.stefanosiano.powerful_libraries.sama.utils.KLongSparseArray
+import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
@@ -41,7 +42,7 @@ open class SamaRvAdapter(
 ): RecyclerView.Adapter<SamaRvAdapter.SimpleViewHolder>(), CoroutineScope {
 
     private val coroutineJob: Job = SupervisorJob()
-    override val coroutineContext = coroutineJob + CoroutineExceptionHandler { _, t -> t.printStackTrace() }
+    override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
     private val itemLayoutIds = SparseIntArray()
 
@@ -64,7 +65,7 @@ open class SamaRvAdapter(
     private val savedItems: HashMap<Long, SparseArray<Any>> = HashMap()
 
     /** map that saves initialized variables to avoid to reinitialize them when reloaded */
-    private val lazyInitializedItemCacheMap = LongSparseArray<SamaListItem>()
+    private val lazyInitializedItemCacheMap = KLongSparseArray<SamaListItem>()
 
     /** Map that link string ids to unique long numbers, to use as stableId */
     private val idsMap: ConcurrentHashMap<String, Long> = ConcurrentHashMap()
@@ -326,9 +327,10 @@ open class SamaRvAdapter(
 
         //remove the observer from the optional current liveData
         runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
-        items.forEach { it.onStop() }
+        //putting try blocks: if object is destroyed and variables (lists) are destroyed before finishing this function, there could be some crash
+        items.forEach { tryOrNull { it.onStop() } }
         lazyInitializedItemCacheMap.clear()
-        contexts.values.forEach { it.cancel() }
+        contexts.values.forEach { tryOrNull { it.cancel() } }
         coroutineContext.cancelChildren()
     }
 

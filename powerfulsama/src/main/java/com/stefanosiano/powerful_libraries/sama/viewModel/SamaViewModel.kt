@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.databinding.*
 import androidx.lifecycle.*
 import com.stefanosiano.powerful_libraries.sama.*
+import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -19,8 +20,8 @@ import java.util.concurrent.atomic.AtomicLong
 open class SamaViewModel<A>
 /** Initializes the LiveData of the response */
 protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAction {
-    private val loggingExceptionHandler = CoroutineExceptionHandler { _, t -> t.printStackTrace() ; handleCoroutineException(t) }
-    override val coroutineContext = SupervisorJob() + loggingExceptionHandler
+    private val coroutineJob: Job = SupervisorJob()
+    override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
     /** Last action sent to the activity. Used to avoid sending multiple actions together (like pressing on 2 buttons) */
     private var lastSentAction: A? = null
@@ -45,8 +46,6 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
 
     /** Clears the LiveData of the response to avoid the observer receives it over and over on configuration changes */
     fun clearVmResponse() = liveResponse.postValue(null)
-
-    protected open fun handleCoroutineException(t: Throwable) {}
 
 
     /**
