@@ -24,10 +24,15 @@ class LiveDataExtensions
 
 
 
-/** Returns a liveData that will be updated with the values of the liveData returned by [f] (executed through [launch]) */
-inline fun <T> CoroutineScope.liveData(crossinline f: suspend () -> LiveData<T>): LiveData<T> =
-    MediatorLiveData<T>().also { mld -> this.launch { f().let { ld -> mld.addSourceLd(ld) { mld.postValue(it) } } } }
+/** Returns a liveData that will be updated with the values of the liveData returned by [f] (executed through [launch] and delayed by [millis] (just the first time)) */
+inline fun <T> CoroutineScope.liveData(millis: Long = 0, crossinline f: suspend () -> LiveData<T>): LiveData<T> =
+    MediatorLiveData<T>().also { mld -> this.launch { delay(millis); f().let { ld -> mld.addSourceLd(ld) { mld.postValue(it) } } } }
 
+/** Runs [f] only when [data] value is not null */
+suspend fun <T> CoroutineScope.waitUntil(data: ObservableField<T>, f: suspend (data: T) -> Unit) { while(data.get() == null) delay(100); return f(data.get()!!) }
+
+/** Runs [f] only when [t] returns true */
+suspend fun <T> CoroutineScope.waitUntil(t: () -> T?, f: suspend (data: T) -> Unit) { while(t() == null) delay(100); return f(t()!!) }
 
 
 /** Returns a liveData that will be updated with the values of the liveData returned by [f].
@@ -208,22 +213,6 @@ inline fun Observable.onChangeAndNow(c: CoroutineScope? = null, crossinline f: s
 inline fun Observable.onChange(c: CoroutineScope? = null, crossinline f: suspend () -> Unit) =
     object : Observable.OnPropertyChangedCallback() { override fun onPropertyChanged(o: Observable?, id: Int) { launchOrNow(c) { f() } } }.also { addOnPropertyChangedCallback(it) }
 
-
-
-
-class AndroidExtensions
-
-/** Returns the drawable associated with the id */
-fun Context.compatDrawable(drawableId: Int) = AppCompatResources.getDrawable(this, drawableId)
-
-/** Returns the color associated with the id */
-fun Context.compatColor(colorId: Int) = ContextCompat.getColor(this, colorId)
-
-/** Returns the dimension associated with the id in dp */
-fun Context.dimensInDp(dimenId: Int) = resources.getDimension(dimenId)/resources.displayMetrics.density
-
-/** Returns the dimension associated with the id in px */
-fun Context.dimensInPx(dimenId: Int) = resources.getDimension(dimenId)
 
 
 

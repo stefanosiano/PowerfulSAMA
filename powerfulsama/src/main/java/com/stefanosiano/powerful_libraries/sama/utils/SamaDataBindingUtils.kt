@@ -1,6 +1,7 @@
 package com.stefanosiano.powerful_libraries.sama.utils
 
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.drawable.Drawable
 import android.text.TextUtils
@@ -20,6 +21,10 @@ import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
 
 
 class SamaDataBindingUtils
+
+/** Puts the [bitmap] into the [imageView] */
+@BindingAdapter("app:src")
+fun setImageViewSource(imageView: ImageView, bitmap: Bitmap?) { imageView.post { imageView.setImageBitmap(bitmap) } }
 
 /** Puts the [drawable] into the [imageView] */
 @BindingAdapter("app:src")

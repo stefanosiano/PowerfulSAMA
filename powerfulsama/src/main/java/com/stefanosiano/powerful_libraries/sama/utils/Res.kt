@@ -43,4 +43,10 @@ object Res {
     /** Retrieve a drawable from resources based on the current theme. NOTE: calling this method when there is no visible activity will use application context, losing theme information */
     fun drawable(resourceId: Int, context: Context? = null): Drawable? = (context ?: currentActivity?.get() ?: appContext).let { AppCompatResources.getDrawable(it, resourceId) }
 
+
+    /** Returns [dimenId] in dp */
+    fun dimensInDp(dimenId: Int, context: Context? = null) = (context ?: currentActivity?.get() ?: appContext).let { it.resources.getDimension(dimenId)/it.resources.displayMetrics.density }
+
+    /** Returns [dimenId] in px */
+    fun dimensInPx(dimenId: Int, context: Context? = null) = (context ?: currentActivity?.get() ?: appContext).resources.getDimension(dimenId)
 }
