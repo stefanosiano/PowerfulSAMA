@@ -124,8 +124,8 @@ open class SamaRvAdapter(
         if(hasStableId) items.runAndWait { savedItems[getItemStableId(it)] = it.onSaveItems(SparseArray()) }
     }
 
-    /** forces all items to reload all saved variables */
-    fun forceReload() { if(hasStableId) items.runAndWait { bindItemToViewHolder(null, it, getItemContext(it)!!) } }
+    /** forces all items to call their [SamaListItem.onBind] and [SamaListItem.onBindInBackground]. Only if [hasStableId] is true */
+    fun rebind() { if(hasStableId) items.forEach { bindItemToViewHolder(null, it, getItemContext(it)!!) } }
 
     override fun getItemViewType(position: Int): Int = getItem(position)?.getViewType() ?: -1
 
