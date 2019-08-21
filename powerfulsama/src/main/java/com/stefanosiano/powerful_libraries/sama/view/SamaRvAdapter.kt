@@ -61,9 +61,6 @@ open class SamaRvAdapter(
     /** items implemented through live data */
     private var liveDataItems: LiveData<out List<SamaListItem>>? = null
 
-    /** map that saves variables of each row and reload them when the items are reloaded (available only if hasStableId = true) */
-    private val savedItems: HashMap<Long, SparseArray<Any>> = HashMap()
-
     /** map that saves initialized variables to avoid to reinitialize them when reloaded */
     private val lazyInitializedItemCacheMap = KLongSparseArray<SamaListItem>()
 
@@ -119,11 +116,6 @@ open class SamaRvAdapter(
 
     override fun getItemCount():Int = items.size
 
-    /** save variables for each item that will be restored when the list is reloaded */
-    private fun saveAll(){
-        if(hasStableId) items.runAndWait { savedItems[getItemStableId(it)] = it.onSaveItems(SparseArray()) }
-    }
-
     /** forces all items to call their [SamaListItem.onBind] and [SamaListItem.onBindInBackground]. Only if [hasStableId] is true */
     fun rebind() { if(hasStableId) items.forEach { bindItemToViewHolder(null, it, getItemContext(it)!!) } }
 
@@ -164,18 +156,7 @@ open class SamaRvAdapter(
         if(!isActive) return
 
         runBlocking { bindListJob?.join() }
-        val bindBackgrounJob = launch(context) { listItem.onBindInBackground(initObjects) }
-
-        //reload saved variables of the items
-        if(hasStableId) {
-            val saved = savedItems[getItemStableId(listItem)]
-            if(saved != null) {
-                runBlocking(context) { bindBackgrounJob.join() }
-                listItem.onReload(saved)
-                launch(context) { listItem.onReloadInBackground(saved) }
-            }
-            savedItems.remove(getItemStableId(listItem))
-        }
+        launch(context) { listItem.onBindInBackground(initObjects) }
     }
 
     /**
@@ -190,7 +171,6 @@ open class SamaRvAdapter(
         bindListJob?.cancel()
         bindListJob = launch {
             items.removeOnListChangedCallback(onListChangedCallback)
-            saveAll()
             runOnUi {
                 items.clear()
                 contexts.clear()
@@ -214,7 +194,6 @@ open class SamaRvAdapter(
         this.items.removeOnListChangedCallback(onListChangedCallback)
         bindListJob?.cancel()
         bindListJob = launch {
-            saveAll()
             if (!isActive) return@launch
             if (forceReload) {
                 if (!isActive) return@launch
@@ -261,12 +240,12 @@ open class SamaRvAdapter(
             if(!preserveLazyInitializedItemCache)
                 lazyInitializedItemCacheMap.clear()
             items.filter { it.isLazyInitialized() }.forEach { lazyInitializedItemCacheMap.put(getItemStableId(it), it) }
-            delay(170)
+            delay(150)
             val lazyItems = items.filter { !it.isLazyInitialized() }
-            lazyItems.iterate{
+            lazyItems.iterateIndexed { item, index ->
                 if(!isActive) return@launch
-                if(lazyInit(it))
-                    delay(17)
+                if(lazyInit(item))
+                    delay(15+5*index.toLong())
             }
         }
     }
@@ -393,7 +372,6 @@ open class SamaRvAdapter(
     //list observer stuff
     /** Function to be called when some items change */
     private fun itemRangeChanged(positionStart: Int, itemCount: Int) = runOnUi {
-        this.saveAll()
         notifyItemRangeChanged(positionStart, itemCount)
     }
 
@@ -408,7 +386,6 @@ open class SamaRvAdapter(
 
     /** Function to be called when some items are removed */
     private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = runOnUi {
-        this.saveAll()
         for(i in positionStart until positionStart+itemCount) {
             getItem(i)?.let { it.onStop() }
             getItemContext(i).cancel()
@@ -419,7 +396,6 @@ open class SamaRvAdapter(
 
     /** Function to be called when the whole list changes */
     private fun dataSetChanged() {
-        this.saveAll()
         items.forEach { it.onStop() }
         lazyInitializedItemCacheMap.clear()
         contexts.values.forEach { it.cancel() }

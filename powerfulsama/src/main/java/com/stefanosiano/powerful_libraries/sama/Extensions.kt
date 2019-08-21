@@ -267,5 +267,8 @@ inline fun <E, M> M.removeWhen(filter: (E) -> Boolean): M where M: MutableCollec
 /** For loop that uses iterator item (useful to modify elements in a list without concurrentModification exceptions) */
 inline fun <T,S> T.iterate(f: (S) -> Unit): T where T: Iterable<S> { val i = iterator(); while(i.hasNext()) { f(i.next()) }; return this }
 
+/** For loop that uses iterator item (useful to modify elements in a list without concurrentModification exceptions) */
+inline fun <T,S> T.iterateIndexed(f: (S, index: Int) -> Unit): T where T: Iterable<S> { val i = iterator(); var index = 0; while(i.hasNext()) { f(i.next(), index); index++ }; return this }
+
 /** Creates a [CoroutineExceptionHandler] that calls [PowerfulSama.onCoroutineException] in case of error and logs the stackTrace */
 internal fun CoroutineScope.coroutineSamaHandler(job: Job): CoroutineContext = job + CoroutineExceptionHandler { _, t -> t.printStackTrace(); PowerfulSama.onCoroutineException?.invoke(this::class.java, t) }
