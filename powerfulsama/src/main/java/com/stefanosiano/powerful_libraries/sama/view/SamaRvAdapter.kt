@@ -245,7 +245,7 @@ open class SamaRvAdapter(
             lazyItems.iterateIndexed { item, index ->
                 if(!isActive) return@launch
                 if(lazyInit(item))
-                    delay(15+5*index.toLong())
+                    delay((5*index.toLong()).coerceAtMost(100))
             }
         }
     }

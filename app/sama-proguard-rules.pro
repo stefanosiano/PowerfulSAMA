@@ -21,4 +21,4 @@
 #-renamesourcefileattribute SourceFile
 
 
--keep class com.stefanosiano.powerfullibraries.sama.ui.** { *; }
+-keep class com.stefanosiano.powerful_libraries.sama.ui.** { *; }
