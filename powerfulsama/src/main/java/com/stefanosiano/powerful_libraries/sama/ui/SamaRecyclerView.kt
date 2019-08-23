@@ -16,7 +16,7 @@ open class SamaRecyclerView: RecyclerView {
 
         val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.SamaRecyclerView, defStyle, 0)
         val columns = attrSet.getInt(R.styleable.SamaRecyclerView_srv_columns, 0)
-        val inconsistencyWorkaround = attrSet.getBoolean(R.styleable.SamaRecyclerView_srv_inconsistency_workaround, false)
+        val inconsistencyWorkaround = attrSet.getBoolean(R.styleable.SamaRecyclerView_srv_inconsistency_workaround, true)
 
         if(columns > 0) {
             when {

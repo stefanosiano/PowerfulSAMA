@@ -117,7 +117,7 @@ open class SamaRvAdapter(
     override fun getItemCount():Int = items.size
 
     /** forces all items to call their [SamaListItem.onBind] and [SamaListItem.onBindInBackground]. Only if [hasStableId] is true */
-    fun rebind() { if(hasStableId) items.forEach { bindItemToViewHolder(null, it, getItemContext(it)!!) } }
+    @Synchronized fun rebind() { runOnUi { if(hasStableId) items.iterate { bindItemToViewHolder(null, it, getItemContext(it)!!) } } }
 
     override fun getItemViewType(position: Int): Int = getItem(position)?.getViewType() ?: -1
 
