@@ -20,7 +20,7 @@ import com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
 
 
-class SamaDataBindingUtils
+class SamaDataBindingAdapters
 
 /** Puts the [bitmap] into the [imageView] */
 @BindingAdapter("src")

@@ -29,10 +29,10 @@ inline fun <T> CoroutineScope.liveData(millis: Long = 0, crossinline f: suspend 
     MediatorLiveData<T>().also { mld -> this.launch { delay(millis); f().let { ld -> mld.addSourceLd(ld) { mld.postValue(it) } } } }
 
 /** Runs [f] only when [data] value is not null */
-suspend fun <T> CoroutineScope.waitUntil(data: ObservableField<T>, f: suspend (data: T) -> Unit) { while(data.get() == null) delay(100); return f(data.get()!!) }
+suspend fun <T> CoroutineScope.delayUntilNotNull(data: ObservableField<T>, f: suspend (data: T) -> Unit) { while(data.get() == null) delay(100); return f(data.get()!!) }
 
-/** Runs [f] only when [t] returns true */
-suspend fun <T> CoroutineScope.waitUntil(t: () -> T?, f: suspend (data: T) -> Unit) { while(t() == null) delay(100); return f(t()!!) }
+/** Delays the current coroutine until [f] returns true */
+suspend fun CoroutineScope.delayUntil(f: () -> Boolean) { while(!f()) delay(100) }
 
 
 /** Returns a liveData that will be updated with the values of the liveData returned by [f].
@@ -182,32 +182,32 @@ fun runOnUi(f: () -> Unit) { if(Looper.myLooper() == mainThreadHandler.looper) f
 
 class ObservableFieldExtensions
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineScope [c] to execute it in the background */
-inline fun <T> ObservableField<T>.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (T?) -> Unit) = onChange(c) { f(get()) }.also { launchOrNow(c) { f(get()) } }
+/** Called by an Observable whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
+inline fun <T> ObservableField<T>.addOnChangedAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend (T?) -> Unit) = onChange(c) { f(get()) }.also { if(!skipFirst) launchOrNow(c) { f(get()) } }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineScope [c] to execute it in the background */
-inline fun ObservableBoolean.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Boolean) -> Unit ) = onChange(c) { f(get()) }.also { launchOrNow(c) { f(get()) } }
+/** Called by an Observable whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
+inline fun ObservableBoolean.addOnChangedAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend (Boolean) -> Unit ) = onChange(c) { f(get()) }.also { if(!skipFirst) launchOrNow(c) { f(get()) } }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineScope [c] to execute it in the background */
-inline fun ObservableByte.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Byte) -> Unit ) = onChange(c) { f(get()) }.also { launchOrNow(c) { f(get()) } }
+/** Called by an Observable whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
+inline fun ObservableByte.addOnChangedAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend (Byte) -> Unit ) = onChange(c) { f(get()) }.also { if(!skipFirst) launchOrNow(c) { f(get()) } }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineScope [c] to execute it in the background */
-inline fun ObservableInt.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Int) -> Unit ) = onChange(c) { f(get()) }.also { launchOrNow(c) { f(get()) } }
+/** Called by an Observable whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
+inline fun ObservableInt.addOnChangedAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend (Int) -> Unit ) = onChange(c) { f(get()) }.also { if(!skipFirst) launchOrNow(c) { f(get()) } }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineScope [c] to execute it in the background */
-inline fun ObservableShort.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Short) -> Unit ) = onChange(c) { f(get()) }.also { launchOrNow(c) { f(get()) } }
+/** Called by an Observable whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
+inline fun ObservableShort.addOnChangedAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend (Short) -> Unit ) = onChange(c) { f(get()) }.also { if(!skipFirst) launchOrNow(c) { f(get()) } }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineScope [c] to execute it in the background */
-inline fun ObservableLong.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Long) -> Unit ) = onChange(c) { f(get()) }.also { launchOrNow(c) { f(get()) } }
+/** Called by an Observable whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
+inline fun ObservableLong.addOnChangedAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend (Long) -> Unit ) = onChange(c) { f(get()) }.also { if(!skipFirst) launchOrNow(c) { f(get()) } }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineScope [c] to execute it in the background */
-inline fun ObservableFloat.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Float) -> Unit ) = onChange(c) { f(get()) }.also { launchOrNow(c) { f(get()) } }
+/** Called by an Observable whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
+inline fun ObservableFloat.addOnChangedAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend (Float) -> Unit ) = onChange(c) { f(get()) }.also { if(!skipFirst) launchOrNow(c) { f(get()) } }
 
-/** Called by an Observable whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineScope [c] to execute it in the background */
-inline fun ObservableDouble.addOnChangedAndNow(c: CoroutineScope? = null, crossinline f: suspend (Double) -> Unit ) = onChange(c) { f(get()) }.also { launchOrNow(c) { f(get()) } }
+/** Called by an Observable whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
+inline fun ObservableDouble.addOnChangedAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend (Double) -> Unit ) = onChange(c) { f(get()) }.also { if(!skipFirst) launchOrNow(c) { f(get()) } }
 
-/** Calls [f] whenever an observable property changes. It also runs the same function now. You can optionally pass a CoroutineScope [c] to execute it in the background */
-inline fun Observable.onChangeAndNow(c: CoroutineScope? = null, crossinline f: suspend () -> Unit) = onChange(c, f).also { launchOrNow(c) { f() } }
+/** Calls [f] whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
+inline fun Observable.onChangeAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend () -> Unit) = onChange(c, f).also { if(!skipFirst) launchOrNow(c) { f() } }
 
 /** Calls [f] whenever an observable property changes. You can optionally pass a CoroutineScope [c] to execute it in the background */
 inline fun Observable.onChange(c: CoroutineScope? = null, crossinline f: suspend () -> Unit) =
