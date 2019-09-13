@@ -16,6 +16,7 @@ class SamaIntent : Intent {
         private val uids = AtomicLong(0)
         private val variables = HashMap<String, Any>()
         private fun store(key: String, variable: Any?) = variable?.let { variables.put(key, it) }
+        @Suppress("UNCHECKED_CAST")
         private fun <T> retrieve(key: String): T? = variables[key] as? T
         private fun removeExtra(key: String) { variables.remove(key) }
         private fun hasExtra(key: String) = variables.containsKey(key)

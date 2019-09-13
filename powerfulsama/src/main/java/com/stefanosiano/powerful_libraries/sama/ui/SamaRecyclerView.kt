@@ -6,9 +6,13 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.R
+import com.stefanosiano.powerful_libraries.sama.toWeakReference
+import java.lang.ref.WeakReference
 
 /** Simple RecyclerView implementation. It just have a fix to avoid memory leaks when using a long living adapter */
 open class SamaRecyclerView: RecyclerView {
+
+    private var weakAdapter: WeakReference<out Adapter<out ViewHolder>?>? = null
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
@@ -30,9 +34,15 @@ open class SamaRecyclerView: RecyclerView {
         attrSet.recycle()
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        adapter = weakAdapter?.get()
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         //NEEDED to avoid memory leak! Removes the adapter, removing the lock on any observer/liveData
+        weakAdapter = adapter.toWeakReference()
         adapter = null
     }
 }

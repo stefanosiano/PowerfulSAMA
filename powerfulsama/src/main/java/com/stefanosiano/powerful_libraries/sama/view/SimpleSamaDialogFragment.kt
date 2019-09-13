@@ -101,6 +101,7 @@ open class SimpleSamaDialogFragment: DialogFragment() {
     }
 
     /** Function used to call [dismiss] from dataBinding */
+    @Suppress("UNUSED_PARAMETER")
     fun dismiss(view: View) = dismiss()
 
     /** Shows the dialog fragment, without using a tag */

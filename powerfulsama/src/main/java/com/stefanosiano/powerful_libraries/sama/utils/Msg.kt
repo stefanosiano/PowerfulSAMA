@@ -300,11 +300,13 @@ class Msg private constructor(
     /** Shows the message and returns its implementation (e.g. AlertDialog). Always prefer to pass [context] (an Activity if possible, especially for AlertDialogs and ProgressDialogs).
      * Optionally calls [f] right after building the message and before showing it.
      * If [showMessage] is met (true, default), then the message will be shown, otherwise [onOk] will be called */
+    @Suppress("UNCHECKED_CAST")
     fun <T> showAs(context: Context? = null, f: ((T?) -> Unit)? = null, showMessage: Boolean = true): Msg?
             = build(context)?.also { f?.invoke(it.implementation?.get() as? T?) }?.show(context, showMessage)
 
     /** Build the message and returns it. Optionally calls [f] right after building the message and before showing it.
      * Always prefer to pass [ctx] (an Activity if possible, especially for AlertDialogs and ProgressDialogs) */
+    @Suppress("UNCHECKED_CAST")
     fun <T> buildAs(ctx: Context? = null, f: ((T?) -> Unit)? = null): T? = build(ctx)?.also { f?.invoke(it.implementation?.get() as? T?) }?.implementation?.get() as? T?
 
     /** Build the message and returns it. Always prefer to pass [ctx] (an Activity if possible, especially for AlertDialogs and ProgressDialogs) */
@@ -329,6 +331,7 @@ class Msg private constructor(
     }
 
 
+    @Suppress("DEPRECATION")
     private fun showMessage(ctx: Context?): Msg? {
 
         val context = ctx ?: currentActivity?.get() ?: return null
@@ -361,6 +364,7 @@ class Msg private constructor(
         return this
     }
 
+    @Suppress("DEPRECATION")
     /** Dismisses the message */
     fun dismiss() {
 
@@ -376,6 +380,7 @@ class Msg private constructor(
         }
     }
 
+    @Suppress("DEPRECATION")
     /** Returns if the message is showing (Toasts will always return false) */
     fun isShowing() =
         when (messageImpl) {
@@ -398,6 +403,7 @@ class Msg private constructor(
     }
 
 
+    @Suppress("DEPRECATION")
     private fun buildAsProgressDialog(context: Context): Msg {
         val progressDialog = ProgressDialog(context, theme ?: 0)
         progressDialog.setTitle(title)
