@@ -34,15 +34,18 @@ open class SamaRecyclerView: RecyclerView {
         attrSet.recycle()
     }
 
+
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        adapter = weakAdapter?.get()
+        swapAdapter(weakAdapter?.get(), false)
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         //NEEDED to avoid memory leak! Removes the adapter, removing the lock on any observer/liveData
         weakAdapter = adapter.toWeakReference()
-        adapter = null
+        swapAdapter(null, false)
+//        adapter = null
     }
 }

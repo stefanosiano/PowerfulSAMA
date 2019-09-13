@@ -9,6 +9,8 @@ import java.lang.Exception
 
 object PowerfulSama {
 
+    //todo logs for activities/fragments/viewmodels/etc with levels
+
     internal var onExceptionWorkarounded: ((clazz: Class<*>, e: Throwable) -> Unit)? = null
     internal var onCoroutineException: ((clazz: Class<*>, e: Throwable) -> Unit)? = null
 
