@@ -38,7 +38,7 @@ open class SamaRecyclerView: RecyclerView {
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        swapAdapter(weakAdapter?.get(), false)
+        weakAdapter?.get()?.let { swapAdapter(it, false) }
     }
 
     override fun onDetachedFromWindow() {
