@@ -20,6 +20,7 @@ open class SamaRecyclerView: RecyclerView {
 
         val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.SamaRecyclerView, defStyle, 0)
         val columns = attrSet.getInt(R.styleable.SamaRecyclerView_srv_columns, 0)
+        val horizontal = attrSet.getBoolean(R.styleable.SamaRecyclerView_srv_horizontal, false)
         val inconsistencyWorkaround = attrSet.getBoolean(R.styleable.SamaRecyclerView_srv_inconsistency_workaround, true)
 
         if(columns > 0) {
@@ -28,6 +29,8 @@ open class SamaRecyclerView: RecyclerView {
                 columns == 1 && !inconsistencyWorkaround -> layoutManager = LinearLayoutManager(context)
                 columns > 1 && inconsistencyWorkaround -> layoutManager = SamaGridLayoutManager(context, columns)
                 columns > 1 && !inconsistencyWorkaround -> layoutManager = GridLayoutManager(context, columns)
+                horizontal && inconsistencyWorkaround -> layoutManager = SamaLinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+                horizontal && !inconsistencyWorkaround -> layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             }
         }
 
