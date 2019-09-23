@@ -13,7 +13,7 @@ import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
  *
  * For more info check https://stackoverflow.com/questions/31759171/recyclerview-and-java-lang-indexoutofboundsexception-inconsistency-detected-in/33822747#33822747
  */
-class SamaGridLayoutManager : GridLayoutManager {
+open class SamaGridLayoutManager : GridLayoutManager {
 
     constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) : super(context, attrs, defStyleAttr, defStyleRes)
     constructor(context: Context?, spanCount: Int) : super(context, spanCount)

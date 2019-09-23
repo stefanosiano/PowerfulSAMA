@@ -19,7 +19,7 @@ import java.lang.ref.WeakReference
 /**
  * Class that provides easy Bottom Navigation
  */
-class SamaBottomNavigationView: BottomNavigationView {
+open class SamaBottomNavigationView: BottomNavigationView {
 
     companion object {
         val cacheSelectedId = SparseIntArray()

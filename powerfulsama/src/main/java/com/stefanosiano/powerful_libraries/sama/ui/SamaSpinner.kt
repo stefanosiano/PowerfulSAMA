@@ -21,7 +21,7 @@ import kotlinx.coroutines.SupervisorJob
  * Custom Spinner that uses data binding to always have the most updated values.
  * It supports a collection of strings, or a collection of [SamaSpinnerItem] (pairs key, value).
  */
-class SamaSpinner : AppCompatSpinner, CoroutineScope {
+open class SamaSpinner : AppCompatSpinner, CoroutineScope {
 
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
