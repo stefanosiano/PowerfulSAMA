@@ -106,17 +106,17 @@ open class SimpleSamaFragment: SamaFragment() {
         return this
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        menuFunctions.firstOrNull { it.first == item?.itemId }?.second?.invoke() ?: return super.onOptionsItemSelected(item)
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        menuFunctions.firstOrNull { it.first == item.itemId }?.second?.invoke() ?: return super.onOptionsItemSelected(item)
         return true
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?, inflater: MenuInflater?) {
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         if(menuId != 0)
-            inflater?.inflate(menuId, menu)
+            inflater.inflate(menuId, menu)
         onOptionMenuCreated?.invoke(menu)
 
-        searchView = if(searchMenuId != 0) (menu?.findItem(searchMenuId)?.actionView as? SamaSearchView)?.toWeakReference() else null
+        searchView = if(searchMenuId != 0) (menu.findItem(searchMenuId)?.actionView as? SamaSearchView)?.toWeakReference() else null
         searchView?.get()?.bindQuery(searchString)
         super.onCreateOptionsMenu(menu, inflater)
     }
@@ -131,7 +131,7 @@ open class SimpleSamaFragment: SamaFragment() {
         retainInstance = true
     }
 
-    override fun onAttach(context: Context?) {
+    override fun onAttach(context: Context) {
         super.onAttach(context)
         if (defaultTitle.isEmpty()) this.defaultTitle = activity?.title?.toString() ?: ""
     }

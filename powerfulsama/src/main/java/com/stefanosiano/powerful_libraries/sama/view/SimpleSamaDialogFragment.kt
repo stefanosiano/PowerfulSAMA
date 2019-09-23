@@ -81,14 +81,14 @@ open class SimpleSamaDialogFragment: DialogFragment() {
     override fun onStart() {
         super.onStart()
         if(fullScreen) {
-            dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            dialog?.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        dialog.window?.requestFeature(Window.FEATURE_NO_TITLE)
-        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
+        dialog?.window?.requestFeature(Window.FEATURE_NO_TITLE)
+        dialog?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        dialog?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
 
         if(bindingPairs.isNotEmpty()) {
             binding = DataBindingUtil.inflate(inflater, layoutId, container, false)
@@ -105,5 +105,5 @@ open class SimpleSamaDialogFragment: DialogFragment() {
     fun dismiss(view: View) = dismiss()
 
     /** Shows the dialog fragment, without using a tag */
-    fun show(manager: FragmentManager?) = super.show(manager, tag)
+    fun show(manager: FragmentManager) = super.show(manager, tag)
 }
