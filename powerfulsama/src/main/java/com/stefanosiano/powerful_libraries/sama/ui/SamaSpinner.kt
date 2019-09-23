@@ -9,22 +9,14 @@ import androidx.appcompat.widget.AppCompatSpinner
 import androidx.databinding.Observable
 import androidx.databinding.ObservableField
 import com.stefanosiano.powerful_libraries.sama.*
-import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 
 
 /**
  * Custom Spinner that uses data binding to always have the most updated values.
  * It supports a collection of strings, or a collection of [SamaSpinnerItem] (pairs key, value).
  */
-open class SamaSpinner : AppCompatSpinner, CoroutineScope {
-
-    private val coroutineJob: Job = SupervisorJob()
-    override val coroutineContext = coroutineSamaHandler(coroutineJob)
+open class SamaSpinner : AppCompatSpinner {
 
     private var arrayAdapter: ArrayAdapter<String>? = null
     private val itemMap = HashMap<String, String>()
