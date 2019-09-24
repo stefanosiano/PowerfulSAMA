@@ -164,9 +164,9 @@ open class SamaSpinner : AppCompatSpinner {
 
 
     /** Simple class with 2 simple fields that implements [SamaSpinnerItem] */
-    private class SimpleSpinnerItem(val key: String?, val value: String?) : SamaSpinnerItem{
-        override fun value() = value ?:""
-        override fun key() = key ?:""
+    class SimpleSpinnerItem(val key: String?, val value: String?) : SamaSpinnerItem{
+        override fun value() = value ?: ""
+        override fun key() = key ?: ""
     }
 
 
