@@ -308,6 +308,7 @@ open class SamaRvAdapter(
      *
      * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter
      */
+    @Suppress("UNCHECKED_CAST")
     @Synchronized fun bindPagedItems(list: PagedList<out SamaListItem?>) : SamaRvAdapter {
 
         isPaged = true
@@ -353,6 +354,7 @@ open class SamaRvAdapter(
      *
      * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
      */
+    @Suppress("UNCHECKED_CAST")
     @Synchronized fun bindPagedItems(list: LiveData<out PagedList<out SamaListItem>>?) : SamaRvAdapter {
         isPaged = true
         lazyInitializedItemCacheMap.clear()
