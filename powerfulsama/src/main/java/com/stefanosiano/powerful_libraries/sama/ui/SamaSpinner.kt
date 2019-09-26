@@ -48,7 +48,12 @@ open class SamaSpinner : AppCompatSpinner {
 
         val key = getSelectedKey()
         currentItem.set(SimpleSpinnerItem(key, itemMap[key]))
-        currentItem.addOnChangedAndNow { item -> if(item == null) return@addOnChangedAndNow; item.key?.let { k -> obserablesKeySet.forEach { it.first()?.set(k) } } ; item.value?.let { v -> obserablesValueSet.forEach { it.first()?.set(v) } } }
+        currentItem.addOnChangedAndNow { item ->
+            if(item == null) return@addOnChangedAndNow
+            logDebug("Selected item: ${item.key} -> ${item.value}")
+            item.key?.let { k -> obserablesKeySet.forEach { it.first()?.set(k) } }
+            item.value?.let { v -> obserablesValueSet.forEach { it.first()?.set(v) } }
+        }
 
 
         arrayAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item)
@@ -103,6 +108,10 @@ open class SamaSpinner : AppCompatSpinner {
         arrayAdapter?.clear()
         arrayAdapter?.addAll( items.map { if(showValue) it.value() else it.key() } )
         arrayAdapter?.notifyDataSetChanged()
+
+        logDebug(if(items.isNotEmpty()) "Setting spinner items: " else "No items set for this spinner")
+        items.forEach { logDebug(it.toString()) }
+
         this.showValue = showValue
         if(showValue) setSelectedValue(old) else setSelectedKey(old)
     }
@@ -138,7 +147,8 @@ open class SamaSpinner : AppCompatSpinner {
             }
         }
 
-        weakObs.get()?.let { obserablesKeySet.add(WeakPair(it, callback)); currentItem.set(SimpleSpinnerItem(it.get(), itemMap[it.get()])) }
+        obserablesKeySet.add(WeakPair(obs, callback))
+        currentItem.set(SimpleSpinnerItem(obs.get(), itemMap[obs.get()]))
     }
 
     /**
@@ -157,7 +167,8 @@ open class SamaSpinner : AppCompatSpinner {
             }
         }
 
-        weakObs.get()?.let { obserablesKeySet.add(WeakPair(it, callback)); currentItem.set(SimpleSpinnerItem(itemMap.getKey(it.get()), it.get())) }
+        obserablesKeySet.add(WeakPair(obs, callback))
+        currentItem.set(SimpleSpinnerItem(itemMap.getKey(obs.get()), obs.get()))
     }
 
 
@@ -167,6 +178,8 @@ open class SamaSpinner : AppCompatSpinner {
     class SimpleSpinnerItem(val key: String?, val value: String?) : SamaSpinnerItem{
         override fun value() = value ?: ""
         override fun key() = key ?: ""
+
+        override fun toString(): String = "SimpleSpinnerItem(key=$key, value=$value)"
     }
 
 

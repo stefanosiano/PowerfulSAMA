@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.databinding.*
 import androidx.lifecycle.*
 import com.stefanosiano.powerful_libraries.sama.*
-import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -43,6 +42,12 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
 
     private val observablesMap = ConcurrentHashMap<Long, Int>()
     private val observablesId = AtomicLong(0)
+
+    /** Flag to understand whether multiple actions can be pushed at once (e.g. multiple buttons clicked at the same time) */
+    private var allowConcurrentActions = false
+
+    /** Flag to understand whether multiple same actions can be pushed at once (e.g. same button clicked multiple times at the same time) */
+    private var allowConcurrentSameActions = false
 
     /** Clears the LiveData of the response to avoid the observer receives it over and over on configuration changes */
     fun clearVmResponse() = liveResponse.postValue(null)
@@ -134,27 +139,29 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing if the value of [o] is null or already changed */
     private fun <T> observePrivate(o: Observable, obValue: () -> T?, obFun: suspend (data: T) -> Unit, skipFirst: Boolean, vararg obs: Observable) {
         val obsId = observablesId.incrementAndGet()
+        val f = { data: T -> suspend { logVerbose(data.toString()); obFun(data) } }
+
         obs.forEach { ob ->
             observablesMap[obsId] = 0
             observables.add(Pair(ob, ob.onChange(this) {
                 //increment value of observablesMap[obsId] -> only first call can run this function
                 observablesMap[obsId] = observablesMap[obsId]?.plus(1) ?: 1
                 if(observablesMap[obsId] != 1) return@onChange
-                obValue()?.let { obFun(it) }
+                obValue()?.let { f(it) }
                 //clear value of observablesMap[obsId] -> everyone can run this function
                 observablesMap[obsId] = 0
             }))
         }
         //sets the function to call when using an observable: it sets the observablesMap[obsId] to 2 (it won't be called by obs), run obFun and finally set observablesMap[obsId] to 0 (callable by everyone)
         when(o) {
-            is ObservableInt -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableShort -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableLong -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableFloat -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableDouble -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableBoolean -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableByte -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableField<*> -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
+            is ObservableInt -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableShort -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableLong -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableFloat -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableDouble -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableBoolean -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableByte -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableField<*> -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
         }
     }
 
@@ -175,6 +182,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     /** Clear the liveData observer (if any) */
     override fun onCleared() {
         super.onCleared()
+        logVerbose("onCleared")
         observables.forEach { it.first.removeOnPropertyChangedCallback(it.second) }
         observables.clear()
         runOnUi { observedLiveData.forEach { it.removeObserver(persistentObserver) } }
@@ -201,29 +209,42 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     fun observeVmResponse(lifecycleOwner: LifecycleOwner, observer: ((vmAction: A, vmData: Any?) -> Boolean)? = null) {
         liveResponse.observeLd(lifecycleOwner) {
 
-            launch {
-                if(!isActive) return@launch
+            synchronized(this) {
+                if(!isActive) return@observeLd
 
                 //If i clear the response, I clear the lastSentAction, too
                 if (it == null) {
                     lastSentAction = null
-                    return@launch
+                    return@observeLd
                 }
 
-                //If the lastSentAction is different from the action of this response, it means the user pressed on 2 buttons together, so I block it
-                if (lastSentAction != null && lastSentAction != it.action) {
-                    Log.e(javaClass.simpleName, "VmResponse blocked! Should clear previous response: ${lastSentAction.toString()} \nbefore sending: $it")
-                    return@launch
+
+                if(lastSentAction != null) {
+                    //If the lastSentAction is different from the action of this response, it means the user pressed on 2 buttons together, so I block it
+                    if ( (lastSentAction != it.action && !allowConcurrentActions) || (lastSentAction == it.action && !allowConcurrentSameActions) ) {
+                        logError("VmResponse blocked! Should clear previous response: ${lastSentAction.toString()} \nbefore sending: $it")
+                        return@observeLd
+                    }
                 }
+
+
                 lastSentAction = it.action
+                logVerbose("Sending to activity: $it")
 
-                Log.v(javaClass.simpleName, "Sending to activity: $it")
+                launch {
+                    if (observer?.invoke(it.action, it.data) != false)
+                        liveResponse.postValue(null)
+                }
 
-                if (observer?.invoke(it.action, it.data) != false)
-                    liveResponse.postValue(null)
             }
         }
     }
+
+    /** Set whether multiple same actions at once are allowed (e.g. same button clicked multiple times at the same time). Defaults to [false] */
+    fun allowConcurrentSameActions(allow: Boolean) { allowConcurrentSameActions = allow }
+
+    /** Set whether multiple actions at once are allowed (e.g. multiple buttons clicked at the same time). Defaults to [false] */
+    fun allowConcurrentActions(allow: Boolean) { allowConcurrentActions = allow }
 }
 
 /** Class containing action and data sent from the ViewModel to its observers */

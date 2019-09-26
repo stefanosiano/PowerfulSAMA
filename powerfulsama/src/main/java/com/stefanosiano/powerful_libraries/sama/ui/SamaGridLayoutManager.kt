@@ -5,6 +5,7 @@ import android.util.AttributeSet
 import android.util.Log
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.stefanosiano.powerful_libraries.sama.logExceptionWorkarounded
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 
 /**
@@ -21,9 +22,6 @@ open class SamaGridLayoutManager : GridLayoutManager {
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler?, state: RecyclerView.State) {
         try { super.onLayoutChildren(recycler, state) }
-        catch (e: IndexOutOfBoundsException) {
-            Log.e(this::class.java.simpleName, e.localizedMessage ?: e.message ?: e.toString())
-            PowerfulSama.onExceptionWorkarounded?.invoke(this::class.java, e) ?: Log.e(this::class.java.simpleName, "Exception is not handled! You can use PowerfulSama.onExceptionWorkarounded to catch it!")
-        }
+        catch (e: IndexOutOfBoundsException) { logExceptionWorkarounded(e) }
     }
 }

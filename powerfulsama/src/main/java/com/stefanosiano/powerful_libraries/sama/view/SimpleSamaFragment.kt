@@ -6,6 +6,7 @@ import android.view.*
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ObservableField
 import androidx.databinding.ViewDataBinding
+import com.stefanosiano.powerful_libraries.sama.logVerbose
 import com.stefanosiano.powerful_libraries.sama.toWeakReference
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
 import java.lang.ref.WeakReference
@@ -107,6 +108,7 @@ open class SimpleSamaFragment: SamaFragment() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        logVerbose("Selected item: ${item.title}")
         menuFunctions.firstOrNull { it.first == item.itemId }?.second?.invoke() ?: return super.onOptionsItemSelected(item)
         return true
     }
@@ -126,9 +128,36 @@ open class SimpleSamaFragment: SamaFragment() {
         searchView?.get()?.unbindQuery(searchString ?: return)
     }
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         retainInstance = true
+        logVerbose("onCreate")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        logVerbose("onResume")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        logVerbose("onStart")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        logVerbose("onPause")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        logVerbose("onStop")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        logVerbose("onDestroy")
     }
 
     override fun onAttach(context: Context) {

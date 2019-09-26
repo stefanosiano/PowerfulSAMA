@@ -3,16 +3,14 @@ package com.stefanosiano.powerful_libraries.sama.utils
 import android.app.Activity
 import android.app.Application
 import android.os.Bundle
+import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.logger
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaIntent
 import java.lang.Exception
 
 object PowerfulSama {
 
-    //todo logs for activities/fragments/viewmodels/etc with levels
-
-    internal var onExceptionWorkarounded: ((clazz: Class<*>, e: Throwable) -> Unit)? = null
-    internal var onCoroutineException: ((clazz: Class<*>, e: Throwable) -> Unit)? = null
+    internal var logger: PowerfulSamaLogger? = null
 
     /** Initializes the SAMA library
      *
@@ -21,8 +19,11 @@ object PowerfulSama {
      * [defaultMessageCustomization] is used as customization function called after the message has been shown. Note: It will be called on UI thread
      * [defaultYeslabel] Default "Yes" text
      * [defaultNolabel] Default "No" text
+     * [logger] Logger used internally for base Sama classes
      */
-    fun init(application: Application, defaultMessagesTheme: Int? = null, defaultMessageCustomization: ((Any) -> Unit)? = null, defaultYeslabel: Int = android.R.string.yes, defaultNolabel: Int = android.R.string.no) {
+    fun init(application: Application, defaultMessagesTheme: Int? = null, defaultMessageCustomization: ((Any) -> Unit)? = null,
+             defaultYeslabel: Int = android.R.string.yes, defaultNolabel: Int = android.R.string.no,
+             logger: PowerfulSamaLogger? = null) {
 
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPaused(activity: Activity?) {}
@@ -39,6 +40,7 @@ object PowerfulSama {
         Msg.defaultCustomization = defaultMessageCustomization
         Msg.defaultYes = defaultYeslabel
         Msg.defaultNo = defaultNolabel
+        PowerfulSama.logger = logger
     }
 
     /** Clears the intent used to start an activity */
@@ -49,10 +51,14 @@ object PowerfulSama {
 
     /** Sets the current activity on which to show the messages */
     private fun setResActivity(activity: Activity?) = activity?.let { Res.setCurrentActivity(it) }
+}
 
-    /** Function to be called when a workaround for a problem is detected (try/catch empty blocks) */
-    fun onExceptionWorkarounded(f: (clazz: Class<*>, e: Throwable) -> Unit) { onExceptionWorkarounded = f }
-
-    /** Function to be called when a coroutine fails and throws an exception */
-    fun onCoroutineException(f: (clazz: Class<*>, e: Throwable) -> Unit) { onCoroutineException = f }
+interface PowerfulSamaLogger {
+    fun logVerbose(clazz: Class<*>, message: String)
+    fun logDebug(clazz: Class<*>, message: String)
+    fun logInfo(clazz: Class<*>, message: String)
+    fun logWarning(clazz: Class<*>, message: String)
+    fun logError(clazz: Class<*>, message: String)
+    fun logException(clazz: Class<*>, t: Throwable)
+    fun logExceptionWorkarounded(clazz: Class<*>, t: Throwable)
 }

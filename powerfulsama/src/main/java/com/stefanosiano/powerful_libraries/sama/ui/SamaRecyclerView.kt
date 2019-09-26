@@ -12,8 +12,6 @@ import java.lang.ref.WeakReference
 /** Simple RecyclerView implementation. It just have a fix to avoid memory leaks when using a long living adapter */
 open class SamaRecyclerView: RecyclerView {
 
-//    private var weakAdapter: WeakReference<out Adapter<out ViewHolder>?>? = null
-
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle) {
@@ -37,18 +35,4 @@ open class SamaRecyclerView: RecyclerView {
         attrSet.recycle()
     }
 
-
-
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-//        weakAdapter?.get()?.let { swapAdapter(it, false) }
-    }
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-        //NEEDED to avoid memory leak! Removes the adapter, removing the lock on any observer/liveData
-//        weakAdapter = adapter.toWeakReference()
-//        swapAdapter(null, false)
-//        adapter = null
-    }
 }

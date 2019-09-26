@@ -11,6 +11,8 @@ import androidx.databinding.ObservableList
 import androidx.databinding.ViewDataBinding
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import androidx.paging.AsyncPagedListDiffer
+import androidx.paging.PagedList
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -41,6 +43,15 @@ open class SamaRvAdapter(
 
 ): RecyclerView.Adapter<SamaRvAdapter.SimpleViewHolder>(), CoroutineScope {
 
+    private val mDiffer: AsyncPagedListDiffer<SamaListItem> = AsyncPagedListDiffer(this, object : DiffUtil.ItemCallback<SamaListItem>() {
+        override fun areItemsTheSame(old: SamaListItem, new: SamaListItem) = getItemStableId(old) == getItemStableId(new)
+        override fun areContentsTheSame(old: SamaListItem, new: SamaListItem) = old.contentEquals(new)
+    })
+
+    var isPaged = false
+
+
+
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
@@ -61,6 +72,9 @@ open class SamaRvAdapter(
     /** items implemented through live data */
     private var liveDataItems: LiveData<out List<SamaListItem>>? = null
 
+    /** items implemented through live data */
+    private var liveDataPagedItems: LiveData<out PagedList<SamaListItem>>? = null
+
     /** map that saves initialized variables to avoid to reinitialize them when reloaded */
     private val lazyInitializedItemCacheMap = KLongSparseArray<SamaListItem>()
 
@@ -75,6 +89,9 @@ open class SamaRvAdapter(
 
     /** Function to be called when the liveData changes. It will reload the list */
     private val liveDataObserver = Observer<List<SamaListItem>> { if(it != null) bindItems(it, false) }
+
+    /** Function to be called when the liveData changes. It will reload the list */
+    private val pagedLiveDataObserver = Observer<PagedList<SamaListItem>> { if(it != null) bindPagedItems(it) }
 
     /** Reference to the recyclerView. Will be used to post runnables to the UIthread */
     private var recyclerView: WeakReference<RecyclerView>? = null
@@ -114,7 +131,7 @@ open class SamaRvAdapter(
         runOnUi { dataSetChanged() }
     }
 
-    override fun getItemCount():Int = items.size
+    override fun getItemCount():Int = if(isPaged) mDiffer.itemCount else items.size
 
     /** forces all items to call their [SamaListItem.onBind] and [SamaListItem.onBindInBackground]. Only if [hasStableId] is true */
     @Synchronized fun rebind() { runOnUi { if(hasStableId) items.iterate { bindItemToViewHolder(null, it, getItemContext(it)!!) } } }
@@ -167,6 +184,7 @@ open class SamaRvAdapter(
      */
     @Suppress("unchecked_cast")
     @Synchronized fun bindItems(list: ObservableList<out SamaListItem>) : SamaRvAdapter {
+        isPaged = false
         lazyInitializedItemCacheMap.clear()
         bindListJob?.cancel()
         bindListJob = launch {
@@ -191,6 +209,7 @@ open class SamaRvAdapter(
      * @param forceReload Force the adapter to completely reload all of its items, calling [notifyDataSetChanged]. Use it if you know all the items will change (will be faster), otherwise leave the default (false)
      */
     @Synchronized fun bindItems(list: List<SamaListItem>, forceReload: Boolean = false) : SamaRvAdapter {
+        isPaged = false
         this.items.removeOnListChangedCallback(onListChangedCallback)
         bindListJob?.cancel()
         bindListJob = launch {
@@ -245,7 +264,7 @@ open class SamaRvAdapter(
             lazyItems.iterateIndexed { item, index ->
                 if(!isActive) return@launch
                 if(lazyInit(item))
-                    delay((5*index.toLong()).coerceAtMost(100))
+                    delay(15+5*index.toLong().coerceAtMost(100))
             }
         }
     }
@@ -271,12 +290,77 @@ open class SamaRvAdapter(
      * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
      */
     @Synchronized fun bindItems(list: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
+        isPaged = false
         lazyInitializedItemCacheMap.clear()
         //remove the observer from the optional current liveData
         runOnUi {
             liveDataItems?.removeObserver(liveDataObserver)
             liveDataItems = list
             liveDataItems?.observeForever(liveDataObserver)
+        }
+        return this
+    }
+
+
+
+    /**
+     * Binds the items of the adapter to the passed paged list
+     *
+     * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter
+     */
+    @Synchronized fun bindPagedItems(list: PagedList<out SamaListItem?>) : SamaRvAdapter {
+
+        isPaged = true
+        this.items.removeOnListChangedCallback(onListChangedCallback)
+        bindListJob?.cancel()
+        bindListJob = launch {
+            if (!isActive) return@launch
+
+            recyclerView?.get()?.also {
+                //I have to stop the scrolling if the new list has less items then current item list
+                if(itemCount > list.size) {
+                    val firstPos = (it.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition() ?: items.size
+                    if(firstPos > list.size)
+                        it.stopScroll()
+                }
+            }
+
+            if (!isActive) return@launch
+            items.clear()
+            contexts.clear()
+            mDiffer.submitList(list as PagedList<SamaListItem>) {
+                runOnUi {
+                    items.addAll(list)
+
+                    items = list.snapshot().filterNotNull().mapTo(ObservableArrayList(), {
+                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
+                        if(itemCached?.contentEquals(it) == true) itemCached else it
+                    })
+                    startLazyInits()
+                }
+            }
+        }
+
+        return this
+    }
+
+
+
+
+
+    /**
+     * Binds the items of the adapter to the passed list
+     *
+     * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
+     */
+    @Synchronized fun bindPagedItems(list: LiveData<out PagedList<out SamaListItem>>?) : SamaRvAdapter {
+        isPaged = true
+        lazyInitializedItemCacheMap.clear()
+        //remove the observer from the optional current liveData
+        runOnUi {
+            liveDataPagedItems?.removeObserver(pagedLiveDataObserver)
+            liveDataPagedItems = list as LiveData<PagedList<SamaListItem>>?
+            liveDataPagedItems?.observeForever(pagedLiveDataObserver)
         }
         return this
     }
@@ -306,6 +390,7 @@ open class SamaRvAdapter(
 
         //remove the observer from the optional current liveData
         runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
+        runOnUi { liveDataPagedItems?.removeObserver(pagedLiveDataObserver) }
         //putting try blocks: if object is destroyed and variables (lists) are destroyed before finishing this function, there could be some crash
         items.forEach { tryOrNull { it.onStop() } }
         lazyInitializedItemCacheMap.clear()
@@ -319,12 +404,14 @@ open class SamaRvAdapter(
         this.recyclerView = WeakReference(recyclerView)
         //remove the observer from the optional current liveData
         runOnUi { liveDataItems?.observeForever(liveDataObserver) }
+        runOnUi { liveDataPagedItems?.observeForever(pagedLiveDataObserver) }
     }
 
     /** Clears all data from the adapter (call it only if you know the adapter is not needed anymore!) */
     fun clear() {
         //remove the observer from the optional current liveData
         runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
+        runOnUi { liveDataPagedItems?.removeObserver(pagedLiveDataObserver) }
 
         items.forEach { it.onStop(); it.onDestroy() }
         val i = contexts.values.iterator()
@@ -346,8 +433,14 @@ open class SamaRvAdapter(
     /** Returns all the items in the adapter */
     fun getItems(): List<SamaListItem> = this.items
 
+    @Suppress("UNCHECKED_CAST")
+            /** Returns the currently shown PagedList, but not necessarily the most recent passed via
+             *  [submitList], because a diff is computed asynchronously before updating the currentList value.
+             * May be null if no PagedList is being presented or adapter is not using a paged list */
+    fun getPagedItems(): PagedList<SamaListItem>? = if(isPaged) mDiffer.currentList as PagedList<SamaListItem> else null
+
     /** Returns the item at position [position] */
-    fun getItem(position: Int): SamaListItem? = tryOrNull { items[position] }
+    fun getItem(position: Int): SamaListItem? = tryOrNull { if(isPaged) mDiffer.getItem(position) else items[position] }
 
     /** Returns the coroutine context bound to the item at position [position] */
     private fun getItemContext(position: Int): CoroutineContext = getLIContext( if(hasStableId) getItemId(position) else position.toLong() )

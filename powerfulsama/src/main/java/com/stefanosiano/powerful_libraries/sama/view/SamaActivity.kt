@@ -1,5 +1,7 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
+import android.os.Bundle
+import android.os.PersistableBundle
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.*
@@ -24,8 +26,33 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     private val observablesMap = ConcurrentHashMap<Long, Int>()
     private val observablesId = AtomicLong(0)
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        logVerbose("onCreate")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        logVerbose("onResume")
+    }
+
+    override fun onStart() {
+        super.onStart()
+        logVerbose("onStart")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        logVerbose("onPause")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        logVerbose("onStop")
+    }
     override fun onDestroy() {
         super.onDestroy()
+        logVerbose("onDestroy")
         observables.forEach { it.first.removeOnPropertyChangedCallback(it.second) }
         observables.clear()
         coroutineContext.cancel()
@@ -48,6 +75,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        logVerbose("Selected item ${item.title}")
         if (item.itemId == android.R.id.home) {
             onBackPressed()
             return true
@@ -121,27 +149,30 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
      * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing if the value of [o] is null or already changed */
     private fun <T> observePrivate(o: Observable, obValue: () -> T?, obFun: suspend (data: T) -> Unit, skipFirst: Boolean, vararg obs: Observable) {
         val obsId = observablesId.incrementAndGet()
+        val f = { data: T -> suspend { logVerbose(data.toString()); obFun(data) } }
+
         obs.forEach { ob ->
             observablesMap[obsId] = 0
             observables.add(Pair(ob, ob.onChange(this) {
                 //increment value of observablesMap[obsId] -> only first call can run this function
                 observablesMap[obsId] = observablesMap[obsId]?.plus(1) ?: 1
                 if(observablesMap[obsId] != 1) return@onChange
-                obValue()?.let { obFun(it) }
+                obValue()?.let { f(it) }
                 //clear value of observablesMap[obsId] -> everyone can run this function
                 observablesMap[obsId] = 0
             }))
         }
+
         //sets the function to call when using an observable: it sets the observablesMap[obsId] to 2 (it won't be called by obs), run obFun and finally set observablesMap[obsId] to 0 (callable by everyone)
         when(o) {
-            is ObservableInt -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableShort -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableLong -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableFloat -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableDouble -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableBoolean -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableByte -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
-            is ObservableField<*> -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) obFun(data) }; observablesMap[obsId] = 0 }))
+            is ObservableInt -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableShort -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableLong -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableFloat -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableDouble -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableBoolean -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableByte -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
+            is ObservableField<*> -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) f(data) }; observablesMap[obsId] = 0 }))
         }
     }
 

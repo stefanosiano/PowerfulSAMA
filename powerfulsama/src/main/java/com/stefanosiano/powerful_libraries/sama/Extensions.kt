@@ -12,6 +12,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
+import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.logger
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import kotlin.coroutines.CoroutineContext
@@ -271,4 +272,12 @@ inline fun <T,S> T.iterate(f: (S) -> Unit): T where T: Iterable<S> { val i = ite
 inline fun <T,S> T.iterateIndexed(f: (S, index: Int) -> Unit): T where T: Iterable<S> { val i = iterator(); var index = 0; while(i.hasNext()) { f(i.next(), index); index++ }; return this }
 
 /** Creates a [CoroutineExceptionHandler] that calls [PowerfulSama.onCoroutineException] in case of error and logs the stackTrace */
-internal fun CoroutineScope.coroutineSamaHandler(job: Job): CoroutineContext = job + CoroutineExceptionHandler { _, t -> t.printStackTrace(); PowerfulSama.onCoroutineException?.invoke(this::class.java, t) }
+internal fun CoroutineScope.coroutineSamaHandler(job: Job): CoroutineContext = job + CoroutineExceptionHandler { _, t -> logException(t) }
+
+internal fun Any.logVerbose(m: String) = logger?.logVerbose(this::class.java, m)
+internal fun Any.logDebug(m: String) = logger?.logDebug(this::class.java, m)
+internal fun Any.logInfo(m: String) = logger?.logInfo(this::class.java, m)
+internal fun Any.logWarning(m: String) = logger?.logWarning(this::class.java, m)
+internal fun Any.logError(m: String) = logger?.logError(this::class.java, m)
+internal fun Any.logException(t: Throwable) = logger?.logException(this::class.java, t)
+internal fun Any.logExceptionWorkarounded(t: Throwable) = logger?.logExceptionWorkarounded(this::class.java, t)

@@ -6,6 +6,7 @@ import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
+import com.stefanosiano.powerful_libraries.sama.logVerbose
 import java.util.*
 
 /** Abstract DialogFragment for all DialogFragments to extend */
@@ -74,15 +75,37 @@ open class SimpleSamaDialogFragment: DialogFragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        logVerbose("onCreate")
         this.layoutId = arguments?.getInt(ExtraLayoutId) ?: 0
         this.fullScreen = arguments?.getBoolean(ExtraFullScreen) ?: false
     }
 
+    override fun onResume() {
+        super.onResume()
+        logVerbose("onResume")
+    }
+
     override fun onStart() {
         super.onStart()
+        logVerbose("onStart")
         if(fullScreen) {
             dialog?.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        logVerbose("onPause")
+    }
+
+    override fun onStop() {
+        super.onStop()
+        logVerbose("onStop")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        logVerbose("onDestroy")
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {

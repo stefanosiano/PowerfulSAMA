@@ -10,15 +10,14 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.snackbar.Snackbar
+import com.stefanosiano.powerful_libraries.sama.*
 import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
-import com.stefanosiano.powerful_libraries.sama.runOnUi
-import com.stefanosiano.powerful_libraries.sama.runOnUiAndWait
+import com.stefanosiano.powerful_libraries.sama.logError
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicLong
 
 
-private const val TAG = "Msg"
 /**
  * Class that manages common messages in the app, like ProgressDialogs, AlertDialog, Snackbar, etc.
  *
@@ -312,6 +311,7 @@ class Msg private constructor(
     /** Build the message and returns it. Always prefer to pass [ctx] (an Activity if possible, especially for AlertDialogs and ProgressDialogs) */
     fun build(ctx: Context?): Msg? {
 
+        logVerbose("Building message")
         val context = ctx ?: currentActivity?.get() ?: return null
         initStrings(context.applicationContext)
 
@@ -325,7 +325,7 @@ class Msg private constructor(
                     (getActivityFromCtx(context)?.window?.decorView?.findViewById(android.R.id.content) as? View?)?.let { buildAsSnackbar(it) } ?: buildAsToast(context)
                 }
             }
-            else -> Log.e(TAG, "Cannot understand the implementation type of the message. Skipping show")
+            else -> logError("Cannot understand the implementation type of the message. Skipping show")
         }
         return this
     }
@@ -334,6 +334,7 @@ class Msg private constructor(
     @Suppress("DEPRECATION")
     private fun showMessage(ctx: Context?): Msg? {
 
+        logVerbose("Showing message")
         val context = ctx ?: currentActivity?.get() ?: return null
         initStrings(context.applicationContext)
 
@@ -342,6 +343,7 @@ class Msg private constructor(
         if(autoDismissDelay > 0) {
             autoDismissJob = launch {
                 delay(autoDismissDelay)
+                logWarning("Auto dismissing message: $autoDismissDelay milliseconds are passed")
                 dismiss()
             }
         }
@@ -355,7 +357,7 @@ class Msg private constructor(
                 MessageImpl.AlertDialog -> (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show()
                 MessageImpl.Toast -> (implementation?.get() as Toast).show()
                 MessageImpl.Snackbar -> (implementation?.get() as? Snackbar?)?.show() ?: (implementation?.get() as? Toast?)?.show()
-                else -> { Log.e(TAG, "Cannot understand the implementation type of the message. Skipping show") }
+                else -> { logError("Cannot understand the implementation type of the message. Skipping show") }
             }
 
             implementation?.get()?.let { customize?.invoke(it) }
@@ -368,13 +370,14 @@ class Msg private constructor(
     /** Dismisses the message */
     fun dismiss() {
 
+        logVerbose("Dismiss message")
         runOnUi {
             when (messageImpl) {
                 MessageImpl.ProgressDialog -> (implementation?.get() as? ProgressDialog?)?.let { if (it.isShowing) it.dismiss() }
                 MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> (implementation?.get() as? AlertDialog?)?.let { if (it.isShowing) it.dismiss() }
                 MessageImpl.Toast -> (implementation?.get() as? Toast?)?.cancel()
                 MessageImpl.Snackbar -> (implementation?.get() as? Snackbar?)?.let { if (it.isShown) it.dismiss() }
-                else -> Log.e(TAG, "Cannot understand the implementation type of the message. Skipping dismiss")
+                else -> logError("Cannot understand the implementation type of the message. Skipping dismiss")
             }
             autoDismissJob?.cancel()
         }
@@ -388,7 +391,7 @@ class Msg private constructor(
             MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> (implementation?.get() as? AlertDialog?)?.isShowing
             MessageImpl.Toast -> false
             MessageImpl.Snackbar -> (implementation?.get() as? Snackbar?)?.isShown
-            else -> { Log.e(TAG, "Cannot understand the implementation type of the message. Skipping isShowing"); false }
+            else -> { logError("Cannot understand the implementation type of the message. Skipping isShowing"); false }
         }
 
 
