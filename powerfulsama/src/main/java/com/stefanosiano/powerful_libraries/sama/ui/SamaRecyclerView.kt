@@ -21,7 +21,7 @@ open class SamaRecyclerView: RecyclerView {
         val horizontal = attrSet.getBoolean(R.styleable.SamaRecyclerView_srv_horizontal, false)
         val inconsistencyWorkaround = attrSet.getBoolean(R.styleable.SamaRecyclerView_srv_inconsistency_workaround, true)
 
-        if(columns > 0) {
+        if(columns > 0 || horizontal) {
             when {
                 columns == 1 && inconsistencyWorkaround -> layoutManager = SamaLinearLayoutManager(context)
                 columns == 1 && !inconsistencyWorkaround -> layoutManager = LinearLayoutManager(context)
