@@ -1,6 +1,5 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
-import android.util.SparseArray
 import android.util.SparseIntArray
 import android.view.LayoutInflater
 import android.view.View
@@ -18,13 +17,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.*
 import com.stefanosiano.powerful_libraries.sama.utils.KLongSparseArray
-import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.atomic.AtomicLong
-import kotlin.coroutines.CoroutineContext
 
 /**
  * Class that implements RecyclerViewAdapter in an easy and powerful way!
@@ -100,7 +97,7 @@ open class SamaRvAdapter(
     private var lazyInitsJob : Job? = null
 
     /** Job used to cancel and start lazy initialization */
-    private var onItemUpdated : (suspend (SamaListItem) -> Unit)? = null
+    private var itemUpdatedListeners : MutableList<suspend (SamaListItem) -> Unit> = ArrayList()
 
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
@@ -171,15 +168,16 @@ open class SamaRvAdapter(
         listItem ?: return
         runBlocking(listItem.coroutineContext) { job?.join() }
         listItem.onBind(initObjects)
-        listItem.onItemUpdatedListenerSet { onItemUpdated?.invoke(it) }
+        listItem.onItemUpdatedListenerSet { item -> itemUpdatedListeners.forEach { it.invoke(item) } }
         if(!isActive) return
         runBlocking { bindListJob?.join() }
         listItem.launch { listItem.onBindInBackground(initObjects) }
     }
 
 
-    /** Observe the items of this [RecyclerView] passing the updated item when it changes (when [SamaListItem2.onItemUpdated] is called) */
-    fun observe(f: suspend (item: SamaListItem) -> Unit) { this.onItemUpdated = f }
+    /** Observe the items of this [RecyclerView] passing the updated item when it changes (when [SamaListItem.onItemUpdated] is called) */
+    @Suppress("UNCHECKED_CAST")
+    fun <T> observe(f: suspend (item: T) -> Unit) where T: SamaListItem { this.itemUpdatedListeners.add(f as suspend (SamaListItem) -> Unit) }
 
     /**
      * Binds the items of the adapter to the passed list
@@ -416,6 +414,7 @@ open class SamaRvAdapter(
         runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
         runOnUi { liveDataPagedItems?.removeObserver(pagedLiveDataObserver) }
 
+        itemUpdatedListeners.clear()
         items.forEach { it.onStop(); it.cancelCoroutine(); it.onDestroy() }
         lazyInitializedItemCacheMap.clear()
         coroutineContext.cancel()
