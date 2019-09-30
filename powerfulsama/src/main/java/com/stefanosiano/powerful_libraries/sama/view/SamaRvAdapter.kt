@@ -66,9 +66,6 @@ open class SamaRvAdapter(
     /** items shown bound to rows (implemented through ObservableArrayList) */
     private var items: ObservableList<SamaListItem> = ObservableArrayList()
 
-    /** Coroutine contexts bound to each adapter item */
-    private val contexts = ConcurrentHashMap<Long, CoroutineContext>()
-
     /** items implemented through live data */
     private var liveDataItems: LiveData<out List<SamaListItem>>? = null
 
@@ -102,6 +99,9 @@ open class SamaRvAdapter(
     /** Job used to cancel and start lazy initialization */
     private var lazyInitsJob : Job? = null
 
+    /** Job used to cancel and start lazy initialization */
+    private var onItemUpdated : (suspend (SamaListItem) -> Unit)? = null
+
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
      * [hasStableId] defaults to true
@@ -134,7 +134,7 @@ open class SamaRvAdapter(
     override fun getItemCount():Int = if(isPaged) mDiffer.itemCount else items.size
 
     /** forces all items to call their [SamaListItem.onBind] and [SamaListItem.onBindInBackground]. Only if [hasStableId] is true */
-    @Synchronized fun rebind() { runOnUi { if(hasStableId) items.iterate { bindItemToViewHolder(null, it, getItemContext(it)!!) } } }
+    @Synchronized fun rebind() { runOnUi { if(hasStableId) items.iterate { bindItemToViewHolder(null, it) } } }
 
     override fun getItemViewType(position: Int): Int = getItem(position)?.getViewType() ?: -1
 
@@ -145,17 +145,18 @@ open class SamaRvAdapter(
     }
 
     override fun onBindViewHolder(holder: SimpleViewHolder, position: Int) {
-        getItemContext(position).cancel()
+        val item = getItem(position) ?: return
+        item.cancelCoroutine()
         runBlocking { bindListJob?.join() }
-        val bindJob = launch(getItemContext(holder.adapterPosition)) { holder.binding.get()?.setVariable(itemBindingId, getItem(holder.adapterPosition)) }
-        bindItemToViewHolder(bindJob, getItem(holder.adapterPosition), getItemContext(holder.adapterPosition))
+        val bindJob = item.launch { holder.binding.get()?.setVariable(itemBindingId, getItem(holder.adapterPosition)) }
+        bindItemToViewHolder(bindJob, getItem(holder.adapterPosition))
     }
 
     override fun onViewDetachedFromWindow(holder: SimpleViewHolder) {
         super.onViewDetachedFromWindow(holder)
         val item = getItem(holder.adapterPosition) ?: return
         item.onStop()
-        contexts[getItemStableId(item)]?.cancel()
+        item.cancelCoroutine()
     }
 
     override fun onViewAttachedToWindow(holder: SimpleViewHolder) {
@@ -166,15 +167,19 @@ open class SamaRvAdapter(
     }
 
     /** Function that binds the item to the view holder, calling appropriate methods in the right order */
-    private fun bindItemToViewHolder(job: Job?, listItem: SamaListItem?, context: CoroutineContext){
+    private fun bindItemToViewHolder(job: Job?, listItem: SamaListItem?){
         listItem ?: return
-        runBlocking(context) { job?.join() }
+        runBlocking(listItem.coroutineContext) { job?.join() }
         listItem.onBind(initObjects)
+        listItem.onItemUpdatedListenerSet { onItemUpdated?.invoke(it) }
         if(!isActive) return
-
         runBlocking { bindListJob?.join() }
-        launch(context) { listItem.onBindInBackground(initObjects) }
+        listItem.launch { listItem.onBindInBackground(initObjects) }
     }
+
+
+    /** Observe the items of this [RecyclerView] passing the updated item when it changes (when [SamaListItem2.onItemUpdated] is called) */
+    fun observe(f: suspend (item: SamaListItem) -> Unit) { this.onItemUpdated = f }
 
     /**
      * Binds the items of the adapter to the passed list
@@ -191,7 +196,6 @@ open class SamaRvAdapter(
             items.removeOnListChangedCallback(onListChangedCallback)
             runOnUi {
                 items.clear()
-                contexts.clear()
                 items = list as ObservableList<SamaListItem>
                 items.addOnListChangedCallback(onListChangedCallback)
                 itemRangeInserted(0, list.size)
@@ -218,7 +222,6 @@ open class SamaRvAdapter(
                 if (!isActive) return@launch
                 runOnUi {
                     items.clear()
-                    contexts.clear()
                     items.addAll(list)
                     dataSetChanged()
                     startLazyInits()
@@ -272,7 +275,7 @@ open class SamaRvAdapter(
 
     private fun lazyInit(item: SamaListItem): Boolean {
         if(hasStableId && !item.isLazyInitialized() && !lazyInitSet.contains(getItemStableId(item))) {
-            launch(getItemContext(item)!!) {
+            item.launch {
                 if (!lazyInitSet.add(getItemStableId(item))) return@launch
                 item.onLazyInit()
                 lazyInitializedItemCacheMap.put(getItemStableId(item), item)
@@ -328,7 +331,6 @@ open class SamaRvAdapter(
 
             if (!isActive) return@launch
             items.clear()
-            contexts.clear()
             mDiffer.submitList(list as PagedList<SamaListItem>) {
                 runOnUi {
                     items.addAll(list)
@@ -394,9 +396,8 @@ open class SamaRvAdapter(
         runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
         runOnUi { liveDataPagedItems?.removeObserver(pagedLiveDataObserver) }
         //putting try blocks: if object is destroyed and variables (lists) are destroyed before finishing this function, there could be some crash
-        items.forEach { tryOrNull { it.onStop() } }
+        items.forEach { tryOrNull { it.onStop(); it.cancelCoroutine() } }
         lazyInitializedItemCacheMap.clear()
-        contexts.values.forEach { tryOrNull { it.cancel() } }
         coroutineContext.cancelChildren()
     }
 
@@ -415,10 +416,7 @@ open class SamaRvAdapter(
         runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
         runOnUi { liveDataPagedItems?.removeObserver(pagedLiveDataObserver) }
 
-        items.forEach { it.onStop(); it.onDestroy() }
-        val i = contexts.values.iterator()
-        while(i.hasNext()) { i.next().cancel() }
-        contexts.values.iterate { it.cancel() }
+        items.forEach { it.onStop(); it.cancelCoroutine(); it.onDestroy() }
         lazyInitializedItemCacheMap.clear()
         coroutineContext.cancel()
     }
@@ -426,7 +424,7 @@ open class SamaRvAdapter(
     override fun onViewRecycled(holder: SimpleViewHolder) {
         super.onViewRecycled(holder)
         getItem(holder.adapterPosition)?.onStop()
-        getItemContext(holder.adapterPosition).cancel()
+        getItem(holder.adapterPosition)?.cancelCoroutine()
     }
 
     /** Returns the stableId of the item at position [position], if available and if adapter hasStableId. */
@@ -443,20 +441,6 @@ open class SamaRvAdapter(
 
     /** Returns the item at position [position] */
     fun getItem(position: Int): SamaListItem? = tryOrNull { if(isPaged) mDiffer.getItem(position) else items[position] }
-
-    /** Returns the coroutine context bound to the item at position [position] */
-    private fun getItemContext(position: Int): CoroutineContext = getLIContext( if(hasStableId) getItemId(position) else position.toLong() )
-
-    /** Returns the coroutine context bound to the item [item]. Use it only if [hasStableId]!!! */
-    private fun getItemContext(item: SamaListItem) = if(!hasStableId) null else getLIContext(getItemStableId(item))
-
-
-    private fun getLIContext(itemId: Long): CoroutineContext {
-        if(contexts[itemId]?.isActive != true)
-            contexts.put( itemId, Job(coroutineJob) + CoroutineExceptionHandler { _, t -> t.printStackTrace() } )
-
-        return contexts[itemId]!!
-    }
 
 
 
@@ -482,8 +466,8 @@ open class SamaRvAdapter(
     /** Function to be called when some items are removed */
     private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = runOnUi {
         for(i in positionStart until positionStart+itemCount) {
-            getItem(i)?.let { it.onStop() }
-            getItemContext(i).cancel()
+            getItem(i)?.onStop()
+            getItem(i)?.cancelCoroutine()
         }
 
         notifyItemRangeRemoved(positionStart, itemCount)
@@ -491,9 +475,8 @@ open class SamaRvAdapter(
 
     /** Function to be called when the whole list changes */
     private fun dataSetChanged() {
-        items.forEach { it.onStop() }
+        items.forEach { it.onStop(); it.cancelCoroutine() }
         lazyInitializedItemCacheMap.clear()
-        contexts.values.forEach { it.cancel() }
         coroutineContext.cancelChildren()
         notifyDataSetChanged()
     }
