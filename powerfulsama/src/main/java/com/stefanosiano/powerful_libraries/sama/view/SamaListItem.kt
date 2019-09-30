@@ -54,7 +54,7 @@ abstract class SamaListItem : CoroutineScope {
     internal fun isLazyInitialized(): Boolean { return isLazyInit }
 
     /** Cancel anything the coroutine is doing. Used internally */
-    internal fun cancelCoroutine() { if(isActive) coroutineContext.cancel() }
+    internal fun cancelCoroutine() { coroutineContext.cancelChildren() }
 
     /** Called in background only once when it should be initialized (it's about to be shown or the initialization background thread reaches it). [isLazyInitialized] is used to understand if the item was already lazy initialized */
     open suspend fun onLazyInit() { isLazyInit = true }
