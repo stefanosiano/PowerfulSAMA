@@ -13,6 +13,7 @@ import com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel
 import com.stefanosiano.powerful_libraries.sama.viewModel.VmResponse
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
 /** Abstract Activity for all Activities to extend */
@@ -23,7 +24,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     /** List of observable callbacks that will be observed until the viewModel is destroyed */
     private val observables = ArrayList<Pair<Observable, Observable.OnPropertyChangedCallback>>()
 
-    private val observablesMap = ConcurrentHashMap<Long, Int>()
+    private val observablesMap = ConcurrentHashMap<Long, AtomicInteger>()
     private val observablesId = AtomicLong(0)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -151,27 +152,74 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         val obsId = observablesId.incrementAndGet()
 
         obs.forEach { ob ->
-            observablesMap[obsId] = 0
+            observablesMap[obsId] = AtomicInteger(0)
             observables.add(Pair(ob, ob.onChange(this) {
                 //increment value of observablesMap[obsId] -> only first call can run this function
-                observablesMap[obsId] = observablesMap[obsId]?.plus(1) ?: 1
-                if(observablesMap[obsId] != 1) return@onChange
+                val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+                if(id != 1) return@onChange
                 obValue()?.let { logVerbose(it.toString()); obFun(it) }
                 //clear value of observablesMap[obsId] -> everyone can run this function
-                observablesMap[obsId] = 0
+                observablesMap[obsId]?.set(0)
             }))
         }
-
         //sets the function to call when using an observable: it sets the observablesMap[obsId] to 2 (it won't be called by obs), run obFun and finally set observablesMap[obsId] to 0 (callable by everyone)
         when(o) {
-            is ObservableInt -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }; observablesMap[obsId] = 0 }))
-            is ObservableShort -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }; observablesMap[obsId] = 0 }))
-            is ObservableLong -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }; observablesMap[obsId] = 0 }))
-            is ObservableFloat -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }; observablesMap[obsId] = 0 }))
-            is ObservableDouble -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }; observablesMap[obsId] = 0 }))
-            is ObservableBoolean -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }; observablesMap[obsId] = 0 }))
-            is ObservableByte -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }; observablesMap[obsId] = 0 }))
-            is ObservableField<*> -> observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) { observablesMap[obsId] = 2; obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }; observablesMap[obsId] = 0 }))
+            is ObservableInt -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableShort -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableLong -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableFloat -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableDouble -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableBoolean -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableByte -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableField<*> -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
         }
     }
 
