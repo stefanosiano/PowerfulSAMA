@@ -4,16 +4,19 @@ import android.content.Context
 import android.os.Handler
 import android.util.AttributeSet
 import android.view.View
+import android.widget.ArrayAdapter
 import androidx.appcompat.widget.SearchView
 import androidx.databinding.Observable
 import androidx.databinding.ObservableField
-import com.stefanosiano.powerful_libraries.sama.R
+import androidx.databinding.ObservableList
+import com.stefanosiano.powerful_libraries.sama.*
 import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
-import com.stefanosiano.powerful_libraries.sama.addOnChangedAndNow
-import com.stefanosiano.powerful_libraries.sama.toWeakReference
 
 /** Class that provides easy to use SearchView with data binding */
 open class SamaSearchView : SearchView {
+
+    /** Adapter used to show suggestions while searching */
+    private lateinit var mSuggestionsAdapter: ArrayAdapter<String>
 
     /** Delay in milliseconds to execute the listener or update the observable */
     var millis = 0L
@@ -92,4 +95,33 @@ open class SamaSearchView : SearchView {
     /** Removes the observable from the registered observables */
     fun unbindQuery(queryObs : ObservableField<String>?) = obserablesSet.filter { queryObs != null && it.first() == queryObs }.forEach { it.first()?.removeOnPropertyChangedCallback(it.second() ?: return@forEach) }
 
+
+
+    /** Sets the [suggestions] to show when writing, using [layoutId]. When the user clicks on a suggestion, [f] will be called */
+    fun bindSuggestions(layoutId: Int, suggestions: ObservableList<String>, f: (String) -> Unit) {
+        mSuggestionsAdapter = ArrayAdapter(context, layoutId)
+        bindSuggestions(suggestions, f)
+        suggestions.onAnyChange {
+            mSuggestionsAdapter.clear()
+            mSuggestionsAdapter.addAll(suggestions)
+            runOnUi { mSuggestionsAdapter.notifyDataSetChanged() }
+        }
+    }
+
+    /** Sets the [suggestions] to show when writing, using [layoutId]. When the user clicks on a suggestion, [f] will be called */
+    fun bindSuggestions(layoutId: Int, suggestions: List<String>, f: (String) -> Unit) {
+        mSuggestionsAdapter = ArrayAdapter(context, layoutId)
+        bindSuggestions(suggestions, f)
+    }
+
+    /** Sets the [suggestions] to show when writing. When the user clicks on a suggestion, [f] will be called */
+    private fun bindSuggestions(suggestions: List<String>, f: (String) -> Unit){
+        mSuggestionsAdapter.addAll(suggestions)
+        val searchAutoComplete = findViewById<SearchAutoComplete>(R.id.search_src_text)
+
+        searchAutoComplete.setOnItemClickListener { parent, view, position, id ->
+            mSuggestionsAdapter.getItem(position)?.let { logVerbose("Clicked on $it"); f(it) }
+        }
+        runOnUi { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
+    }
 }

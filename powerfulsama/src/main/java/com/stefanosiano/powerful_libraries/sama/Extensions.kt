@@ -215,6 +215,16 @@ inline fun Observable.onChange(c: CoroutineScope? = null, crossinline f: suspend
     object : Observable.OnPropertyChangedCallback() { override fun onPropertyChanged(o: Observable?, id: Int) { launchOrNow(c) { f() } } }.also { addOnPropertyChangedCallback(it) }
 
 
+/** Calls [f] whenever anything on this list changes. To have a better management use [ObservableList.addOnListChangedCallback] with an [ObservableList.OnListChangedCallback] */
+fun <T> ObservableList<T>.onAnyChange(f: () -> Unit) = addOnListChangedCallback(object : ObservableList.OnListChangedCallback<ObservableList<T>>() {
+    override fun onChanged(sender: ObservableList<T>?) { f() }
+    override fun onItemRangeRemoved(sender: ObservableList<T>?, positionStart: Int, itemCount: Int) { f() }
+    override fun onItemRangeMoved(sender: ObservableList<T>?, fromPosition: Int, toPosition: Int, itemCount: Int) { f() }
+    override fun onItemRangeInserted(sender: ObservableList<T>?, positionStart: Int, itemCount: Int) { f() }
+    override fun onItemRangeChanged(sender: ObservableList<T>?, positionStart: Int, itemCount: Int) { f() }
+})
+
+
 
 
 class Extensions
