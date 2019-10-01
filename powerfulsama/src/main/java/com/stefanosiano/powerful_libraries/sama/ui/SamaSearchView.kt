@@ -119,7 +119,7 @@ open class SamaSearchView : SearchView {
         mSuggestionsAdapter.addAll(suggestions)
         val searchAutoComplete = findViewById<SearchAutoComplete>(R.id.search_src_text)
 
-        searchAutoComplete.setOnItemClickListener { parent, view, position, id ->
+        searchAutoComplete.setOnItemClickListener { _, _, position, _ ->
             mSuggestionsAdapter.getItem(position)?.let { logVerbose("Clicked on $it"); f(it) }
         }
         runOnUi { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
