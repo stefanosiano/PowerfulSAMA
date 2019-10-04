@@ -7,10 +7,17 @@ import com.stefanosiano.powerful_libraries.sama.logVerbose
 import com.stefanosiano.powerful_libraries.sama.tryOrNull
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import kotlinx.coroutines.*
+import java.util.concurrent.atomic.AtomicLong
 
 
 /** Abstract Fragment for all Fragments to extend */
 abstract class SamaFragment: Fragment(), CoroutineScope {
+
+    companion object {
+        private val uid = AtomicLong(0)
+    }
+
+    val uid = Companion.uid.incrementAndGet()
 
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
@@ -51,4 +58,5 @@ abstract class SamaFragment: Fragment(), CoroutineScope {
 
     /** Removes this fragment from the stack of the fragment manager */
     fun remove() { tryOrNull { fragmentManager?.beginTransaction()?.remove(this)?.commit() } }
+
 }

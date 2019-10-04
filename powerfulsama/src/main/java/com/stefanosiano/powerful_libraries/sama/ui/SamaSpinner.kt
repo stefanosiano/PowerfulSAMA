@@ -109,8 +109,8 @@ open class SamaSpinner : AppCompatSpinner {
         arrayAdapter?.addAll( items.map { if(showValue) it.value() else it.key() } )
         arrayAdapter?.notifyDataSetChanged()
 
-        logDebug(if(items.isNotEmpty()) "Setting spinner items: " else "No items set for this spinner")
-        items.forEach { logDebug(it.toString()) }
+        logVerbose(if(items.isNotEmpty()) "Setting spinner items: " else "No items set for this spinner")
+        items.forEach { logVerbose(it.toString()) }
 
         this.showValue = showValue
         if(showValue) setSelectedValue(old) else setSelectedKey(old)
