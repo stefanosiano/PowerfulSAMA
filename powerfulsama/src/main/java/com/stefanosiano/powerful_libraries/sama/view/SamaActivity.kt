@@ -8,6 +8,7 @@ import androidx.databinding.*
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import com.stefanosiano.powerful_libraries.sama.*
+import com.stefanosiano.powerful_libraries.sama.utils.Perms
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel
 import com.stefanosiano.powerful_libraries.sama.viewModel.VmResponse
@@ -84,6 +85,28 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         }
         return super.onOptionsItemSelected(item)
     }
+
+
+
+
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        Perms.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+
+
+
+
+
+
+
+
 
 
     /** Observes a liveData until the ViewModel is destroyed, using a custom observer */

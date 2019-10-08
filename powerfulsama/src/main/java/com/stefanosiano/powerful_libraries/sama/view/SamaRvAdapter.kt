@@ -329,8 +329,8 @@ open class SamaRvAdapter(
 
             if (!isActive) return@launch
             items.clear()
-            mDiffer.submitList(list as PagedList<SamaListItem>) {
-                runOnUi {
+            runOnUi {
+                mDiffer.submitList(list as PagedList<SamaListItem>) {
                     items.addAll(list)
 
                     items = list.snapshot().filterNotNull().mapTo(ObservableArrayList(), {

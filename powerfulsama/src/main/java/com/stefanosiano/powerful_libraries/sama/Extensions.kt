@@ -125,6 +125,26 @@ inline fun <T> LiveData<List<T>>.filter(c: CoroutineScope? = null, crossinline f
 /** Calls [f] with [launch] using passed scope, if it's active. If no scope is passed (it's null), [f] is called directly through [runBlocking] */
 inline fun launchOrNow(c: CoroutineScope?, crossinline f: suspend () -> Unit) { if(c?.isActive == false) return; c?.launch { f() } ?: runBlocking { f() } }
 
+/** Run [f] to get a [LiveData] every time any of [obs] changes. It return a [LiveData] of the same type as [f] */
+fun <T> CoroutineScope.liveDataOnObservableAndNow(vararg obs: ObservableField<*>, f: suspend () -> LiveData<T>): LiveData<T> {
+    val mediatorLiveData = MediatorLiveData<T>()
+    var lastLiveData: LiveData<T>? = null
+
+    val onChanged = suspend {
+        lastLiveData?.also { mediatorLiveData.removeSourceLd(it) }
+        lastLiveData = f()
+        if(lastLiveData != null) mediatorLiveData.addSourceLd(lastLiveData!!) {
+            mediatorLiveData.postValue(it)
+        }
+    }
+
+    //the first time this function is called nothing is changed, so i force the reload manually
+    launch { onChanged.invoke() }
+    obs.forEach { it.onChange(this, onChanged) }
+
+    return mediatorLiveData
+}
+
 /**
  * Returns a list containing only elements matching the given [filterBy].
  * When [observableField] changes, the list is calculated again.
