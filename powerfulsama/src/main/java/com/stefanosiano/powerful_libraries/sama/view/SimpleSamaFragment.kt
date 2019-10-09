@@ -20,6 +20,7 @@ open class SimpleSamaFragment: SamaFragment() {
     private var searchString: ObservableField<String>? = null
     private val bindingPairs: MutableList<Pair<Int, Any>> = ArrayList()
     private val menuFunctions: MutableList<Pair<Int, () -> Unit>> = ArrayList()
+    private var logTag: String? = null
     private var title = ""
     private var defaultTitle = ""
     private var onOptionMenuCreated: ((menu: Menu?) -> Unit)? = null
@@ -79,6 +80,12 @@ open class SimpleSamaFragment: SamaFragment() {
         return this
     }
 
+    /** Sets the tag shown in logs */
+    fun logTag(logTag: String): SimpleSamaFragment {
+        this.logTag = logTag
+        return this
+    }
+
     /** Binds an observableString to a SamaSearchView
      *
      * @param searchMenuId id of the searchView
@@ -108,7 +115,7 @@ open class SimpleSamaFragment: SamaFragment() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        logVerbose("Selected item: ${item.title}")
+        logVerbose("$logTag: Selected item: ${item.title}")
         menuFunctions.firstOrNull { it.first == item.itemId }?.second?.invoke() ?: return super.onOptionsItemSelected(item)
         return true
     }
@@ -132,32 +139,32 @@ open class SimpleSamaFragment: SamaFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         retainInstance = true
-        logVerbose("onCreate")
+        logVerbose("$logTag: onCreate")
     }
 
     override fun onResume() {
         super.onResume()
-        logVerbose("onResume")
+        logVerbose("$logTag: onResume")
     }
 
     override fun onStart() {
         super.onStart()
-        logVerbose("onStart")
+        logVerbose("$logTag: onStart")
     }
 
     override fun onPause() {
         super.onPause()
-        logVerbose("onPause")
+        logVerbose("$logTag: onPause")
     }
 
     override fun onStop() {
         super.onStop()
-        logVerbose("onStop")
+        logVerbose("$logTag: onStop")
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        logVerbose("onDestroy")
+        logVerbose("$logTag: onDestroy")
     }
 
     override fun onAttach(context: Context) {

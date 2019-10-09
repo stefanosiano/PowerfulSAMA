@@ -133,7 +133,7 @@ open class SamaRvAdapter(
     /** forces all items to call their [SamaListItem.onBind] and [SamaListItem.onBindInBackground]. Only if [hasStableId] is true */
     @Synchronized fun rebind() { runOnUi { if(hasStableId) items.iterate { bindItemToViewHolder(null, it) } } }
 
-    override fun getItemViewType(position: Int): Int = getItem(position)?.getViewType() ?: -1
+    override fun getItemViewType(position: Int): Int = getItemOrNull(position)?.getViewType() ?: -1
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SimpleViewHolder {
         val layoutId = if(itemLayoutIds.get(viewType) != 0) itemLayoutIds.get(viewType) else itemLayoutId
@@ -142,23 +142,23 @@ open class SamaRvAdapter(
     }
 
     override fun onBindViewHolder(holder: SimpleViewHolder, position: Int) {
-        val item = getItem(position) ?: return
+        val item = getItemOrNull(position) ?: return
         item.cancelCoroutine()
         runBlocking { bindListJob?.join() }
-        val bindJob = item.launch { holder.binding.get()?.setVariable(itemBindingId, getItem(holder.adapterPosition)) }
-        bindItemToViewHolder(bindJob, getItem(holder.adapterPosition))
+        val bindJob = item.launch { holder.binding.get()?.setVariable(itemBindingId, getItemOrNull(holder.adapterPosition)) }
+        bindItemToViewHolder(bindJob, getItemOrNull(holder.adapterPosition))
     }
 
     override fun onViewDetachedFromWindow(holder: SimpleViewHolder) {
         super.onViewDetachedFromWindow(holder)
-        val item = getItem(holder.adapterPosition) ?: return
+        val item = getItemOrNull(holder.adapterPosition) ?: return
         item.onStop()
         item.cancelCoroutine()
     }
 
     override fun onViewAttachedToWindow(holder: SimpleViewHolder) {
         super.onViewAttachedToWindow(holder)
-        val item = getItem(holder.adapterPosition) ?: return
+        val item = getItemOrNull(holder.adapterPosition) ?: return
         item.onStart()
         lazyInit(item)
     }
@@ -422,12 +422,12 @@ open class SamaRvAdapter(
 
     override fun onViewRecycled(holder: SimpleViewHolder) {
         super.onViewRecycled(holder)
-        getItem(holder.adapterPosition)?.onStop()
-        getItem(holder.adapterPosition)?.cancelCoroutine()
+        getItemOrNull(holder.adapterPosition)?.onStop()
+        getItemOrNull(holder.adapterPosition)?.cancelCoroutine()
     }
 
     /** Returns the stableId of the item at position [position], if available and if adapter hasStableId. */
-    override fun getItemId(position: Int): Long = if(hasStableId && getItem(position) != null) getItemStableId(getItem(position)!!) else RecyclerView.NO_ID
+    override fun getItemId(position: Int): Long = if(hasStableId && getItemOrNull(position) != null) getItemStableId(getItemOrNull(position)!!) else RecyclerView.NO_ID
 
     /** Returns all the items in the adapter */
     fun getItems(): List<SamaListItem> = this.items
@@ -437,6 +437,9 @@ open class SamaRvAdapter(
              *  [submitList], because a diff is computed asynchronously before updating the currentList value.
              * May be null if no PagedList is being presented or adapter is not using a paged list */
     fun getPagedItems(): PagedList<SamaListItem>? = if(isPaged) mDiffer.currentList as PagedList<SamaListItem> else null
+
+    /** Returns the item at position [position]. If the items are from a paged list the item is returned only if it was already loaded */
+    private fun getItemOrNull(position: Int): SamaListItem? = tryOrNull { if(isPaged) mDiffer.currentList?.get(position) ?: items[position] else items[position] }
 
     /** Returns the item at position [position] */
     fun getItem(position: Int): SamaListItem? = tryOrNull { if(isPaged) mDiffer.getItem(position) else items[position] }
@@ -465,8 +468,8 @@ open class SamaRvAdapter(
     /** Function to be called when some items are removed */
     private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = runOnUi {
         for(i in positionStart until positionStart+itemCount) {
-            getItem(i)?.onStop()
-            getItem(i)?.cancelCoroutine()
+            getItemOrNull(i)?.onStop()
+            getItemOrNull(i)?.cancelCoroutine()
         }
 
         notifyItemRangeRemoved(positionStart, itemCount)
