@@ -18,38 +18,39 @@ abstract class SamaFragment: Fragment(), CoroutineScope {
     }
 
     val uid = Companion.uid.incrementAndGet()
+    internal var logTag: String? = null
 
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        logVerbose("onCreate")
+        logVerbose("$logTag: onCreate")
     }
 
     override fun onResume() {
         super.onResume()
-        logVerbose("onResume")
+        logVerbose("$logTag: onResume")
     }
 
     override fun onStart() {
         super.onStart()
-        logVerbose("onStart")
+        logVerbose("$logTag: onStart")
     }
 
     override fun onPause() {
         super.onPause()
-        logVerbose("onPause")
+        logVerbose("$logTag: onPause")
     }
 
     override fun onStop() {
         super.onStop()
-        logVerbose("onStop")
+        logVerbose("$logTag: onStop")
     }
 
     override fun onDestroy() {
-        logVerbose("onDestroy")
         super.onDestroy()
+        logVerbose("$logTag: onDestroy")
         coroutineContext.cancel()
     }
 

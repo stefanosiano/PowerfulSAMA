@@ -20,7 +20,6 @@ open class SimpleSamaFragment: SamaFragment() {
     private var searchString: ObservableField<String>? = null
     private val bindingPairs: MutableList<Pair<Int, Any>> = ArrayList()
     private val menuFunctions: MutableList<Pair<Int, () -> Unit>> = ArrayList()
-    private var logTag: String? = null
     private var title = ""
     private var defaultTitle = ""
     private var onOptionMenuCreated: ((menu: Menu?) -> Unit)? = null
@@ -139,32 +138,6 @@ open class SimpleSamaFragment: SamaFragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         retainInstance = true
-        logVerbose("$logTag: onCreate")
-    }
-
-    override fun onResume() {
-        super.onResume()
-        logVerbose("$logTag: onResume")
-    }
-
-    override fun onStart() {
-        super.onStart()
-        logVerbose("$logTag: onStart")
-    }
-
-    override fun onPause() {
-        super.onPause()
-        logVerbose("$logTag: onPause")
-    }
-
-    override fun onStop() {
-        super.onStop()
-        logVerbose("$logTag: onStop")
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        logVerbose("$logTag: onDestroy")
     }
 
     override fun onAttach(context: Context) {

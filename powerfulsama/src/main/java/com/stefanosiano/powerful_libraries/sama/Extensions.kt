@@ -139,8 +139,11 @@ fun <T> CoroutineScope.liveDataOnObservableAndNow(vararg obs: ObservableField<*>
     }
 
     //the first time this function is called nothing is changed, so i force the reload manually
-    launch { onChanged.invoke() }
-    obs.forEach { it.onChange(this, onChanged) }
+    var lastJob = launch { onChanged.invoke() }
+    obs.forEach {
+        lastJob.cancel()
+        it.onChange(this) { lastJob = launch { onChanged() } }
+    }
 
     return mediatorLiveData
 }
