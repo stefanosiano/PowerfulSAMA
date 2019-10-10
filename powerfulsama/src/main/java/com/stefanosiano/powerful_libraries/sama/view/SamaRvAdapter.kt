@@ -103,7 +103,7 @@ open class SamaRvAdapter(
     private var onLoadStarted : (suspend () -> Unit)? = null
 
     /** Function called when adapter finishes loading items (one of [bindItems] or [bindPagedItems] finished its job) */
-    private var onLoadFinished : (suspend () -> Unit)? = null
+    private var onLoadFinished : (() -> Unit)? = null
 
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
@@ -205,8 +205,8 @@ open class SamaRvAdapter(
                 items = list as ObservableList<SamaListItem>
                 items.addOnListChangedCallback(onListChangedCallback)
                 itemRangeInserted(0, list.size)
+                onLoadFinished?.invoke()
                 startLazyInits()
-                launch { onLoadFinished?.invoke() }
             }
         }
         return this
@@ -232,8 +232,8 @@ open class SamaRvAdapter(
                     items.clear()
                     items.addAll(list)
                     dataSetChanged()
+                    onLoadFinished?.invoke()
                     startLazyInits()
-                    launch { onLoadFinished?.invoke() }
                 }
             } else {
                 val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
@@ -255,8 +255,8 @@ open class SamaRvAdapter(
                         if(itemCached?.contentEquals(it) == true) itemCached else it
                     })
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+                    onLoadFinished?.invoke()
                     startLazyInits()
-                    launch { onLoadFinished?.invoke() }
                 }
             }
         }
@@ -350,8 +350,8 @@ open class SamaRvAdapter(
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
                         if(itemCached?.contentEquals(it) == true) itemCached else it
                     })
+                    onLoadFinished?.invoke()
                     startLazyInits()
-                    launch { onLoadFinished?.invoke() }
                 }
             }
         }
@@ -392,7 +392,7 @@ open class SamaRvAdapter(
     fun onLoadStarted (f: suspend () -> Unit) : SamaRvAdapter { this.onLoadStarted = f; return this }
 
     /** Function called when adapter finishes loading items (one of [bindItems] or [bindPagedItems] finished its job) */
-    fun onLoadFinished (f: suspend () -> Unit) : SamaRvAdapter { this.onLoadFinished = f; return this }
+    fun onLoadFinished (f: () -> Unit) : SamaRvAdapter { this.onLoadFinished = f; return this }
 
     private fun getItemStableId(listItem: SamaListItem): Long {
         return if(listItem.getStableId() != RecyclerView.NO_ID)
