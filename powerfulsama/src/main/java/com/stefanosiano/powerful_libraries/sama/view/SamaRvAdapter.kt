@@ -96,8 +96,14 @@ open class SamaRvAdapter(
     /** Job used to cancel and start lazy initialization */
     private var lazyInitsJob : Job? = null
 
-    /** Job used to cancel and start lazy initialization */
+    /** Listener passed to items to provide a callback to the adapter's caller */
     private var itemUpdatedListeners : MutableList<suspend (SamaListItem) -> Unit> = ArrayList()
+
+    /** Function called when adapter starts loading items (one of [bindItems] or [bindPagedItems] is called) */
+    private var onLoadStarted : (suspend () -> Unit)? = null
+
+    /** Function called when adapter finishes loading items (one of [bindItems] or [bindPagedItems] finished its job) */
+    private var onLoadFinished : (suspend () -> Unit)? = null
 
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
@@ -127,6 +133,7 @@ open class SamaRvAdapter(
         this.itemLayoutId = itemLayoutId
         runOnUi { dataSetChanged() }
     }
+
 
     override fun getItemCount():Int = if(isPaged) mDiffer.itemCount else items.size
 
@@ -191,13 +198,17 @@ open class SamaRvAdapter(
         lazyInitializedItemCacheMap.clear()
         bindListJob?.cancel()
         bindListJob = launch {
-            items.removeOnListChangedCallback(onListChangedCallback)
+            onLoadStarted?.invoke()
             runOnUi {
+                items.removeOnListChangedCallback(onListChangedCallback)
                 items.clear()
                 items = list as ObservableList<SamaListItem>
                 items.addOnListChangedCallback(onListChangedCallback)
+                if (!isActive) return@runOnUi
                 itemRangeInserted(0, list.size)
+                if (!isActive) return@runOnUi
                 startLazyInits()
+                launch { onLoadFinished?.invoke() }
             }
         }
         return this
@@ -216,6 +227,7 @@ open class SamaRvAdapter(
         bindListJob?.cancel()
         bindListJob = launch {
             if (!isActive) return@launch
+            onLoadStarted?.invoke()
             if (forceReload) {
                 if (!isActive) return@launch
                 runOnUi {
@@ -223,6 +235,7 @@ open class SamaRvAdapter(
                     items.addAll(list)
                     dataSetChanged()
                     startLazyInits()
+                    launch { onLoadFinished?.invoke() }
                 }
             } else {
                 val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
@@ -243,9 +256,12 @@ open class SamaRvAdapter(
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
                         if(itemCached?.contentEquals(it) == true) itemCached else it
                     })
+                    if (!isActive) return@runOnUi
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                     startLazyInits()
+                    launch { onLoadFinished?.invoke() }
                 }
+                if (!isActive) return@launch
             }
         }
 
@@ -317,6 +333,7 @@ open class SamaRvAdapter(
         bindListJob?.cancel()
         bindListJob = launch {
             if (!isActive) return@launch
+            onLoadStarted?.invoke()
 
             recyclerView?.get()?.also {
                 //I have to stop the scrolling if the new list has less items then current item list
@@ -331,6 +348,7 @@ open class SamaRvAdapter(
             items.clear()
             runOnUi {
                 mDiffer.submitList(list as PagedList<SamaListItem>) {
+                    if (!isActive) return@submitList
                     items.addAll(list)
 
                     items = list.snapshot().filterNotNull().mapTo(ObservableArrayList(), {
@@ -338,6 +356,7 @@ open class SamaRvAdapter(
                         if(itemCached?.contentEquals(it) == true) itemCached else it
                     })
                     startLazyInits()
+                    launch { onLoadFinished?.invoke() }
                 }
             }
         }
@@ -373,6 +392,12 @@ open class SamaRvAdapter(
         initObjects[key] = ob
         return this
     }
+
+    /** Function called when adapter starts loading items (one of [bindItems] or [bindPagedItems] is called) */
+    fun onLoadStarted (f: suspend () -> Unit) : SamaRvAdapter { this.onLoadStarted = f; return this }
+
+    /** Function called when adapter finishes loading items (one of [bindItems] or [bindPagedItems] finished its job) */
+    fun onLoadFinished (f: suspend () -> Unit) : SamaRvAdapter { this.onLoadFinished = f; return this }
 
     private fun getItemStableId(listItem: SamaListItem): Long {
         return if(listItem.getStableId() != RecyclerView.NO_ID)
