@@ -204,9 +204,7 @@ open class SamaRvAdapter(
                 items.clear()
                 items = list as ObservableList<SamaListItem>
                 items.addOnListChangedCallback(onListChangedCallback)
-                if (!isActive) return@runOnUi
                 itemRangeInserted(0, list.size)
-                if (!isActive) return@runOnUi
                 startLazyInits()
                 launch { onLoadFinished?.invoke() }
             }
@@ -256,12 +254,10 @@ open class SamaRvAdapter(
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
                         if(itemCached?.contentEquals(it) == true) itemCached else it
                     })
-                    if (!isActive) return@runOnUi
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                     startLazyInits()
                     launch { onLoadFinished?.invoke() }
                 }
-                if (!isActive) return@launch
             }
         }
 
@@ -348,7 +344,6 @@ open class SamaRvAdapter(
             items.clear()
             runOnUi {
                 mDiffer.submitList(list as PagedList<SamaListItem>) {
-                    if (!isActive) return@submitList
                     items.addAll(list)
 
                     items = list.snapshot().filterNotNull().mapTo(ObservableArrayList(), {
