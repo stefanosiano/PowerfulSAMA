@@ -1,7 +1,7 @@
 package com.stefanosiano.powerful_libraries.sama.utils
 
-import android.util.LongSparseArray
 import android.util.SparseArray
+import androidx.collection.LongSparseArray
 import com.stefanosiano.powerful_libraries.sama.logException
 import com.stefanosiano.powerful_libraries.sama.tryOrNull
 import com.stefanosiano.powerful_libraries.sama.tryOrPrint

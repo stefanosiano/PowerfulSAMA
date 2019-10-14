@@ -1,9 +1,11 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
+import android.util.SparseArray
 import android.util.SparseIntArray
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.collection.LongSparseArray
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ObservableArrayList
 import androidx.databinding.ObservableList
@@ -70,7 +72,7 @@ open class SamaRvAdapter(
     private var liveDataPagedItems: LiveData<out PagedList<SamaListItem>>? = null
 
     /** map that saves initialized variables to avoid to reinitialize them when reloaded */
-    private val lazyInitializedItemCacheMap = KLongSparseArray<SamaListItem>()
+    private val lazyInitializedItemCacheMap = LongSparseArray<SamaListItem>()
 
     /** Map that link string ids to unique long numbers, to use as stableId */
     private val idsMap: ConcurrentHashMap<String, Long> = ConcurrentHashMap()
@@ -104,6 +106,9 @@ open class SamaRvAdapter(
 
     /** Function called when adapter finishes loading items (one of [bindItems] or [bindPagedItems] finished its job) */
     private var onLoadFinished : (() -> Unit)? = null
+
+    /** List of items to be bound to [SamaMutableListItem] */
+    private var mutableBoundItems = LongSparseArray<Any>()
 
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
@@ -174,11 +179,28 @@ open class SamaRvAdapter(
     private fun bindItemToViewHolder(job: Job?, listItem: SamaListItem?){
         listItem ?: return
         runBlocking(listItem.coroutineContext) { job?.join() }
-        listItem.onBind(initObjects)
+        if(listItem is SamaMutableListItem<*>) {
+            val bound = mutableBoundItems.get(getItemStableId(listItem)) ?: {
+                listItem.newBoundItem().also { mutableBoundItems.put(getItemStableId(listItem), it) }
+            }
+            listItem.bind(bound, initObjects)
+        }
+        else
+            listItem.onBind(initObjects)
+
         listItem.onItemUpdatedListenerSet { item -> itemUpdatedListeners.forEach { it.invoke(item) } }
         if(!isActive) return
         runBlocking { bindListJob?.join() }
-        listItem.launch { listItem.onBindInBackground(initObjects) }
+        listItem.launch {
+            if(listItem is SamaMutableListItem<*>) {
+                val bound = mutableBoundItems.get(getItemStableId(listItem)) ?: {
+                    listItem.newBoundItem().also { mutableBoundItems.put(getItemStableId(listItem), it) }
+                }
+                listItem.bindInBackground(bound, initObjects)
+            }
+            else
+                listItem.onBindInBackground(initObjects)
+        }
     }
 
 
@@ -446,16 +468,29 @@ open class SamaRvAdapter(
         getItem(holder.adapterPosition)?.cancelCoroutine()
     }
 
+
+    /** Returns the list of bound items to [SamaMutableListItem], if adapter hasStableId */
+    @Suppress("UNCHECKED_CAST")
+    fun <T> getBoundItems(): List<T> {
+        val size = mutableBoundItems.size()
+        val boundItems = ArrayList<T>(size)
+        for(i in 0..size) {
+            val key = mutableBoundItems.keyAt(i)
+            boundItems.add(mutableBoundItems.get(key) as T)
+        }
+        return boundItems
+    }
+
     /** Returns the stableId of the item at position [position], if available and if adapter hasStableId. */
     override fun getItemId(position: Int): Long = if(hasStableId && getItem(position) != null) getItemStableId(getItem(position)!!) else RecyclerView.NO_ID
 
     /** Returns all the items in the adapter */
     fun getItems(): List<SamaListItem> = this.items
 
+    /** Returns the currently shown PagedList, but not necessarily the most recent passed via
+     *  [submitList], because a diff is computed asynchronously before updating the currentList value.
+     * May be null if no PagedList is being presented or adapter is not using a paged list */
     @Suppress("UNCHECKED_CAST")
-            /** Returns the currently shown PagedList, but not necessarily the most recent passed via
-             *  [submitList], because a diff is computed asynchronously before updating the currentList value.
-             * May be null if no PagedList is being presented or adapter is not using a paged list */
     fun getPagedItems(): PagedList<SamaListItem>? = if(isPaged) mDiffer.currentList as PagedList<SamaListItem> else null
 
     /** Returns the item at position [position]. If the items are from a paged list the item is returned only if it was already loaded */
