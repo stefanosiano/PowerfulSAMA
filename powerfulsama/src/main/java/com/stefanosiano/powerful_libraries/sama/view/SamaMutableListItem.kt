@@ -4,7 +4,6 @@ package com.stefanosiano.powerful_libraries.sama.view
 abstract class SamaMutableListItem<T> : SamaListItem() {
     final override fun onBind(initObjects: Map<String, Any>) = super.onBind(initObjects)
     final override suspend fun onBindInBackground(initObjects: Map<String, Any>) = super.onBindInBackground(initObjects)
-    final override suspend fun onLazyInit() = super.onLazyInit()
 
 
     /** Called when it's bound to the view */
