@@ -15,10 +15,16 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore internal var isLazyInit = false
     @Ignore internal var isStarted = false
 
+    @Ignore internal var updateJob: Job? = null
 
 
-    /** Sets a listener through [SamaRvAdapter] to be called by the item */
-    protected fun onItemUpdated() = launch { onItemUpdated?.invoke(this@SamaListItem) }
+
+    /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] */
+    protected fun onItemUpdated() { updateJob = launch { onItemUpdated?.invoke(this@SamaListItem) } }
+
+    /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] after [millis] milliseconds.
+     * If called again before [millis] milliseconds are passed, previous call is cancelled */
+    protected fun onItemUpdated(millis: Long) { updateJob?.cancel(); updateJob = launch { delay(millis); if(isActive) onItemUpdated?.invoke(this@SamaListItem) } }
 
     /** Sets a listener through [SamaRvAdapter] to be called by the item */
     internal fun onItemUpdatedListenerSet(f: suspend (SamaListItem) -> Unit) { onItemUpdated = f }
