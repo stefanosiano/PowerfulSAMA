@@ -1,1 +1,1 @@
-include ':app', ':powerfulsama'
+include ':app', ':powerfulsama', ':powerfulsama_annotations'
