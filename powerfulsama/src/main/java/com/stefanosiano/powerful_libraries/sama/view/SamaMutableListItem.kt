@@ -2,6 +2,8 @@ package com.stefanosiano.powerful_libraries.sama.view
 
 
 abstract class SamaMutableListItem<T> : SamaListItem() {
+
+    @Deprecated(message = "Use method with bound object, since this is a mutableListItem", replaceWith = ReplaceWith("onBind(bound, initObjects)"))
     final override fun onBind(initObjects: Map<String, Any>) = super.onBind(initObjects)
     final override suspend fun onBindInBackground(initObjects: Map<String, Any>) = super.onBindInBackground(initObjects)
 

@@ -6,13 +6,13 @@
     <declare-styleable name="SamaRecyclerView">
 
         <!-- Sets the number of columns of the recyclerView: if 1 -> LinearLayoutManager is used. If higher, GridLayoutManager is used -->
-        <attr name="srv_columns" format="integer" />
+        <attr name="srvColumns" format="integer" />
 
         <!-- Sets whether the recyclerView should put items horizontally (using a linearLayoutManager) -->
-        <attr name="srv_horizontal" format="boolean" />
+        <attr name="srvHorizontal" format="boolean" />
 
         <!-- Sets whether to use a workaround for the inconsistencyDetected: IndexOutOfBoundsException (Only when using srv_columns). See https://stackoverflow.com/questions/31759171/recyclerview-and-java-lang-indexoutofboundsexception-inconsistency-detected-in/33822747#33822747 -->
-        <attr name="srv_inconsistency_workaround" format="boolean" />
+        <attr name="srvInconsistencyWorkaround" format="boolean" />
 
 
     </declare-styleable>
