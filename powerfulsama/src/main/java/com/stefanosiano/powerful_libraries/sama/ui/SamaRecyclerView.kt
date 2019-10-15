@@ -44,7 +44,8 @@ open class SamaRecyclerView: RecyclerView {
     }
 
     private fun resetLayoutManager() {
-
+        val position = (layoutManager as? LinearLayoutManager?)?.findFirstVisibleItemPosition()
+        recycledViewPool.clear()
         if(columns > 0 || horizontal) {
             when {
                 columns == 1 && inconsistencyWorkaround -> layoutManager = SamaLinearLayoutManager(context)
@@ -55,6 +56,7 @@ open class SamaRecyclerView: RecyclerView {
                 horizontal && !inconsistencyWorkaround -> layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             }
         }
+        (layoutManager as? LinearLayoutManager?)?.scrollToPosition(position ?: 0)
     }
 
 }
