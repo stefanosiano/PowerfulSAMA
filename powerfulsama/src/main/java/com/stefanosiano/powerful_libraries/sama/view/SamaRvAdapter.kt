@@ -155,7 +155,6 @@ open class SamaRvAdapter(
 
     override fun onBindViewHolder(holder: SimpleViewHolder, position: Int) {
         val item = getItem(position) ?: return
-        item.cancelCoroutine()
         runBlocking { bindListJob?.join() }
         val bindJob = item.launch { holder.binding.get()?.setVariable(itemBindingId, getItem(holder.adapterPosition)) }
         bindItemToViewHolder(bindJob, getItem(holder.adapterPosition))
@@ -165,7 +164,6 @@ open class SamaRvAdapter(
         super.onViewDetachedFromWindow(holder)
         val item = getItem(holder.adapterPosition) ?: return
         item.onStop()
-        item.cancelCoroutine()
     }
 
     override fun onViewAttachedToWindow(holder: SimpleViewHolder) {
@@ -436,7 +434,7 @@ open class SamaRvAdapter(
         runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
         runOnUi { liveDataPagedItems?.removeObserver(pagedLiveDataObserver) }
         //putting try blocks: if object is destroyed and variables (lists) are destroyed before finishing this function, there could be some crash
-        items.forEach { tryOrNull { it.onStop(); it.cancelCoroutine() } }
+        items.forEach { tryOrNull { it.onStop() } }
         lazyInitializedItemCacheMap.clear()
         coroutineContext.cancelChildren()
     }
@@ -457,7 +455,7 @@ open class SamaRvAdapter(
         runOnUi { liveDataPagedItems?.removeObserver(pagedLiveDataObserver) }
 
         itemUpdatedListeners.clear()
-        items.forEach { it.onStop(); it.cancelCoroutine(); it.onDestroy() }
+        items.forEach { it.onStop(); it.onDestroy() }
         lazyInitializedItemCacheMap.clear()
         coroutineContext.cancel()
     }
@@ -465,7 +463,6 @@ open class SamaRvAdapter(
     override fun onViewRecycled(holder: SimpleViewHolder) {
         super.onViewRecycled(holder)
         getItem(holder.adapterPosition)?.onStop()
-        getItem(holder.adapterPosition)?.cancelCoroutine()
     }
 
 
@@ -524,7 +521,6 @@ open class SamaRvAdapter(
     private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = runOnUi {
         for(i in positionStart until positionStart+itemCount) {
             getItemOrNull(i)?.onStop()
-            getItemOrNull(i)?.cancelCoroutine()
         }
 
         notifyItemRangeRemoved(positionStart, itemCount)
@@ -532,7 +528,7 @@ open class SamaRvAdapter(
 
     /** Function to be called when the whole list changes */
     private fun dataSetChanged() {
-        items.forEach { it.onStop(); it.cancelCoroutine() }
+        items.forEach { it.onStop() }
         lazyInitializedItemCacheMap.clear()
         coroutineContext.cancelChildren()
         notifyDataSetChanged()

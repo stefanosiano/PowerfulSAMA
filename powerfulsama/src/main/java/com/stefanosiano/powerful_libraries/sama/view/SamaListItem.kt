@@ -47,7 +47,7 @@ abstract class SamaListItem : CoroutineScope {
     /** Compares this to another item to decide if they are the same when the list is reloaded. By default it calls == */
     open fun contentEquals(other: SamaListItem) = this == other
 
-    /** Called when it's removed from the recyclerview or the recyclerView no longer observes the adapter. Always called after [onStop]. Use it to completely clear any resource */
+    /** Called when it's removed from the recyclerview or the recyclerView no longer observes the adapter. Always called after [onStop]. Use it to completely clear any resource. Its coroutines are cancelled here */
     open fun onDestroy() { coroutineContext.cancel() }
 
     /** Called when it's reattached to the recyclerview after being detached. Use it if you need to reuse resources freed in [onStop] */
@@ -58,9 +58,6 @@ abstract class SamaListItem : CoroutineScope {
 
     /** Return if it was lazy initialized. Use it with [onLazyInit] */
     internal fun isLazyInitialized(): Boolean { return isLazyInit }
-
-    /** Cancel anything the coroutine is doing. Used internally */
-    internal fun cancelCoroutine() { coroutineContext.cancelChildren() }
 
     /** Called in background only once when it should be initialized (it's about to be shown or the initialization background thread reaches it). [isLazyInitialized] is used to understand if the item was already lazy initialized */
     open suspend fun onLazyInit() { isLazyInit = true }
