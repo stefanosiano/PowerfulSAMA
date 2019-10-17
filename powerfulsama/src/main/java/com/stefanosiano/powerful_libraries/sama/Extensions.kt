@@ -256,10 +256,10 @@ class Extensions
 
 
 /** Run a function for each element and wait for the completion of all of them, using coroutines */
-inline fun <T> Iterable<T>.runAndWait(crossinline run: suspend (x: T) -> Unit) = runBlocking { map { async {run(it)} }.forEach { it.await() } }
+inline fun <T> Iterable<T>.runAndWait(crossinline run: suspend (x: T) -> Unit) = runBlocking { map { async {run(it)} }.map { it.await() } }
 
 /** Run a function for each element, using coroutines */
-inline fun <T> Iterable<T>.launch(coroutineScope: CoroutineScope, crossinline run: suspend (x: T) -> Unit) = forEach { coroutineScope.launch { run(it) } }
+inline fun <T> Iterable<T>.launch(coroutineScope: CoroutineScope, crossinline run: suspend (x: T) -> Unit) = coroutineScope.launch { map { async {run(it)} } }
 
 /** Try to execute [toTry] in a try catch block, return null if an exception is raised */
 inline fun <T> tryOrNull(toTry: () -> T): T? = tryOr(null, toTry)
