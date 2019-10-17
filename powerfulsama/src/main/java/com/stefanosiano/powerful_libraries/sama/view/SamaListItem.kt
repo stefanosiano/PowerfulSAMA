@@ -1,12 +1,28 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
 import android.util.SparseArray
+import androidx.databinding.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Ignore
+import com.stefanosiano.powerful_libraries.sama.*
 import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
+import com.stefanosiano.powerful_libraries.sama.logVerbose
 import kotlinx.coroutines.*
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 abstract class SamaListItem : CoroutineScope {
+
+
+    /** List of observable callbacks that will be observed until the viewModel is destroyed */
+    @Ignore private val observables = ArrayList<Pair<Observable, Observable.OnPropertyChangedCallback>>()
+
+    @Ignore private val observablesMap = ConcurrentHashMap<Long, AtomicInteger>()
+    @Ignore private val observablesId = AtomicLong(0)
+
 
     @Ignore private val coroutineJob: Job = SupervisorJob()
     @Ignore override val coroutineContext = coroutineSamaHandler(coroutineJob)
@@ -54,11 +70,159 @@ abstract class SamaListItem : CoroutineScope {
     open fun onStart() { isStarted = true }
 
     /** Called when it's removed from the recyclerview, or its view was recycled or the recyclerView no longer observes the adapter. Use it to clear resources, keeping in mind the item may be reused later on */
-    open fun onStop() { isStarted = false }
+    open fun onStop() {
+        observables.forEach { it.first.removeOnPropertyChangedCallback(it.second) }
+        observables.clear()
+        isStarted = false
+    }
 
     /** Return if it was lazy initialized. Use it with [onLazyInit] */
     internal fun isLazyInitialized(): Boolean { return isLazyInit }
 
     /** Called in background only once when it should be initialized (it's about to be shown or the initialization background thread reaches it). [isLazyInitialized] is used to understand if the item was already lazy initialized */
     open suspend fun onLazyInit() { isLazyInit = true }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
+     * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing [o] is null or already changed.
+     * If multiple [obs] change at the same time, [obFun] is called only once */
+    protected fun observe(o: ObservableByte, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: Byte) -> Unit): Unit = observePrivate(o, { o.get() }, obFun, skipFirst, *obs)
+
+    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
+     * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing [o] is null or already changed.
+     * If multiple [obs] change at the same time, [obFun] is called only once */
+    protected fun observe(o: ObservableInt, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: Int) -> Unit): Unit = observePrivate(o, { o.get() }, obFun, skipFirst, *obs)
+
+    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
+     * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing [o] is null or already changed.
+     * If multiple [obs] change at the same time, [obFun] is called only once */
+    protected fun observe(o: ObservableShort, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: Short) -> Unit): Unit = observePrivate(o, { o.get() }, obFun, skipFirst, *obs)
+
+    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
+     * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing [o] is null or already changed.
+     * If multiple [obs] change at the same time, [obFun] is called only once */
+    protected fun observe(o: ObservableLong, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: Long) -> Unit): Unit = observePrivate(o, { o.get() }, obFun, skipFirst, *obs)
+
+    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
+     * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing [o] is null or already changed.
+     * If multiple [obs] change at the same time, [obFun] is called only once */
+    protected fun observe(o: ObservableFloat, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: Float) -> Unit): Unit = observePrivate(o, { o.get() }, obFun, skipFirst, *obs)
+
+    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
+     * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing [o] is null or already changed.
+     * If multiple [obs] change at the same time, [obFun] is called only once */
+    protected fun observe(o: ObservableDouble, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: Double) -> Unit): Unit = observePrivate(o, { o.get() }, obFun, skipFirst, *obs)
+
+
+    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
+     * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing [o] is null or already changed.
+     * If multiple [obs] change at the same time, [obFun] is called only once */
+    protected fun observe(o: ObservableBoolean, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: Boolean) -> Unit): Unit = observePrivate(o, { o.get() }, obFun, skipFirst, *obs)
+
+
+    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
+     * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing [o] is null or already changed.
+     * If multiple [obs] change at the same time, [obFun] is called only once */
+    protected fun <T> observe(o: ObservableField<T>, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: T) -> Unit): Unit = observePrivate(o, { o.get() }, obFun, skipFirst, *obs)
+
+
+    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
+     * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing if the value of [o] is null or already changed */
+    private fun <T> observePrivate(o: Observable, obValue: () -> T?, obFun: suspend (data: T) -> Unit, skipFirst: Boolean, vararg obs: Observable) {
+        val obsId = observablesId.incrementAndGet()
+
+        obs.forEach { ob ->
+            observablesMap[obsId] = AtomicInteger(0)
+            observables.add(Pair(ob, ob.onChange(this) {
+                //increment value of observablesMap[obsId] -> only first call can run this function
+                val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+                if(id != 1) return@onChange
+                obValue()?.let { logVerbose(it.toString()); obFun(it) }
+                //clear value of observablesMap[obsId] -> everyone can run this function
+                observablesMap[obsId]?.set(0)
+            }))
+        }
+        //sets the function to call when using an observable: it sets the observablesMap[obsId] to 2 (it won't be called by obs), run obFun and finally set observablesMap[obsId] to 0 (callable by everyone)
+        when(o) {
+            is ObservableInt -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableShort -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableLong -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableFloat -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableDouble -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableBoolean -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableByte -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+            is ObservableField<*> -> {
+                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                    observablesMap[obsId]?.set(2)
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
+        }
+    }
+
 }
