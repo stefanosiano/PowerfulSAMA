@@ -24,6 +24,8 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
     /** List of observable callbacks that will be observed until the viewModel is destroyed */
     private val observables = ArrayList<Pair<Observable, Observable.OnPropertyChangedCallback>>()
+    /** List of observable lists callbacks that will be observed until the viewModel is destroyed */
+    private val listObservables = ArrayList<Pair<ObservableList<Any>, ObservableList.OnListChangedCallback<ObservableList<Any>>>>()
 
     private val observablesMap = ConcurrentHashMap<Long, AtomicInteger>()
     private val observablesId = AtomicLong(0)
@@ -57,6 +59,8 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         logVerbose("onDestroy")
         observables.forEach { it.first.removeOnPropertyChangedCallback(it.second) }
         observables.clear()
+        listObservables.forEach { it.first.removeOnListChangedCallback(it.second) }
+        listObservables.clear()
         coroutineContext.cancel()
     }
 
@@ -107,6 +111,37 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
 
 
+
+    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
+     * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing [o] is null or already changed.
+     * If multiple [obs] change at the same time, [obFun] is called only once */
+    @Suppress("UNCHECKED_CAST")
+    protected fun <T> observe(o: ObservableList<T>, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any {
+        val obsId = observablesId.incrementAndGet()
+        obs.forEach { ob ->
+            observablesMap[obsId] = AtomicInteger(0)
+            observables.add(Pair(ob, ob.onChange(this) {
+                //increment value of observablesMap[obsId] -> only first call can run this function
+                val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+                if(id != 1) return@onChange
+                o.let { logVerbose(it.toString()); obFun(it) }
+                //clear value of observablesMap[obsId] -> everyone can run this function
+                observablesMap[obsId]?.set(0)
+            }))
+        }
+
+        val c = o.onAnyChange {
+            launchOrNow(this) {
+                observablesMap[obsId]?.set(2)
+                logVerbose(o.toString())
+                obFun(it)
+                observablesMap[obsId]?.set(0)
+            }
+        }
+        listObservables.add(Pair(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
+        if(!skipFirst)
+            launchOrNow(this) { obFun(o) }
+    }
 
 
     /** Observes a liveData until the ViewModel is destroyed, using a custom observer */

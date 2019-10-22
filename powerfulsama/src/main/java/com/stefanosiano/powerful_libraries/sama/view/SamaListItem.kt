@@ -19,6 +19,8 @@ abstract class SamaListItem : CoroutineScope {
 
     /** List of observable callbacks that will be observed until the viewModel is destroyed */
     @Ignore private val observables = ArrayList<Pair<Observable, Observable.OnPropertyChangedCallback>>()
+    /** List of observable lists callbacks that will be observed until the viewModel is destroyed */
+    @Ignore private val listObservables = ArrayList<Pair<ObservableList<Any>, ObservableList.OnListChangedCallback<ObservableList<Any>>>>()
 
     @Ignore private val observablesMap = ConcurrentHashMap<Long, AtomicInteger>()
     @Ignore private val observablesId = AtomicLong(0)
@@ -27,7 +29,7 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore private val coroutineJob: Job = SupervisorJob()
     @Ignore override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
-    @Ignore internal var onItemUpdated : (suspend (SamaListItem) -> Unit)? = null
+    @Ignore internal var onItemUpdated : (suspend (SamaListItem, SamaListItemAction?) -> Unit)? = null
     @Ignore internal var isLazyInit = false
     @Ignore internal var isStarted = false
 
@@ -35,15 +37,12 @@ abstract class SamaListItem : CoroutineScope {
 
 
 
-    /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] */
-    protected fun onItemUpdated() { updateJob = launch { onItemUpdated?.invoke(this@SamaListItem) } }
-
-    /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] after [millis] milliseconds.
+    /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] after [millis] milliseconds, optionally passing an [action].
      * If called again before [millis] milliseconds are passed, previous call is cancelled */
-    protected fun onItemUpdated(millis: Long) { updateJob?.cancel(); updateJob = launch { delay(millis); if(isActive) onItemUpdated?.invoke(this@SamaListItem) } }
+    protected fun onItemUpdated(millis: Long = 0, action: SamaListItemAction?) { updateJob?.cancel(); updateJob = launch { delay(millis); if(isActive) onItemUpdated?.invoke(this@SamaListItem, action) } }
 
     /** Sets a listener through [SamaRvAdapter] to be called by the item */
-    internal fun onItemUpdatedListenerSet(f: suspend (SamaListItem) -> Unit) { onItemUpdated = f }
+    internal fun onItemUpdatedListenerSet(f: suspend (SamaListItem, SamaListItemAction?) -> Unit) { onItemUpdated = f }
 
     /** Returns the unique id of the item (defaults to [RecyclerView.NO_ID]). Overrides [getStableIdString] if specified */
     open fun getStableId(): Long = RecyclerView.NO_ID
@@ -73,6 +72,8 @@ abstract class SamaListItem : CoroutineScope {
     open fun onStop() {
         observables.forEach { it.first.removeOnPropertyChangedCallback(it.second) }
         observables.clear()
+        listObservables.forEach { it.first.removeOnListChangedCallback(it.second) }
+        listObservables.clear()
         isStarted = false
     }
 
@@ -83,6 +84,8 @@ abstract class SamaListItem : CoroutineScope {
     open suspend fun onLazyInit() { isLazyInit = true }
 
 
+    /** Interface that indicates the action of the ListItem sent */
+    interface SamaListItemAction
 
 
 
@@ -95,14 +98,36 @@ abstract class SamaListItem : CoroutineScope {
 
 
 
+    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
+     * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing [o] is null or already changed.
+     * If multiple [obs] change at the same time, [obFun] is called only once */
+    @Suppress("UNCHECKED_CAST")
+    protected fun <T> observe(o: ObservableList<T>, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any {
+        val obsId = observablesId.incrementAndGet()
+        obs.forEach { ob ->
+            observablesMap[obsId] = AtomicInteger(0)
+            observables.add(Pair(ob, ob.onChange(this) {
+                //increment value of observablesMap[obsId] -> only first call can run this function
+                val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+                if(id != 1) return@onChange
+                o.let { logVerbose(it.toString()); obFun(it) }
+                //clear value of observablesMap[obsId] -> everyone can run this function
+                observablesMap[obsId]?.set(0)
+            }))
+        }
 
-
-
-
-
-
-
-
+        val c = o.onAnyChange {
+            launchOrNow(this) {
+                observablesMap[obsId]?.set(2)
+                logVerbose(o.toString())
+                obFun(it)
+                observablesMap[obsId]?.set(0)
+            }
+        }
+        listObservables.add(Pair(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
+        if(!skipFirst)
+            launchOrNow(this) { obFun(o) }
+    }
 
 
     /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
