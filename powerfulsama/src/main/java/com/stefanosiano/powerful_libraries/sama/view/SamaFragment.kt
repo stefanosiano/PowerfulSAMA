@@ -13,11 +13,6 @@ import java.util.concurrent.atomic.AtomicLong
 /** Abstract Fragment for all Fragments to extend */
 abstract class SamaFragment: Fragment(), CoroutineScope {
 
-    companion object {
-        private val uid = AtomicLong(0)
-    }
-
-    val uid = Companion.uid.incrementAndGet()
     internal var logTag: String? = null
 
     private val coroutineJob: Job = SupervisorJob()

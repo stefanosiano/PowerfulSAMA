@@ -88,7 +88,7 @@ open class SamaBottomNavigationView: BottomNavigationView {
                 .show(pair.second)
                 .commitAllowingStateLoss()
 
-            this.pairs?.filter { it.second()?.uid != pair.second.uid && it.second()?.isAdded == false }?.launch(activity) { p -> p.second()?.also {
+            this.pairs?.filter { it.second() != pair.second && it.second()?.isAdded == false }?.launch(activity) { p -> p.second()?.also {
                 fragmentTransaction.add(containerId, it).hide(it)
             } }
             selectedItemId = pair.first
