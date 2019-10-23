@@ -1,6 +1,5 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
-import android.util.SparseArray
 import android.util.SparseIntArray
 import android.view.LayoutInflater
 import android.view.View
@@ -18,7 +17,6 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.*
-import com.stefanosiano.powerful_libraries.sama.utils.KLongSparseArray
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
@@ -186,7 +184,7 @@ open class SamaRvAdapter(
         else
             listItem.onBind(initObjects)
 
-        listItem.onItemUpdatedListenerSet { item, action -> itemUpdatedListeners.forEach { it.invoke(item, action) } }
+        listItem.setPostActionListener { item, action -> itemUpdatedListeners.forEach { it.invoke(item, action) } }
         if(!isActive) return
         runBlocking { bindListJob?.join() }
         listItem.launch {
@@ -202,7 +200,7 @@ open class SamaRvAdapter(
     }
 
 
-    /** Observe the items of this [RecyclerView] passing the updated item when it changes (when [SamaListItem.onItemUpdated] is called) */
+    /** Observe the items of this [RecyclerView] passing the updated item when it changes (when [SamaListItem.onPostAction] is called) */
     @Suppress("UNCHECKED_CAST")
     fun <T> observe(f: suspend (item: T, action: SamaListItem.SamaListItemAction?) -> Unit) where T: SamaListItem { this.itemUpdatedListeners.add(f as suspend (SamaListItem, SamaListItem.SamaListItemAction?) -> Unit) }
 
@@ -414,9 +412,9 @@ open class SamaRvAdapter(
     /** Function called when adapter finishes loading items (one of [bindItems] or [bindPagedItems] finished its job) */
     fun onLoadFinished (f: () -> Unit) : SamaRvAdapter { this.onLoadFinished = f; return this }
 
-    private fun getItemStableId(listItem: SamaListItem): Long {
-        return if(listItem.getStableId() != RecyclerView.NO_ID)
-            listItem.getStableId()
+    private fun getItemStableId(listItem: SamaListItem?): Long {
+        return if(listItem?.getStableId() != RecyclerView.NO_ID)
+            listItem?.getStableId() ?: RecyclerView.NO_ID
         else {
             val id = idsMap[listItem.getStableIdString()] ?: RecyclerView.NO_ID
             if(id == RecyclerView.NO_ID) idsMap[listItem.getStableIdString()] = maxId.incrementAndGet()
@@ -559,6 +557,9 @@ open class SamaRvAdapter(
         override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = if(hasStableId) getItemStableId(oldList[oldItemPosition]) == getItemStableId(newList[newItemPosition]) else true
         override fun getOldListSize(): Int = oldList.size
         override fun getNewListSize(): Int = newList.size
-        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = oldList[oldItemPosition].contentEquals(newList[newItemPosition])
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
+            newList.size > newItemPosition
+                    && oldList.size > oldItemPosition
+                    && oldList[oldItemPosition].contentEquals(newList[newItemPosition])
     }
 }

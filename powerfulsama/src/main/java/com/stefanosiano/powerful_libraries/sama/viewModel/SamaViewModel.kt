@@ -6,6 +6,7 @@ import androidx.lifecycle.*
 import com.stefanosiano.powerful_libraries.sama.*
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -52,23 +53,28 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     /** Flag to understand whether multiple same actions can be pushed at once (e.g. same button clicked multiple times at the same time) */
     private var allowConcurrentSameActions = false
 
+    /** Flag to understand whether this [SamaViewModel] is already initialized. Used to check if [onFirtstTime] should be called */
+    private var isInitialized = AtomicBoolean(false)
+
+
     /** Clears the LiveData of the response to avoid the observer receives it over and over on configuration changes */
     fun clearVmResponse() = liveResponse.postValue(null)
 
 
     /**
-     * Sends the response to the active observer
+     * Sends the action to the active observer
      * @param actionId Id of the action to send
-     * @param error Id of the error to send (default null). If null, it means no error is sent to the observer
      * @param data Data to send (default null). Can be null
      */
-    protected fun postVmResponse(actionId: A, data: Any? = null) = postVmResponse(VmResponse(actionId, data))
+    protected fun postAction(actionId: A, data: Any? = null) = postAction(VmResponse(actionId, data))
 
-    /** Sends the response to the active observer */
-    protected fun postVmResponse(vmResponse: VmResponse<A>) = liveResponse.postValue(vmResponse)
+    /** Sends the action to the active observer */
+    protected fun postAction(vmResponse: VmResponse<A>) = liveResponse.postValue(vmResponse)
 
 
 
+
+    @Synchronized fun onFirtstTime(f: SamaViewModel<A>.() -> Unit) { if(!isInitialized.getAndSet(true)) this.f() }
 
 
 

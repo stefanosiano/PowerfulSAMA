@@ -1,9 +1,6 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
-import android.util.SparseArray
 import androidx.databinding.*
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Ignore
 import com.stefanosiano.powerful_libraries.sama.*
@@ -29,7 +26,7 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore private val coroutineJob: Job = SupervisorJob()
     @Ignore override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
-    @Ignore internal var onItemUpdated : (suspend (SamaListItem, SamaListItemAction?) -> Unit)? = null
+    @Ignore internal var onPostAction : (suspend (SamaListItem, SamaListItemAction?) -> Unit)? = null
     @Ignore internal var isLazyInit = false
     @Ignore internal var isStarted = false
 
@@ -39,10 +36,10 @@ abstract class SamaListItem : CoroutineScope {
 
     /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] after [millis] milliseconds, optionally passing an [action].
      * If called again before [millis] milliseconds are passed, previous call is cancelled */
-    protected fun onItemUpdated(millis: Long = 0, action: SamaListItemAction? = null) { updateJob?.cancel(); updateJob = launch { delay(millis); if(isActive) onItemUpdated?.invoke(this@SamaListItem, action) } }
+    protected fun postAction(action: SamaListItemAction? = null, millis: Long = 0) { updateJob?.cancel(); updateJob = launch { delay(millis); if(isActive) onPostAction?.invoke(this@SamaListItem, action) } }
 
     /** Sets a listener through [SamaRvAdapter] to be called by the item */
-    internal fun onItemUpdatedListenerSet(f: suspend (SamaListItem, SamaListItemAction?) -> Unit) { onItemUpdated = f }
+    internal fun setPostActionListener(f: suspend (SamaListItem, SamaListItemAction?) -> Unit) { onPostAction = f }
 
     /** Returns the unique id of the item (defaults to [RecyclerView.NO_ID]). Overrides [getStableIdString] if specified */
     open fun getStableId(): Long = RecyclerView.NO_ID
