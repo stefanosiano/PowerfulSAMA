@@ -51,26 +51,34 @@ abstract class SamaListItem : CoroutineScope {
     open fun getViewType() = -1
 
     /** Called when it's bound to the view */
-    open fun onBind(initObjects: Map<String, Any>) {  }
+    open fun onBind(initObjects: Map<String, Any>) { launch { onBindInBackground(initObjects) } }
 
     /** Called when it's bound to the view, in background after [onBind] */
-    open suspend fun onBindInBackground(initObjects: Map<String, Any>) {}
+    protected open suspend fun onBindInBackground(initObjects: Map<String, Any>) {}
 
     /** Compares this to another item to decide if they are the same when the list is reloaded. By default it calls == */
     open fun contentEquals(other: SamaListItem) = this == other
 
     /** Called when it's removed from the recyclerview or the recyclerView no longer observes the adapter. Always called after [onStop]. Use it to completely clear any resource. Its coroutines are cancelled here */
-    open fun onDestroy() { coroutineContext.cancel() }
+    open fun onDestroy() {
+        observables.forEach { it.first.removeOnPropertyChangedCallback(it.second) }
+        listObservables.forEach { it.first.removeOnListChangedCallback(it.second) }
+        observables.clear()
+        listObservables.clear()
+        coroutineContext.cancel()
+    }
 
     /** Called when it's reattached to the recyclerview after being detached. Use it if you need to reuse resources freed in [onStop] */
-    open fun onStart() { isStarted = true }
+    open fun onStart() {
+        observables.forEach { it.first.addOnPropertyChangedCallback(it.second) }
+        listObservables.forEach { it.first.addOnListChangedCallback(it.second) }
+        isStarted = true
+    }
 
     /** Called when it's removed from the recyclerview, or its view was recycled or the recyclerView no longer observes the adapter. Use it to clear resources, keeping in mind the item may be reused later on */
     open fun onStop() {
         observables.forEach { it.first.removeOnPropertyChangedCallback(it.second) }
-        observables.clear()
         listObservables.forEach { it.first.removeOnListChangedCallback(it.second) }
-        listObservables.clear()
         isStarted = false
     }
 

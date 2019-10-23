@@ -1,5 +1,7 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
+import kotlinx.coroutines.launch
+
 
 abstract class SamaMutableListItem<T> : SamaListItem() {
 
@@ -12,17 +14,13 @@ abstract class SamaMutableListItem<T> : SamaListItem() {
     abstract fun newBoundItem(): T
 
     /** Called when it's bound to the view */
-    open fun onBind(bound: T, initObjects: Map<String, Any>) {  }
+    open fun onBind(bound: T, initObjects: Map<String, Any>) { launch { onBindInBackground(bound, initObjects) } }
 
     /** Called when it's bound to the view */
     @Suppress("UNCHECKED_CAST")
     internal fun bind(bound: Any, initObjects: Map<String, Any>) = onBind(bound as T, initObjects)
 
     /** Called when it's bound to the view, in background after [onBind] */
-    @Suppress("UNCHECKED_CAST")
-    internal suspend fun bindInBackground(bound: Any, initObjects: Map<String, Any>) = onBindInBackground(bound as T, initObjects)
-
-    /** Called when it's bound to the view, in background after [onBind] */
-    open suspend fun onBindInBackground(bound: T, initObjects: Map<String, Any>) {}
+    protected open suspend fun onBindInBackground(bound: T, initObjects: Map<String, Any>) {}
 
 }

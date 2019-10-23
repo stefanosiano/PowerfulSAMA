@@ -161,13 +161,13 @@ open class SamaRvAdapter(
     override fun onViewDetachedFromWindow(holder: SimpleViewHolder) {
         super.onViewDetachedFromWindow(holder)
         val item = getItem(holder.adapterPosition) ?: return
-        item.onStop()
+//        item.onStop()
     }
 
     override fun onViewAttachedToWindow(holder: SimpleViewHolder) {
         super.onViewAttachedToWindow(holder)
         val item = getItem(holder.adapterPosition) ?: return
-        item.onStart()
+//        item.onStart()
         lazyInit(item)
     }
 
@@ -175,6 +175,7 @@ open class SamaRvAdapter(
     private fun bindItemToViewHolder(job: Job?, listItem: SamaListItem?){
         listItem ?: return
         runBlocking(listItem.coroutineContext) { job?.join() }
+
         if(listItem is SamaMutableListItem<*>) {
             val bound = mutableBoundItems.get(getItemStableId(listItem)) ?: {
                 listItem.newBoundItem().also { mutableBoundItems.put(getItemStableId(listItem), it) }
@@ -185,18 +186,7 @@ open class SamaRvAdapter(
             listItem.onBind(initObjects)
 
         listItem.setPostActionListener { action, item -> itemUpdatedListeners.forEach { it.invoke(action, item) } }
-        if(!isActive) return
-        runBlocking { bindListJob?.join() }
-        listItem.launch {
-            if(listItem is SamaMutableListItem<*>) {
-                val bound = mutableBoundItems.get(getItemStableId(listItem)) ?: {
-                    listItem.newBoundItem().also { mutableBoundItems.put(getItemStableId(listItem), it) }
-                }
-                listItem.bindInBackground(bound, initObjects)
-            }
-            else
-                listItem.onBindInBackground(initObjects)
-        }
+        listItem.onStart()
     }
 
 
@@ -364,9 +354,9 @@ open class SamaRvAdapter(
                 mDiffer.submitList(list as PagedList<SamaListItem>) {
                     items.addAll(list)
 
-                    items = list.snapshot().filterNotNull().mapTo(ObservableArrayList(), {
-                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
-                        if(itemCached?.contentEquals(it) == true) itemCached else it
+                    items = list.filterNotNull().mapTo(ObservableArrayList(), {
+                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it)) ?: it
+                        if(itemCached.contentEquals(it)) itemCached else it
                     })
                     onLoadFinished?.invoke()
                     startLazyInits()
@@ -432,9 +422,9 @@ open class SamaRvAdapter(
         runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
         runOnUi { liveDataPagedItems?.removeObserver(pagedLiveDataObserver) }
         //putting try blocks: if object is destroyed and variables (lists) are destroyed before finishing this function, there could be some crash
-        items.forEach { tryOrNull { it.onStop() } }
-        lazyInitializedItemCacheMap.clear()
-        coroutineContext.cancelChildren()
+//        items.forEach { tryOrNull { it.onStop() } }
+//        lazyInitializedItemCacheMap.clear()
+//        coroutineContext.cancelChildren()
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
@@ -456,11 +446,6 @@ open class SamaRvAdapter(
         items.forEach { it.onStop(); it.onDestroy() }
         lazyInitializedItemCacheMap.clear()
         coroutineContext.cancel()
-    }
-
-    override fun onViewRecycled(holder: SimpleViewHolder) {
-        super.onViewRecycled(holder)
-        getItem(holder.adapterPosition)?.onStop()
     }
 
 
@@ -507,7 +492,12 @@ open class SamaRvAdapter(
     }
 
     /** Function to be called when some items are added */
-    private fun itemRangeInserted(positionStart: Int, itemCount: Int) = runOnUi { notifyItemRangeInserted(positionStart, itemCount) }
+    private fun itemRangeInserted(positionStart: Int, itemCount: Int) = runOnUi {
+        for(i in positionStart until positionStart+itemCount) {
+            getItemOrNull(i)?.onStart()
+        }
+        notifyItemRangeInserted(positionStart, itemCount)
+    }
 
     /** Function to be called when some items are moved */
     private fun itemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int){
@@ -524,8 +514,8 @@ open class SamaRvAdapter(
         notifyItemRangeRemoved(positionStart, itemCount)
     }
 
-    /** Function to be called when the whole list changes */
-    private fun dataSetChanged() {
+    /** Function to be called when the whole list changes. Deeper than [notifyDataSetChanged] */
+    fun dataSetChanged() {
         items.forEach { it.onStop() }
         lazyInitializedItemCacheMap.clear()
         coroutineContext.cancelChildren()
