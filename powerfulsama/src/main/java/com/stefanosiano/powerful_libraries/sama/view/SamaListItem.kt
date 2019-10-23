@@ -26,7 +26,7 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore private val coroutineJob: Job = SupervisorJob()
     @Ignore override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
-    @Ignore internal var onPostAction : (suspend (SamaListItem, SamaListItemAction?) -> Unit)? = null
+    @Ignore internal var onPostAction : (suspend (SamaListItemAction?, SamaListItem) -> Unit)? = null
     @Ignore internal var isLazyInit = false
     @Ignore internal var isStarted = false
 
@@ -36,10 +36,10 @@ abstract class SamaListItem : CoroutineScope {
 
     /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] after [millis] milliseconds, optionally passing an [action].
      * If called again before [millis] milliseconds are passed, previous call is cancelled */
-    protected fun postAction(action: SamaListItemAction? = null, millis: Long = 0) { updateJob?.cancel(); updateJob = launch { delay(millis); if(isActive) onPostAction?.invoke(this@SamaListItem, action) } }
+    protected fun postAction(action: SamaListItemAction? = null, millis: Long = 0) { updateJob?.cancel(); updateJob = launch { delay(millis); if(isActive) onPostAction?.invoke(action, this@SamaListItem) } }
 
     /** Sets a listener through [SamaRvAdapter] to be called by the item */
-    internal fun setPostActionListener(f: suspend (SamaListItem, SamaListItemAction?) -> Unit) { onPostAction = f }
+    internal fun setPostActionListener(f: suspend (SamaListItemAction?, SamaListItem) -> Unit) { onPostAction = f }
 
     /** Returns the unique id of the item (defaults to [RecyclerView.NO_ID]). Overrides [getStableIdString] if specified */
     open fun getStableId(): Long = RecyclerView.NO_ID

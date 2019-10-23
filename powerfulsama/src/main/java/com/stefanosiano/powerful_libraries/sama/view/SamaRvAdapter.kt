@@ -97,7 +97,7 @@ open class SamaRvAdapter(
     private var lazyInitsJob : Job? = null
 
     /** Listener passed to items to provide a callback to the adapter's caller */
-    private var itemUpdatedListeners : MutableList<suspend (SamaListItem, SamaListItem.SamaListItemAction?) -> Unit> = ArrayList()
+    private var itemUpdatedListeners : MutableList<suspend (SamaListItem.SamaListItemAction?, SamaListItem) -> Unit> = ArrayList()
 
     /** Function called when adapter starts loading items (one of [bindItems] or [bindPagedItems] is called) */
     private var onLoadStarted : (suspend () -> Unit)? = null
@@ -184,7 +184,7 @@ open class SamaRvAdapter(
         else
             listItem.onBind(initObjects)
 
-        listItem.setPostActionListener { item, action -> itemUpdatedListeners.forEach { it.invoke(item, action) } }
+        listItem.setPostActionListener { action, item -> itemUpdatedListeners.forEach { it.invoke(action, item) } }
         if(!isActive) return
         runBlocking { bindListJob?.join() }
         listItem.launch {
@@ -202,7 +202,7 @@ open class SamaRvAdapter(
 
     /** Observe the items of this [RecyclerView] passing the updated item when it changes (when [SamaListItem.onPostAction] is called) */
     @Suppress("UNCHECKED_CAST")
-    fun <T> observe(f: suspend (item: T, action: SamaListItem.SamaListItemAction?) -> Unit) where T: SamaListItem { this.itemUpdatedListeners.add(f as suspend (SamaListItem, SamaListItem.SamaListItemAction?) -> Unit) }
+    fun <T> observe(f: suspend (action: SamaListItem.SamaListItemAction?, item: T) -> Unit) where T: SamaListItem { this.itemUpdatedListeners.add(f as suspend (SamaListItem.SamaListItemAction?, SamaListItem) -> Unit) }
 
     /**
      * Binds the items of the adapter to the passed list
