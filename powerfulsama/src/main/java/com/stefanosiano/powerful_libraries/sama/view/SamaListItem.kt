@@ -32,6 +32,10 @@ abstract class SamaListItem : CoroutineScope {
 
     @Ignore internal var updateJob: Job? = null
 
+    /** current position given by the [SamaRvAdapter]*/
+    @Ignore var adapterPosition: Int? = null
+        internal set
+
 
 
     /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] after [millis] milliseconds, optionally passing an [action].
