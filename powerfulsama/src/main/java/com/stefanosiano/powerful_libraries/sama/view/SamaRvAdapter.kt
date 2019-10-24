@@ -171,6 +171,7 @@ open class SamaRvAdapter(
         lazyInit(item)
     }
 
+
     /** Function that binds the item to the view holder, calling appropriate methods in the right order */
     private fun bindItemToViewHolder(job: Job?, listItem: SamaListItem?){
         listItem ?: return
@@ -208,13 +209,16 @@ open class SamaRvAdapter(
         bindListJob = launch {
             onLoadStarted?.invoke()
             runOnUi {
+                notifyItemRangeRemoved(0, items.size)
+                /*
                 items.removeOnListChangedCallback(onListChangedCallback)
                 items.clear()
                 items = list as ObservableList<SamaListItem>
                 items.addOnListChangedCallback(onListChangedCallback)
+                */
                 itemRangeInserted(0, list.size)
                 onLoadFinished?.invoke()
-                startLazyInits()
+//                startLazyInits()
             }
         }
         return this
@@ -237,11 +241,12 @@ open class SamaRvAdapter(
             if (forceReload) {
                 if (!isActive) return@launch
                 runOnUi {
-                    items.clear()
-                    items.addAll(list)
-                    dataSetChanged()
+//                    items.clear()
+//                    items.addAll(list)
+//                    dataSetChanged()
+                    notifyDataSetChanged()
                     onLoadFinished?.invoke()
-                    startLazyInits()
+//                    startLazyInits()
                 }
             } else {
                 val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
@@ -257,14 +262,14 @@ open class SamaRvAdapter(
                 }
                 if (!isActive) return@launch
                 runOnUi {
-                    items.clear()
-                    items = list.mapTo(ObservableArrayList(), {
-                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
-                        if(itemCached?.contentEquals(it) == true) itemCached else it
-                    })
+//                    items.clear()
+//                    items = list.mapTo(ObservableArrayList(), {
+//                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
+//                        if(itemCached?.contentEquals(it) == true) itemCached else it
+//                    })
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                     onLoadFinished?.invoke()
-                    startLazyInits()
+//                    startLazyInits()
                 }
             }
         }
@@ -349,17 +354,17 @@ open class SamaRvAdapter(
             }
 
             if (!isActive) return@launch
-            items.clear()
+//            items.clear()
             runOnUi {
                 mDiffer.submitList(list as PagedList<SamaListItem>) {
-                    items.addAll(list)
+//                    items.addAll(list)
 
-                    items = list.filterNotNull().mapTo(ObservableArrayList(), {
-                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it)) ?: it
-                        if(itemCached.contentEquals(it)) itemCached else it
-                    })
+//                    items = list.filterNotNull().mapTo(ObservableArrayList(), {
+//                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it)) ?: it
+//                        if(itemCached.contentEquals(it)) itemCached else it
+//                    })
                     onLoadFinished?.invoke()
-                    startLazyInits()
+//                    startLazyInits()
                 }
             }
         }
@@ -421,6 +426,7 @@ open class SamaRvAdapter(
         //remove the observer from the optional current liveData
         runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
         runOnUi { liveDataPagedItems?.removeObserver(pagedLiveDataObserver) }
+        unregisterAdapterDataObserver(innerDataObserver)
         //putting try blocks: if object is destroyed and variables (lists) are destroyed before finishing this function, there could be some crash
 //        items.forEach { tryOrNull { it.onStop() } }
 //        lazyInitializedItemCacheMap.clear()
@@ -434,6 +440,7 @@ open class SamaRvAdapter(
         //remove the observer from the optional current liveData
         runOnUi { liveDataItems?.observeForever(liveDataObserver) }
         runOnUi { liveDataPagedItems?.observeForever(pagedLiveDataObserver) }
+        registerAdapterDataObserver(innerDataObserver)
     }
 
     /** Clears all data from the adapter (call it only if you know the adapter is not needed anymore!) */
@@ -498,35 +505,94 @@ open class SamaRvAdapter(
 
     /** Function to be called when some items are added */
     private fun itemRangeInserted(positionStart: Int, itemCount: Int) = runOnUi {
-        for(i in positionStart until positionStart+itemCount) {
-            getItemOrNull(i)?.onStart()
-        }
+//        for(i in positionStart until positionStart+itemCount) {
+//            getItemOrNull(i)?.onStart()
+//        }
         notifyItemRangeInserted(positionStart, itemCount)
     }
 
     /** Function to be called when some items are moved */
     private fun itemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int){
-        itemRangeRemoved(fromPosition, itemCount)
-        itemRangeInserted(toPosition, itemCount)
+        notifyItemRangeRemoved(fromPosition, itemCount)
+        notifyItemRangeInserted(toPosition, itemCount)
     }
+
 
     /** Function to be called when some items are removed */
     private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = runOnUi {
-        for(i in positionStart until positionStart+itemCount) {
-            getItemOrNull(i)?.onStop()
-        }
+//        for(i in positionStart until positionStart+itemCount) {
+//            getItemOrNull(i)?.onStop()
+//        }
 
         notifyItemRangeRemoved(positionStart, itemCount)
     }
 
     /** Function to be called when the whole list changes. Deeper than [notifyDataSetChanged] */
     fun dataSetChanged() {
-        items.forEach { it.onStop() }
-        lazyInitializedItemCacheMap.clear()
-        coroutineContext.cancelChildren()
+//        items.forEach { it.onStop() }
+//        lazyInitializedItemCacheMap.clear()
+//        coroutineContext.cancelChildren()
         notifyDataSetChanged()
     }
 
+
+
+
+
+
+
+
+    val innerDataObserver = object : RecyclerView.AdapterDataObserver() {
+        override fun onChanged() {
+            super.onChanged()
+            lazyInitializedItemCacheMap.clear()
+            startLazyInits()
+        }
+
+        override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+            super.onItemRangeRemoved(positionStart, itemCount)
+            for (i in positionStart..itemCount)
+                items.removeAt(i).also { it.onStop(); it.onDestroy() }
+        }
+
+        override fun onItemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int) {
+            super.onItemRangeMoved(fromPosition, toPosition, itemCount)
+            for (i in fromPosition..itemCount) {
+                val item = items.removeAt(i)
+                items.add(toPosition+i, item)
+            }
+        }
+
+        override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+            super.onItemRangeInserted(positionStart, itemCount)
+            for (i in positionStart..itemCount) {
+                val item = getItem(i)
+                items.add(i, item)
+                lazyInitializedItemCacheMap.remove(getItemStableId(item))
+            }
+            startLazyInits()
+        }
+
+        override fun onItemRangeChanged(positionStart: Int, itemCount: Int) {
+            super.onItemRangeChanged(positionStart, itemCount)
+            for (i in positionStart..itemCount) {
+                val item = getItem(i)
+//                    bindItemToViewHolder(null, item)
+                lazyInitializedItemCacheMap.remove(getItemStableId(item))
+            }
+            startLazyInits()
+        }
+
+        override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) {
+            super.onItemRangeChanged(positionStart, itemCount, payload)
+            for (i in positionStart..itemCount) {
+                val item = getItem(i)
+//                    bindItemToViewHolder(null, item)
+                lazyInitializedItemCacheMap.remove(getItemStableId(item))
+            }
+            startLazyInits()
+        }
+    }
 
 
     /** Class that implement the ViewHolder of the Adapter */
