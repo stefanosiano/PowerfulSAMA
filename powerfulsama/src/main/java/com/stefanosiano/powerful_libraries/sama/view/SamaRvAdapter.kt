@@ -209,11 +209,11 @@ open class SamaRvAdapter(
             onLoadStarted?.invoke()
             runOnUi {
                 items.removeOnListChangedCallback(onListChangedCallback)
-                unregisterAdapterDataObserver(innerDataObserver)
+                unregisterAdapterDataObserverOrNull(innerDataObserver)
                 items.clear()
                 items = list as ObservableList<SamaListItem>
                 items.addOnListChangedCallback(onListChangedCallback)
-                registerAdapterDataObserver(innerDataObserver)
+                registerAdapterDataObserverOrNull(innerDataObserver)
                 itemRangeInserted(0, list.size)
                 onLoadFinished?.invoke()
 //                startLazyInits()
@@ -260,12 +260,12 @@ open class SamaRvAdapter(
                 if (!isActive) return@launch
                 runOnUi {
                     items.clear()
-                    unregisterAdapterDataObserver(innerDataObserver)
+                    unregisterAdapterDataObserverOrNull(innerDataObserver)
                     items = list.mapTo(ObservableArrayList(), {
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
                         if(itemCached?.contentEquals(it) == true) itemCached else it
                     })
-                    registerAdapterDataObserver(innerDataObserver)
+                    registerAdapterDataObserverOrNull(innerDataObserver)
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                     onLoadFinished?.invoke()
 //                    startLazyInits()
@@ -358,12 +358,12 @@ open class SamaRvAdapter(
                 mDiffer.submitList(list as PagedList<SamaListItem>) {
                     items.addAll(list)
 
-                    unregisterAdapterDataObserver(innerDataObserver)
+                    unregisterAdapterDataObserverOrNull(innerDataObserver)
                     items = list.filterNotNull().mapTo(ObservableArrayList(), {
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it)) ?: it
                         if(itemCached.contentEquals(it)) itemCached else it
                     })
-                    unregisterAdapterDataObserver(innerDataObserver)
+                    registerAdapterDataObserverOrNull(innerDataObserver)
                     onLoadFinished?.invoke()
 //                    startLazyInits()
                 }
@@ -427,7 +427,7 @@ open class SamaRvAdapter(
         //remove the observer from the optional current liveData
         runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
         runOnUi { liveDataPagedItems?.removeObserver(pagedLiveDataObserver) }
-        runOnUi { unregisterAdapterDataObserver(innerDataObserver) }
+        runOnUi { unregisterAdapterDataObserverOrNull(innerDataObserver) }
         //putting try blocks: if object is destroyed and variables (lists) are destroyed before finishing this function, there could be some crash
 //        items.forEach { tryOrNull { it.onStop() } }
 //        lazyInitializedItemCacheMap.clear()
@@ -441,7 +441,7 @@ open class SamaRvAdapter(
         //remove the observer from the optional current liveData
         runOnUi { liveDataItems?.observeForever(liveDataObserver) }
         runOnUi { liveDataPagedItems?.observeForever(pagedLiveDataObserver) }
-        runOnUi { registerAdapterDataObserver(innerDataObserver) }
+        runOnUi { registerAdapterDataObserverOrNull(innerDataObserver) }
     }
 
     /** Clears all data from the adapter (call it only if you know the adapter is not needed anymore!) */
@@ -540,6 +540,8 @@ open class SamaRvAdapter(
 
 
 
+    private fun unregisterAdapterDataObserverOrNull(observer: RecyclerView.AdapterDataObserver) = tryOrNull { unregisterAdapterDataObserver(observer) }
+    private fun registerAdapterDataObserverOrNull(observer: RecyclerView.AdapterDataObserver) = tryOrNull { registerAdapterDataObserver(observer) }
 
     private val innerDataObserver = object : RecyclerView.AdapterDataObserver() {
         override fun onChanged() {
