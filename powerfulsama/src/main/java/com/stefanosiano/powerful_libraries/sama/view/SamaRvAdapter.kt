@@ -15,6 +15,7 @@ import androidx.paging.AsyncPagedListDiffer
 import androidx.paging.PagedList
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.ListUpdateCallback
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.*
 import kotlinx.coroutines.*
@@ -213,10 +214,10 @@ open class SamaRvAdapter(
                 items.clear()
                 items = list as ObservableList<SamaListItem>
                 items.addOnListChangedCallback(onListChangedCallback)
-                registerAdapterDataObserverOrNull(innerDataObserver)
                 itemRangeInserted(0, list.size)
+                registerAdapterDataObserverOrNull(innerDataObserver)
                 onLoadFinished?.invoke()
-//                startLazyInits()
+                startLazyInits()
             }
         }
         return this
@@ -259,14 +260,14 @@ open class SamaRvAdapter(
                 }
                 if (!isActive) return@launch
                 runOnUi {
-                    items.clear()
-                    unregisterAdapterDataObserverOrNull(innerDataObserver)
-                    items = list.mapTo(ObservableArrayList(), {
-                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
-                        if(itemCached?.contentEquals(it) == true) itemCached else it
-                    })
-                    registerAdapterDataObserverOrNull(innerDataObserver)
-                    diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+//                    unregisterAdapterDataObserverOrNull(innerDataObserver)
+//                    items.clear()
+//                    items = list.mapTo(ObservableArrayList(), {
+//                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
+//                        if(itemCached?.contentEquals(it) == true) itemCached else it
+//                    })
+                    diffResult.dispatchUpdatesTo(innerDataObserver)
+//                    registerAdapterDataObserverOrNull(innerDataObserver)
                     onLoadFinished?.invoke()
 //                    startLazyInits()
                 }
@@ -283,7 +284,7 @@ open class SamaRvAdapter(
             if(!isActive) return@launch
             if(!preserveLazyInitializedItemCache)
                 lazyInitializedItemCacheMap.clear()
-            items.filter { it.isLazyInitialized() }.forEach { lazyInitializedItemCacheMap.put(getItemStableId(it), it) }
+            items.filter { it?.isLazyInitialized() == true }.forEach { lazyInitializedItemCacheMap.put(getItemStableId(it), it) }
             delay(150)
             val lazyItems = items.filter { !it.isLazyInitialized() }
             lazyItems.iterateIndexed { item, index ->
@@ -355,17 +356,17 @@ open class SamaRvAdapter(
             if (!isActive) return@launch
             items.clear()
             runOnUi {
+                unregisterAdapterDataObserverOrNull(innerDataObserver)
                 mDiffer.submitList(list as PagedList<SamaListItem>) {
                     items.addAll(list)
 
-                    unregisterAdapterDataObserverOrNull(innerDataObserver)
-                    items = list.filterNotNull().mapTo(ObservableArrayList(), {
-                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it)) ?: it
-                        if(itemCached.contentEquals(it)) itemCached else it
-                    })
+//                    items = list.filterNotNull().mapTo(ObservableArrayList(), {
+//                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it)) ?: it
+//                        if(itemCached.contentEquals(it)) itemCached else it
+//                    })
                     registerAdapterDataObserverOrNull(innerDataObserver)
                     onLoadFinished?.invoke()
-//                    startLazyInits()
+                    startLazyInits()
                 }
             }
         }
@@ -543,7 +544,13 @@ open class SamaRvAdapter(
     private fun unregisterAdapterDataObserverOrNull(observer: RecyclerView.AdapterDataObserver) = tryOrNull { unregisterAdapterDataObserver(observer) }
     private fun registerAdapterDataObserverOrNull(observer: RecyclerView.AdapterDataObserver) = tryOrNull { registerAdapterDataObserver(observer) }
 
-    private val innerDataObserver = object : RecyclerView.AdapterDataObserver() {
+    private val innerDataObserver = object : RecyclerView.AdapterDataObserver(), ListUpdateCallback {
+
+        override fun onChanged(position: Int, count: Int, payload: Any?) = onItemRangeChanged(position, count, payload)
+        override fun onMoved(fromPosition: Int, toPosition: Int) = onItemRangeMoved(fromPosition, toPosition, 1)
+        override fun onInserted(position: Int, count: Int) = onItemRangeInserted(position, count)
+        override fun onRemoved(position: Int, count: Int) = onItemRangeRemoved(position, count)
+
         override fun onChanged() {
             super.onChanged()
             lazyInitializedItemCacheMap.clear()
@@ -568,7 +575,7 @@ open class SamaRvAdapter(
             super.onItemRangeInserted(positionStart, itemCount)
             for (i in positionStart..itemCount) {
                 val item = getItem(i)
-                items.add(i, lazyInitializedItemCacheMap.get(getItemStableId(item)) ?: item)
+                items.add(i, item)
             }
             startLazyInits()
         }
