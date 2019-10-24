@@ -186,7 +186,7 @@ open class SamaRvAdapter(
             listItem.onBind(initObjects)
 
         listItem.setPostActionListener { action, item -> itemUpdatedListeners.forEach { it.invoke(action, item) } }
-        listItem.onStart()
+        //listItem.onStart()
     }
 
 
@@ -446,6 +446,11 @@ open class SamaRvAdapter(
         items.forEach { it.onStop(); it.onDestroy() }
         lazyInitializedItemCacheMap.clear()
         coroutineContext.cancel()
+    }
+
+    override fun onViewRecycled(holder: SimpleViewHolder) {
+        super.onViewRecycled(holder)
+        getItem(holder.adapterPosition)?.onStop()
     }
 
 
