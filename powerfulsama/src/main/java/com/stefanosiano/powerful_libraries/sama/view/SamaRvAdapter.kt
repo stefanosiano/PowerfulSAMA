@@ -209,9 +209,11 @@ open class SamaRvAdapter(
             onLoadStarted?.invoke()
             runOnUi {
                 items.removeOnListChangedCallback(onListChangedCallback)
+                unregisterAdapterDataObserver(innerDataObserver)
                 items.clear()
                 items = list as ObservableList<SamaListItem>
                 items.addOnListChangedCallback(onListChangedCallback)
+                registerAdapterDataObserver(innerDataObserver)
                 itemRangeInserted(0, list.size)
                 onLoadFinished?.invoke()
 //                startLazyInits()
@@ -258,10 +260,12 @@ open class SamaRvAdapter(
                 if (!isActive) return@launch
                 runOnUi {
                     items.clear()
+                    unregisterAdapterDataObserver(innerDataObserver)
                     items = list.mapTo(ObservableArrayList(), {
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
                         if(itemCached?.contentEquals(it) == true) itemCached else it
                     })
+                    registerAdapterDataObserver(innerDataObserver)
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                     onLoadFinished?.invoke()
 //                    startLazyInits()
@@ -354,10 +358,12 @@ open class SamaRvAdapter(
                 mDiffer.submitList(list as PagedList<SamaListItem>) {
                     items.addAll(list)
 
+                    unregisterAdapterDataObserver(innerDataObserver)
                     items = list.filterNotNull().mapTo(ObservableArrayList(), {
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it)) ?: it
                         if(itemCached.contentEquals(it)) itemCached else it
                     })
+                    unregisterAdapterDataObserver(innerDataObserver)
                     onLoadFinished?.invoke()
 //                    startLazyInits()
                 }
@@ -560,8 +566,7 @@ open class SamaRvAdapter(
             super.onItemRangeInserted(positionStart, itemCount)
             for (i in positionStart..itemCount) {
                 val item = getItem(i)
-                items.add(i, item)
-                lazyInitializedItemCacheMap.remove(getItemStableId(item))
+                items.add(i, lazyInitializedItemCacheMap.get(getItemStableId(item)) ?: item)
             }
             startLazyInits()
         }
