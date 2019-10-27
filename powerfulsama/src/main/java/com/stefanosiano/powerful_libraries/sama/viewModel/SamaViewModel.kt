@@ -54,7 +54,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     private var allowConcurrentSameActions = false
 
     /** Flag to understand whether this [SamaViewModel] is already initialized. Used to check if [onFirtstTime] should be called */
-    private var isInitialized = AtomicBoolean(false)
+    internal var isInitialized = AtomicBoolean(false)
 
 
     /** Clears the LiveData of the response to avoid the observer receives it over and over on configuration changes */
@@ -71,10 +71,6 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     /** Sends the action to the active observer */
     protected fun postAction(vmResponse: VmResponse<A>) = liveResponse.postValue(vmResponse)
 
-
-
-
-    @Synchronized fun onFirtstTime(f: SamaViewModel<A>.() -> Unit) { if(!isInitialized.getAndSet(true)) this.f() }
 
 
 
@@ -342,6 +338,11 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
 
     /** Set whether multiple actions at once are allowed (e.g. multiple buttons clicked at the same time). Defaults to [false] */
     fun allowConcurrentActions(allow: Boolean) { allowConcurrentActions = allow }
+}
+
+/** Executes [f] only once. If this is called multiple times, it will have no effect */
+@Synchronized fun <T> T.onFirstTime(f: T.() -> Unit) where T : SamaViewModel<*> {
+    if(!isInitialized.getAndSet(true)) this.f()
 }
 
 /** Class containing action and data sent from the ViewModel to its observers */

@@ -121,7 +121,7 @@ abstract class SamaListItem : CoroutineScope {
                 //increment value of observablesMap[obsId] -> only first call can run this function
                 val id = observablesMap[obsId]?.incrementAndGet() ?: 1
                 if(id != 1) return@onChange
-                o.let { logVerbose(it.toString()); obFun(it) }
+                o.let { logVerbose("${adapterPosition ?: 0} - $it"); obFun(it) }
                 //clear value of observablesMap[obsId] -> everyone can run this function
                 observablesMap[obsId]?.set(0)
             }))
@@ -130,7 +130,7 @@ abstract class SamaListItem : CoroutineScope {
         val c = o.onAnyChange {
             launchOrNow(this) {
                 observablesMap[obsId]?.set(2)
-                logVerbose(o.toString())
+                logVerbose("${adapterPosition ?: 0} - $o")
                 obFun(it)
                 observablesMap[obsId]?.set(0)
             }
@@ -195,7 +195,7 @@ abstract class SamaListItem : CoroutineScope {
                 //increment value of observablesMap[obsId] -> only first call can run this function
                 val id = observablesMap[obsId]?.incrementAndGet() ?: 1
                 if(id != 1) return@onChange
-                obValue()?.let { logVerbose(it.toString()); obFun(it) }
+                obValue()?.let { logVerbose("${adapterPosition ?: 0} - $it"); obFun(it) }
                 //clear value of observablesMap[obsId] -> everyone can run this function
                 observablesMap[obsId]?.set(0)
             }))
@@ -205,56 +205,56 @@ abstract class SamaListItem : CoroutineScope {
             is ObservableInt -> {
                 observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableShort -> {
                 observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableLong -> {
                 observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableFloat -> {
                 observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableDouble -> {
                 observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableBoolean -> {
                 observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableByte -> {
                 observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableField<*> -> {
                 observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - ${data.toString()}"); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }

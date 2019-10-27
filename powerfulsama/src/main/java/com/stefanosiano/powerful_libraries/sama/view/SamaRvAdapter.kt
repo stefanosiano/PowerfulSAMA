@@ -13,9 +13,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.paging.AsyncPagedListDiffer
 import androidx.paging.PagedList
-import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.recyclerview.widget.*
 import com.stefanosiano.powerful_libraries.sama.*
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
@@ -134,14 +132,11 @@ open class SamaRvAdapter(
     /** Changes the layout of the rows and reload the list */
     fun setItemLayoutId(itemLayoutId: Int) {
         this.itemLayoutId = itemLayoutId
-        runOnUi { dataSetChanged() }
+        runOnUi { notifyDataSetChanged() }
     }
 
 
     override fun getItemCount():Int = if(isPaged) mDiffer.itemCount else items.size
-
-//    /** forces all items to call their [SamaListItem.onBind] and [SamaListItem.onBindInBackground]. Only if [hasStableId] is true */
-//    @Synchronized fun rebind() { runOnUi { if(hasStableId) items.iterate { bindItemToViewHolder(null, it, holder.adapterPosition) } } }
 
     override fun getItemViewType(position: Int): Int = getItem(position)?.getViewType() ?: -1
 
@@ -238,8 +233,9 @@ open class SamaRvAdapter(
                 if (!isActive) return@launch
                 runOnUi {
                     items.clear()
-                    items.addAll(list)
                     dataSetChanged()
+                    items.addAll(list)
+                    notifyDataSetChanged()
                     onLoadFinished?.invoke()
                     startLazyInits()
                 }
@@ -352,7 +348,7 @@ open class SamaRvAdapter(
             items.clear()
             runOnUi {
                 mDiffer.submitList(list as PagedList<SamaListItem>) {
-                    items.addAll(list)
+//                    items.addAll(list)
 
                     items = list.filterNotNull().mapTo(ObservableArrayList(), {
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
@@ -450,7 +446,8 @@ open class SamaRvAdapter(
 
     override fun onViewRecycled(holder: SimpleViewHolder) {
         super.onViewRecycled(holder)
-        getItem(holder.adapterPosition)?.onStop()
+        //If using pagedLists, the view is recycled and i should stop the item in my list, not the newly added item from mDiffer.list
+        tryOrNull { items[holder.adapterPosition] }?.onStop()
     }
 
 
