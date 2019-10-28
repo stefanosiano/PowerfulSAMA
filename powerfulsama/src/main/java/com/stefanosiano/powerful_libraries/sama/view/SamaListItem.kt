@@ -32,8 +32,12 @@ abstract class SamaListItem : CoroutineScope {
 
     @Ignore internal var updateJob: Job? = null
 
-    /** current position given by the [SamaRvAdapter]*/
+    /** current position given by the [SamaRvAdapter]. Surely available in [onBind] and [onBindInBackground] */
     @Ignore var adapterPosition: Int? = null
+        internal set
+
+    /** current adapter size given by the [SamaRvAdapter]. It may be inaccurate on item list reload. Surely available in [onBind] and [onBindInBackground] */
+    @Ignore var adapterSize: Int? = null
         internal set
 
 
