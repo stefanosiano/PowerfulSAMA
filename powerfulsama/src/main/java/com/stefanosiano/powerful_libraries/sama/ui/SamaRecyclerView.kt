@@ -14,6 +14,7 @@ open class SamaRecyclerView: RecyclerView {
 
     private var inconsistencyWorkaround = true
     private var horizontal = false
+    private var autoDetach = false
     private var columns = 0
 
     constructor(context: Context) : this(context, null)
@@ -23,11 +24,17 @@ open class SamaRecyclerView: RecyclerView {
         val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.SamaRecyclerView, defStyle, 0)
         columns = attrSet.getInt(R.styleable.SamaRecyclerView_srvColumns, 0)
         horizontal = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvHorizontal, false)
+        autoDetach = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvAutoDetach, false)
         inconsistencyWorkaround = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvInconsistencyWorkaround, true)
         attrSet.recycle()
         resetLayoutManager()
     }
-    
+
+    override fun onDetachedFromWindow() {
+        if(autoDetach) adapter = null
+        super.onDetachedFromWindow()
+    }
+
     fun setSrvColumns(columns: Int) {
         this.columns = columns
         resetLayoutManager()
