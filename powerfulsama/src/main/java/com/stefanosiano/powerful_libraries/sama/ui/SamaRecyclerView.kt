@@ -43,6 +43,15 @@ open class SamaRecyclerView: RecyclerView {
         resetLayoutManager()
     }
 
+    /** Call [LinearLayoutManager.scrollToPositionWithOffset] if the underlying layoutManager is a [LinearLayoutManager].
+     * Otherwise it calls [scrollToPosition] */
+    fun scrollToPositionWithOffset(position: Int, offset: Int = 0) {
+        if(layoutManager is LinearLayoutManager)
+            (layoutManager as LinearLayoutManager).scrollToPositionWithOffset(position, offset)
+        else
+            scrollToPosition(position)
+    }
+
     private fun resetLayoutManager() {
         val position = (layoutManager as? LinearLayoutManager?)?.findFirstVisibleItemPosition()
         recycledViewPool.clear()

@@ -2,15 +2,16 @@ package com.stefanosiano.powerful_libraries.sama.utils
 
 import android.app.Activity
 import android.app.Application
+import android.content.Context
+import android.content.pm.Signature
 import android.os.Bundle
-import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.logger
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaIntent
-import java.lang.Exception
 
 object PowerfulSama {
 
     internal var logger: PowerfulSamaLogger? = null
+    internal lateinit var applicationContext: Context
 
     /** Initializes the SAMA library
      *
@@ -20,11 +21,20 @@ object PowerfulSama {
      * [defaultYeslabel] Default "Yes" text
      * [defaultNolabel] Default "No" text
      * [logger] Logger used internally for base Sama classes
+     * [checkSignatureFunction] Function to check whether the signatures of the app are correct
+     * [onSignatureChackFailed] Function to run if the signatures of the app are NOT correct (will be run by [SamaSignature.checkSignatures])
      */
-    fun init(application: Application, defaultMessagesTheme: Int? = null, defaultMessageCustomization: ((Any) -> Unit)? = null,
-             defaultYeslabel: Int = android.R.string.yes, defaultNolabel: Int = android.R.string.no,
-             logger: PowerfulSamaLogger? = null) {
+    fun init(
+        application: Application,
+        defaultMessagesTheme: Int? = null,
+        defaultMessageCustomization: ((Any) -> Unit)? = null,
+        defaultYeslabel: Int = android.R.string.yes,
+        defaultNolabel: Int = android.R.string.no,
+        logger: PowerfulSamaLogger? = null,
+        checkSignatureFunction: ((Array<Signature>) -> Boolean)? = null,
+        onSignatureChackFailed: ((Array<Signature>) -> Unit)? = null) {
 
+        applicationContext = application
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPaused(activity: Activity?) {}
             override fun onActivityResumed(activity: Activity?) { setMsgActivity(activity); setResActivity(activity) }
@@ -41,6 +51,9 @@ object PowerfulSama {
         Msg.defaultYes = defaultYeslabel
         Msg.defaultNo = defaultNolabel
         PowerfulSama.logger = logger
+
+        if(checkSignatureFunction != null && onSignatureChackFailed != null)
+            SamaSignature.init(checkSignatureFunction, onSignatureChackFailed)
     }
 
     /** Clears the intent used to start an activity */

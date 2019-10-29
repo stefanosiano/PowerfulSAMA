@@ -1,15 +1,15 @@
 package com.stefanosiano.powerful_libraries.sama.utils
 
 import android.app.Activity
-import android.app.AlertDialog
-import android.content.Context
 import android.content.pm.PackageManager
-import android.util.LongSparseArray
 import android.util.SparseArray
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicInteger
+import android.net.Uri.fromParts
+import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
+import android.content.Intent
 
 
 object Perms {
@@ -19,7 +19,7 @@ object Perms {
 
     private val permHelperMap = SparseArray<PermHelper>()
 
-    private val requestCodes = AtomicInteger(0)
+    private val requestCodes = AtomicInteger(42000)
 
     fun onRequestPermissionsResult(activity: Activity, requestCode: Int, permissions: Array<out String>, grantResults: IntArray): Boolean {
 
@@ -27,14 +27,12 @@ object Perms {
         if(!permHelper.isCallingResult) return false
         permHelperMap.remove(requestCode)
         return permHelper.onRequestPermissionsResult(activity, permissions, grantResults)
-
-        return true
     }
 
 
     fun askPermissions(perms: List<String>,
              onShowRationale: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
-             onPermanentlyDenied: (perms: Array<String>) -> Unit = {  },
+             onPermanentlyDenied: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
              optionalPerms: List<String> = ArrayList(),
              f: () -> Unit): Boolean {
 
@@ -47,7 +45,7 @@ object Perms {
         return false
     }
 
-    fun askPermissions(perms: List<String>, rationaleId: Int, onPermanentlyDenied: (perms: Array<String>) -> Unit = {  },
+    fun askPermissions(perms: List<String>, rationaleId: Int, onPermanentlyDenied: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
              optionalPerms: List<String> = ArrayList(), f: () -> Unit) = askPermissions(perms,
         { permissions, activity, requestCode -> Msg.alertDialog().message(rationaleId).negative(android.R.string.cancel)
             .onOk(android.R.string.ok) { ActivityCompat.requestPermissions(activity, permissions, requestCode) }.show(activity) },
@@ -56,8 +54,16 @@ object Perms {
 
 
     fun askPermissions(perms: List<String>, onShowRationale: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
-             permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit) = askPermissions(perms, onShowRationale,
-        { perms -> },
+             permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit) =
+        askPermissions(perms, onShowRationale,
+        { perms, activity, requestCode ->
+            Msg.alertDialog().message(permanentlyDeniedId).negative(android.R.string.cancel)
+                .onOk(android.R.string.ok) {
+                    val intent = Intent(ACTION_APPLICATION_DETAILS_SETTINGS)
+                        .setData(fromParts("package", activity.packageName, null))
+                    activity.startActivityForResult(intent, requestCode)
+                }.show(activity)
+        },
         optionalPerms, f)
 
 
@@ -71,32 +77,28 @@ object Perms {
 
     fun call(perms: List<String>,
              onShowRationale: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
-             onPermanentlyDenied: (perms: Array<String>) -> Unit = {  },
+             onPermanentlyDenied: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
              optionalPerms: List<String> = ArrayList(),
              f: () -> Unit) {
-        if(askPermissions(perms, onShowRationale, onPermanentlyDenied, optionalPerms, f)) return
-        f()
+        if(!askPermissions(perms, onShowRationale, onPermanentlyDenied, optionalPerms, f)) f()
     }
 
-    fun call(perms: List<String>, rationaleId: Int, onPermanentlyDenied: (perms: Array<String>) -> Unit = {  },
-             optionalPerms: List<String> = ArrayList(), f: () -> Unit) = call(perms,
-        { permissions, activity, requestCode -> Msg.alertDialog().message(rationaleId).negative(android.R.string.cancel)
-            .onOk(android.R.string.ok) { ActivityCompat.requestPermissions(activity, permissions, requestCode) }.show(activity) },
-        onPermanentlyDenied, optionalPerms, f)
+    fun call(perms: List<String>, rationaleId: Int, onPermanentlyDenied: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
+             optionalPerms: List<String> = ArrayList(), f: () -> Unit) {
+        if(!askPermissions(perms, rationaleId, onPermanentlyDenied, optionalPerms, f)) f()
+    }
 
 
     fun call(perms: List<String>,
              onShowRationale: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
-             permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit) = call(perms, onShowRationale,
-        { perms -> }, optionalPerms, f)
-//    !!!permanentlyDeniedId!!!
+             permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit) {
+        if(!askPermissions(perms, onShowRationale, permanentlyDeniedId, optionalPerms, f)) f()
+    }
 
 
-    fun call(perms: List<String>, rationaleId: Int, permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit) =
-        call(perms,
-            { permissions, activity, requestCode -> Msg.alertDialog().message(rationaleId).negative(android.R.string.cancel)
-                .onOk(android.R.string.ok) { ActivityCompat.requestPermissions(activity, permissions, requestCode) }.show(activity) },
-            permanentlyDeniedId, optionalPerms, f)
+    fun call(perms: List<String>, rationaleId: Int, permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit) {
+        if(!askPermissions(perms, rationaleId, permanentlyDeniedId, optionalPerms, f)) f()
+    }
 
 
 
@@ -106,7 +108,7 @@ object Perms {
         private val requestCode: Int,
         private val optionalPermissions: List<String>,
         private val onShowRationale: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
-        private val onPermanentlyDenied: (perms: Array<String>) -> Unit,
+        private val onPermanentlyDenied: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
         private val onGranted: () -> Unit) {
 
         var isCallingResult = false
@@ -179,7 +181,7 @@ object Perms {
             deniedPermissions.addAll(rationalePermissions)
 
             if (shouldRunDenied) {
-                onPermanentlyDenied(deniedPermissions.toTypedArray())
+                onPermanentlyDenied(deniedPermissions.toTypedArray(), activity, requestCode)
                 return true
             }
 
