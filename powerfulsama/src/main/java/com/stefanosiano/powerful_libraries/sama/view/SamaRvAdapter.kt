@@ -233,7 +233,7 @@ open class SamaRvAdapter(
             if (forceReload) {
                 if (!isActive) return@launch
                 runOnUi {
-                    items.forEach { it.onDestroy() }
+                    items.forEach { it.onDestroy(false) }
                     items.clear()
                     dataSetChanged()
                     items.addAll(list)
@@ -259,7 +259,7 @@ open class SamaRvAdapter(
                     items = list.mapTo(ObservableArrayList(), {
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
                         if(itemCached?.contentEquals(it) == true) itemCached
-                        else { itemCached?.onDestroy(); it }
+                        else { itemCached?.onDestroy(false); it }
                     })
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                     onLoadFinished?.invoke()
@@ -356,7 +356,7 @@ open class SamaRvAdapter(
                     items = list.filterNotNull().mapTo(ObservableArrayList(), {
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
                         if(itemCached?.contentEquals(it) == true) itemCached
-                        else { itemCached?.onDestroy(); it }
+                        else { itemCached?.onDestroy(false); it }
                     })
                     onLoadFinished?.invoke()
                     startLazyInits()
@@ -446,14 +446,14 @@ open class SamaRvAdapter(
 
         coroutineContext.cancel()
         itemUpdatedListeners.clear()
-        items.forEach { it.onDestroy() }
+        items.forEach { it.onDestroy(false) }
         lazyInitializedItemCacheMap.clear()
     }
 
     override fun onViewRecycled(holder: SimpleViewHolder) {
         super.onViewRecycled(holder)
         //If using pagedLists, the view is recycled and i should stop the item in my list, not the newly added item from mDiffer.list
-        tryOrNull { items[holder.adapterPosition] }?.onDestroy()
+        tryOrNull { items[holder.adapterPosition] }?.onDestroy(true)
     }
 
 

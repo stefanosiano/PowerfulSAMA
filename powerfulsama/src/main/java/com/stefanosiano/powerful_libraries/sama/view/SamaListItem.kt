@@ -78,14 +78,17 @@ abstract class SamaListItem : CoroutineScope {
         listObservables.forEach { tryOrNull { it.first.removeOnListChangedCallback(it.second) } }
     }
 
-    /** Called when it's removed from the recyclerview, or its view was recycled or the recyclerView no longer observes the adapter. Use it to completely clear any resource. Its coroutines are cancelled here */
-    open fun onDestroy() {
+    /** Called when it's removed from the recyclerview, or its view was recycled or the recyclerView no longer observes the adapter.
+     * [canBeReused] determines whether the item may be reused later (the view was recycled, but the item is still present in the adapter)
+     * Use it to completely clear any resource. Its coroutines are cancelled here */
+    open fun onDestroy(canBeReused: Boolean) {
         onStop()
         observables.forEach { tryOrNull { it.first.removeOnPropertyChangedCallback(it.second) } }
         observables.clear()
         listObservables.forEach { tryOrNull { it.first.removeOnListChangedCallback(it.second) } }
         listObservables.clear()
-        coroutineContext.cancel()
+        if(canBeReused) coroutineContext.cancelChildren()
+        else coroutineContext.cancel()
     }
 
     /** Return if it was lazy initialized. Use it with [onLazyInit] */
