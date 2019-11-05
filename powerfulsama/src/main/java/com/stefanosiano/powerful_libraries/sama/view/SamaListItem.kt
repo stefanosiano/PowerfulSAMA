@@ -68,14 +68,14 @@ abstract class SamaListItem : CoroutineScope {
 
     /** Called when the view is reattached to the recyclerview after being detached or the adapter has been reattached after being detatched. Use it if you need to reuse resources freed in [onStop]. By default restart all [observe] methods  */
     open fun onStart() {
-        observables.forEach { tryOrNull { it.first.addOnPropertyChangedCallback(it.second) } }
-        listObservables.forEach { tryOrNull { it.first.addOnListChangedCallback(it.second) } }
+        synchronized(observables) { observables.asSequence().forEach { tryOrNull { it.first.addOnPropertyChangedCallback(it.second) } } }
+        synchronized(listObservables) { listObservables.forEach { tryOrNull { it.first.addOnListChangedCallback(it.second) } } }
     }
 
     /** Called when the view is detached from the recyclerview or the adapter is detached. Use it if you need to stop some heavy computation. By default it stops all [observe] methods */
     open fun onStop() {
-        observables.forEach { tryOrNull { it.first.removeOnPropertyChangedCallback(it.second) } }
-        listObservables.forEach { tryOrNull { it.first.removeOnListChangedCallback(it.second) } }
+        synchronized(observables) { observables.forEach { tryOrNull { it.first.removeOnPropertyChangedCallback(it.second) } } }
+        synchronized(listObservables) { listObservables.forEach { tryOrNull { it.first.removeOnListChangedCallback(it.second) } } }
     }
 
     /** Called when it's removed from the recyclerview, or its view was recycled or the recyclerView no longer observes the adapter.
@@ -120,14 +120,16 @@ abstract class SamaListItem : CoroutineScope {
         val obsId = observablesId.incrementAndGet()
         obs.forEach { ob ->
             observablesMap[obsId] = AtomicInteger(0)
-            observables.add(Pair(ob, ob.onChange(this) {
-                //increment value of observablesMap[obsId] -> only first call can run this function
-                val id = observablesMap[obsId]?.incrementAndGet() ?: 1
-                if(id != 1) return@onChange
-                o.let { logVerbose("${adapterPosition ?: 0} - $it"); obFun(it) }
-                //clear value of observablesMap[obsId] -> everyone can run this function
-                observablesMap[obsId]?.set(0)
-            }))
+            synchronized(observables) {
+                observables.add(Pair(ob, ob.onChange(this) {
+                    //increment value of observablesMap[obsId] -> only first call can run this function
+                    val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+                    if (id != 1) return@onChange
+                    o.let { logVerbose("${adapterPosition ?: 0} - $it"); obFun(it) }
+                    //clear value of observablesMap[obsId] -> everyone can run this function
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
         }
 
         val c = o.onAnyChange {
@@ -138,7 +140,7 @@ abstract class SamaListItem : CoroutineScope {
                 observablesMap[obsId]?.set(0)
             }
         }
-        listObservables.add(Pair(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
+        synchronized(listObservables) { listObservables.add(Pair(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>)) }
         if(!skipFirst)
             launchOrNow(this) { obFun(o) }
     }
@@ -194,72 +196,90 @@ abstract class SamaListItem : CoroutineScope {
 
         obs.forEach { ob ->
             observablesMap[obsId] = AtomicInteger(0)
-            observables.add(Pair(ob, ob.onChange(this) {
-                //increment value of observablesMap[obsId] -> only first call can run this function
-                val id = observablesMap[obsId]?.incrementAndGet() ?: 1
-                if(id != 1) return@onChange
-                obValue()?.let { logVerbose("${adapterPosition ?: 0} - $it"); obFun(it) }
-                //clear value of observablesMap[obsId] -> everyone can run this function
-                observablesMap[obsId]?.set(0)
-            }))
+            synchronized(observables) {
+                observables.add(Pair(ob, ob.onChange(this) {
+                    //increment value of observablesMap[obsId] -> only first call can run this function
+                    val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+                    if (id != 1) return@onChange
+                    obValue()?.let { logVerbose("${adapterPosition ?: 0} - $it"); obFun(it) }
+                    //clear value of observablesMap[obsId] -> everyone can run this function
+                    observablesMap[obsId]?.set(0)
+                }))
+            }
         }
         //sets the function to call when using an observable: it sets the observablesMap[obsId] to 2 (it won't be called by obs), run obFun and finally set observablesMap[obsId] to 0 (callable by everyone)
         when(o) {
             is ObservableInt -> {
-                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
+                synchronized(observables) {
+                    observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                        observablesMap[obsId]?.set(2)
+                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        observablesMap[obsId]?.set(0)
+                    }))
+                }
             }
             is ObservableShort -> {
-                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
+                synchronized(observables) {
+                    observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                        observablesMap[obsId]?.set(2)
+                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        observablesMap[obsId]?.set(0)
+                    }))
+                }
             }
             is ObservableLong -> {
-                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
+                synchronized(observables) {
+                    observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                        observablesMap[obsId]?.set(2)
+                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        observablesMap[obsId]?.set(0)
+                    }))
+                }
             }
             is ObservableFloat -> {
-                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
+                synchronized(observables) {
+                    observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                        observablesMap[obsId]?.set(2)
+                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        observablesMap[obsId]?.set(0)
+                    }))
+                }
             }
             is ObservableDouble -> {
-                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
+                synchronized(observables) {
+                    observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                        observablesMap[obsId]?.set(2)
+                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        observablesMap[obsId]?.set(0)
+                    }))
+                }
             }
             is ObservableBoolean -> {
-                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
+                synchronized(observables) {
+                    observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                        observablesMap[obsId]?.set(2)
+                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        observablesMap[obsId]?.set(0)
+                    }))
+                }
             }
             is ObservableByte -> {
-                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
+                synchronized(observables) {
+                    observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                        observablesMap[obsId]?.set(2)
+                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        observablesMap[obsId]?.set(0)
+                    }))
+                }
             }
             is ObservableField<*> -> {
-                observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - ${data.toString()}"); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
+                synchronized(observables) {
+                    observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
+                        observablesMap[obsId]?.set(2)
+                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - ${data.toString()}"); obFun(data) } }
+                        observablesMap[obsId]?.set(0)
+                    }))
+                }
             }
         }
     }
