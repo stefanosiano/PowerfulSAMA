@@ -31,12 +31,12 @@ abstract class SamaListItem : CoroutineScope {
 
     @Ignore internal var updateJob: Job? = null
 
-    /** current position given by the [SamaRvAdapter]. Surely available in [onBind] and [onBindInBackground] */
-    @Ignore var adapterPosition: Int? = null
+    /** current position given by the [SamaRvAdapter] (0 at beginning). Surely set in [onBind] and [onBindInBackground] */
+    @Ignore var adapterPosition: Int = 0
         internal set
 
-    /** current adapter size given by the [SamaRvAdapter]. It may be inaccurate on item list reload. Surely available in [onBind] and [onBindInBackground] */
-    @Ignore var adapterSize: Int? = null
+    /** current adapter size given by the [SamaRvAdapter] (0 at beginning). It may be inaccurate on item list reload. Surely set in [onBind] and [onBindInBackground] */
+    @Ignore var adapterSize: Int = 0
         internal set
 
 
@@ -125,7 +125,7 @@ abstract class SamaListItem : CoroutineScope {
                     //increment value of observablesMap[obsId] -> only first call can run this function
                     val id = observablesMap[obsId]?.incrementAndGet() ?: 1
                     if (id != 1) return@onChange
-                    o.let { logVerbose("${adapterPosition ?: 0} - $it"); obFun(it) }
+                    o.let { logVerbose("$adapterPosition - $it"); obFun(it) }
                     //clear value of observablesMap[obsId] -> everyone can run this function
                     observablesMap[obsId]?.set(0)
                 }))
@@ -135,7 +135,7 @@ abstract class SamaListItem : CoroutineScope {
         val c = o.onAnyChange {
             launchOrNow(this) {
                 observablesMap[obsId]?.set(2)
-                logVerbose("${adapterPosition ?: 0} - $o")
+                logVerbose("$adapterPosition - $o")
                 obFun(it)
                 observablesMap[obsId]?.set(0)
             }

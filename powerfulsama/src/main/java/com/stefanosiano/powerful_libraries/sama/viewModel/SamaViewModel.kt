@@ -299,7 +299,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      *      @return True to clear the response after being sent to the observer. False to retain it.
      *      If false, the response should be cleared using [clearVmResponse][SamaViewModel.clearVmResponse] method.
      */
-    fun observeVmResponse(lifecycleOwner: LifecycleOwner, observer: ((vmAction: A, vmData: Any?) -> Boolean)? = null) {
+    fun observeVmResponse(lifecycleOwner: LifecycleOwner, observer: (suspend (vmAction: A, vmData: Any?) -> Boolean)? = null) {
         liveResponse.observeLd(lifecycleOwner) {
 
             synchronized(this) {

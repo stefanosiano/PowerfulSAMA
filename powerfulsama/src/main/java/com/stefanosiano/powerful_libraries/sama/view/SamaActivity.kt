@@ -295,7 +295,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     }*/
 
     /** Observes the vmResponse of the [vm]. It's just a simpler way to call [SamaViewModel.observeVmResponse] */
-    protected fun <A> observeVmResponse(vm: SamaViewModel<A>, f: (A, Any?) -> Boolean) where A: VmResponse.VmAction = vm.observeVmResponse(this, f)
+    protected fun <A> observeVmResponse(vm: SamaViewModel<A>, f: suspend (A, Any?) -> Boolean) where A: VmResponse.VmAction = vm.observeVmResponse(this, f)
 
     val samaIntent
         /** Returns the intent that started this activity as [SamaIntent], allowing the use of [SamaIntent.getExtraStatic] */
