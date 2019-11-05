@@ -28,7 +28,6 @@ abstract class SamaListItem : CoroutineScope {
 
     @Ignore internal var onPostAction : (suspend (SamaListItemAction?, SamaListItem) -> Unit)? = null
     @Ignore internal var isLazyInit = false
-    @Ignore internal var isStarted = false
 
     @Ignore internal var updateJob: Job? = null
 
@@ -67,29 +66,26 @@ abstract class SamaListItem : CoroutineScope {
     /** Compares this to another item to decide if they are the same when the list is reloaded. By default it calls == */
     open fun contentEquals(other: SamaListItem) = this == other
 
-    /** Called when it's removed from the recyclerview or the recyclerView no longer observes the adapter. Always called after [onStop]. Use it to completely clear any resource. Its coroutines are cancelled here */
-    open fun onDestroy() {
-//        observables.forEach { it.first.removeOnPropertyChangedCallback(it.second) }
-//        listObservables.forEach { it.first.removeOnListChangedCallback(it.second) }
-//        observables.clear()
-//        listObservables.clear()
-        coroutineContext.cancel()
-    }
-
-    /** Called when it's reattached to the recyclerview after being detached. Use it if you need to reuse resources freed in [onStop] */
+    /** Called when the view is reattached to the recyclerview after being detached or the adapter has been reattached after being detatched. Use it if you need to reuse resources freed in [onStop]. By default restart all [observe] methods  */
     open fun onStart() {
-//        observables.forEach { it.first.addOnPropertyChangedCallback(it.second) }
-//        listObservables.forEach { it.first.addOnListChangedCallback(it.second) }
-        isStarted = true
+        observables.forEach { tryOrNull { it.first.addOnPropertyChangedCallback(it.second) } }
+        listObservables.forEach { tryOrNull { it.first.addOnListChangedCallback(it.second) } }
     }
 
-    /** Called when it's removed from the recyclerview, or its view was recycled or the recyclerView no longer observes the adapter. Use it to clear resources, keeping in mind the item may be reused later on */
+    /** Called when the view is detached from the recyclerview or the adapter is detached. Use it if you need to stop some heavy computation. By default it stops all [observe] methods */
     open fun onStop() {
-        observables.forEach { it.first.removeOnPropertyChangedCallback(it.second) }
+        observables.forEach { tryOrNull { it.first.removeOnPropertyChangedCallback(it.second) } }
+        listObservables.forEach { tryOrNull { it.first.removeOnListChangedCallback(it.second) } }
+    }
+
+    /** Called when it's removed from the recyclerview, or its view was recycled or the recyclerView no longer observes the adapter. Use it to completely clear any resource. Its coroutines are cancelled here */
+    open fun onDestroy() {
+        onStop()
+        observables.forEach { tryOrNull { it.first.removeOnPropertyChangedCallback(it.second) } }
         observables.clear()
-        listObservables.forEach { it.first.removeOnListChangedCallback(it.second) }
+        listObservables.forEach { tryOrNull { it.first.removeOnListChangedCallback(it.second) } }
         listObservables.clear()
-        isStarted = false
+        coroutineContext.cancel()
     }
 
     /** Return if it was lazy initialized. Use it with [onLazyInit] */

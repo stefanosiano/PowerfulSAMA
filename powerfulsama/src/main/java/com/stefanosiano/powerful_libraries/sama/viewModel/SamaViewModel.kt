@@ -325,7 +325,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
                 logVerbose("Sending to activity: $it")
 
                 launch {
-                    if (tryOr(true) { observer?.invoke(it.action, it.data) != false })
+                    if (tryOrPrint(true) { observer?.invoke(it.action, it.data) != false })
                         liveResponse.postValue(null)
                 }
 

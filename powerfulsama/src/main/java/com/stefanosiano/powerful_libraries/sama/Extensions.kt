@@ -32,8 +32,8 @@ inline fun <T> CoroutineScope.liveData(millis: Long = 0, crossinline f: suspend 
 /** Runs [f] only when [data] value is not null */
 suspend fun <T> CoroutineScope.delayUntilNotNull(data: ObservableField<T>, f: suspend (data: T) -> Unit) { while(data.get() == null) delay(100); return f(data.get()!!) }
 
-/** Delays the current coroutine until [f] returns true */
-suspend fun CoroutineScope.delayUntil(f: () -> Boolean) { while(!f()) delay(100) }
+/** Delays for [millis] milliseconds the current coroutine until [f] returns true */
+suspend fun CoroutineScope.delayUntil(millis: Long = 100, f: () -> Boolean) { while(!f()) delay(millis) }
 
 
 /** Returns a liveData that will be updated with the values of the liveData returned by [f].
@@ -272,7 +272,10 @@ inline fun <T> tryOrNull(toTry: () -> T): T? = tryOr(null, toTry)
 inline fun <T> tryOr(default: T, toTry: () -> T): T { return try { toTry() } catch (e: Exception) { default } }
 
 /** Try to execute [toTry] in a try catch block, prints the exception and returns [default] if an exception is raised */
-inline fun <T> tryOrPrint(default: T? = null, toTry: () -> T): T? { return try { toTry() } catch (e: Exception) { e.printStackTrace(); default } }
+inline fun <T> tryOrPrint(default: T, toTry: () -> T): T { return try { toTry() } catch (e: Exception) { e.printStackTrace(); default } }
+
+/** Try to execute [toTry] in a try catch block, prints the exception and returns [null] if an exception is raised */
+inline fun <T> tryOrPrint(toTry: () -> T): T? { return try { toTry() } catch (e: Exception) { e.printStackTrace(); null } }
 
 /** Gets an enum from a string through enumValueOf<T>(). Useful to use in [string?.toEnum<>() ?: default] */
 inline fun <reified T : Enum<T>> String.toEnum(default: T) : T = try{ enumValueOf(this) } catch (e: Exception) { default }

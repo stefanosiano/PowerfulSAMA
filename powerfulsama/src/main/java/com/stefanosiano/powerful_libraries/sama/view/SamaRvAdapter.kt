@@ -156,13 +156,13 @@ open class SamaRvAdapter(
     override fun onViewDetachedFromWindow(holder: SimpleViewHolder) {
         super.onViewDetachedFromWindow(holder)
         val item = getItem(holder.adapterPosition) ?: return
-//        item.onStop()
+        item.onStop()
     }
 
     override fun onViewAttachedToWindow(holder: SimpleViewHolder) {
         super.onViewAttachedToWindow(holder)
         val item = getItem(holder.adapterPosition) ?: return
-//        item.onStart()
+        item.onStart()
         lazyInit(item)
     }
 
@@ -233,6 +233,7 @@ open class SamaRvAdapter(
             if (forceReload) {
                 if (!isActive) return@launch
                 runOnUi {
+                    items.forEach { it.onDestroy() }
                     items.clear()
                     dataSetChanged()
                     items.addAll(list)
@@ -257,7 +258,8 @@ open class SamaRvAdapter(
                     items.clear()
                     items = list.mapTo(ObservableArrayList(), {
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
-                        if(itemCached?.contentEquals(it) == true) itemCached else it
+                        if(itemCached?.contentEquals(it) == true) itemCached
+                        else { itemCached?.onDestroy(); it }
                     })
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                     onLoadFinished?.invoke()
@@ -353,7 +355,8 @@ open class SamaRvAdapter(
 
                     items = list.filterNotNull().mapTo(ObservableArrayList(), {
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
-                        if(itemCached?.contentEquals(it) == true) itemCached else it
+                        if(itemCached?.contentEquals(it) == true) itemCached
+                        else { itemCached?.onDestroy(); it }
                     })
                     onLoadFinished?.invoke()
                     startLazyInits()
@@ -418,8 +421,8 @@ open class SamaRvAdapter(
         //remove the observer from the optional current liveData
         runOnUi { liveDataItems?.removeObserver(liveDataObserver) }
         runOnUi { liveDataPagedItems?.removeObserver(pagedLiveDataObserver) }
-        //putting try blocks: if object is destroyed and variables (lists) are destroyed before finishing this function, there could be some crash
-//        items.forEach { tryOrNull { it.onStop() } }
+        //putting try blocks???: if object is destroyed and variables (lists) are destroyed before finishing this function, there could be some crash
+        items.forEach { it.onStop() }
         lazyInitializedItemCacheMap.clear()
 //        coroutineContext.cancelChildren()
     }
@@ -429,6 +432,8 @@ open class SamaRvAdapter(
         this.recyclerView?.clear()
         this.recyclerView = WeakReference(recyclerView)
         //remove the observer from the optional current liveData
+        //putting try blocks???: if object is destroyed and variables (lists) are destroyed before finishing this function, there could be some crash
+        items.forEach { it.onStart() }
         runOnUi { liveDataItems?.observeForever(liveDataObserver) }
         runOnUi { liveDataPagedItems?.observeForever(pagedLiveDataObserver) }
     }
@@ -441,14 +446,14 @@ open class SamaRvAdapter(
 
         coroutineContext.cancel()
         itemUpdatedListeners.clear()
-        items.forEach { it.onStop(); it.onDestroy() }
+        items.forEach { it.onDestroy() }
         lazyInitializedItemCacheMap.clear()
     }
 
     override fun onViewRecycled(holder: SimpleViewHolder) {
         super.onViewRecycled(holder)
         //If using pagedLists, the view is recycled and i should stop the item in my list, not the newly added item from mDiffer.list
-        tryOrNull { items[holder.adapterPosition] }?.onStop()
+        tryOrNull { items[holder.adapterPosition] }?.onDestroy()
     }
 
 
@@ -471,7 +476,7 @@ open class SamaRvAdapter(
     fun getItems(): List<SamaListItem> = this.items
 
     /** Returns the currently shown PagedList, but not necessarily the most recent passed via
-     *  [submitList], because a diff is computed asynchronously before updating the currentList value.
+     *  [bindPagedItems], because a diff is computed asynchronously before updating the currentList value.
      * May be null if no PagedList is being presented or adapter is not using a paged list */
     @Suppress("UNCHECKED_CAST")
     fun getPagedItems(): PagedList<SamaListItem>? = if(isPaged) mDiffer.currentList as PagedList<SamaListItem> else null
@@ -490,9 +495,7 @@ open class SamaRvAdapter(
 
     //list observer stuff
     /** Function to be called when some items change */
-    private fun itemRangeChanged(positionStart: Int, itemCount: Int) = runOnUi {
-        notifyItemRangeChanged(positionStart, itemCount)
-    }
+    private fun itemRangeChanged(positionStart: Int, itemCount: Int) = runOnUi { notifyItemRangeChanged(positionStart, itemCount) }
 
     /** Function to be called when some items are added */
     private fun itemRangeInserted(positionStart: Int, itemCount: Int) = runOnUi { notifyItemRangeInserted(positionStart, itemCount) }
@@ -504,21 +507,10 @@ open class SamaRvAdapter(
     }
 
     /** Function to be called when some items are removed */
-    private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = runOnUi {
-//        for(i in positionStart until positionStart+itemCount) {
-//            getItemOrNull(i)?.onStop()
-//        }
+    private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = runOnUi { notifyItemRangeRemoved(positionStart, itemCount) }
 
-        notifyItemRangeRemoved(positionStart, itemCount)
-    }
-
-    /** Function to be called when the whole list changes. Deeper than [notifyDataSetChanged] */
-    private fun dataSetChanged() {
-        items.forEach { it.onStop() }
-        lazyInitializedItemCacheMap.clear()
-//        coroutineContext.cancelChildren()
-        notifyDataSetChanged()
-    }
+    /** Function to be called when the whole list changes. Calls [notifyDataSetChanged] and clears the lazy init cache */
+    fun dataSetChanged() { lazyInitializedItemCacheMap.clear(); notifyDataSetChanged() }
 
 
 
