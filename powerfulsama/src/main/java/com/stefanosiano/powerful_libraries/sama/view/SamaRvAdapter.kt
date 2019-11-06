@@ -349,15 +349,10 @@ open class SamaRvAdapter(
 
             if (!isActive) return@launch
             items.clear()
+            lazyInitializedItemCacheMap.clear()
             runOnUi {
                 mDiffer.submitList(list as PagedList<SamaListItem>) {
-//                    items.addAll(list)
-
-                    items = list.filterNotNull().mapIndexedTo(ObservableArrayList(), { i, it ->
-                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
-                        if(itemCached?.contentEquals(it) == true) { mDiffer.currentList?.set(i, itemCached); itemCached }
-                        else { itemCached?.onDestroy(false); it }
-                    })
+                    items = list.filterNotNull().mapTo(ObservableArrayList(), { it })
                     onLoadFinished?.invoke()
                     startLazyInits()
                 }

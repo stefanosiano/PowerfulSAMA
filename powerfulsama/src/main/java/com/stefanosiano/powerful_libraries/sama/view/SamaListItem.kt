@@ -94,7 +94,8 @@ abstract class SamaListItem : CoroutineScope {
     /** Return if it was lazy initialized. Use it with [onLazyInit] */
     internal fun isLazyInitialized(): Boolean { return isLazyInit }
 
-    /** Called in background only once when it should be initialized (it's about to be shown or the initialization background thread reaches it). [isLazyInitialized] is used to understand if the item was already lazy initialized */
+    /** Called in background only once when it should be initialized (it's about to be shown or the initialization background thread reaches it).
+     * When using pagedLists this method will be called every time a list update occurs. You may want to avoid it when using pagedLists that may change often */
     open suspend fun onLazyInit() { isLazyInit = true }
 
 
