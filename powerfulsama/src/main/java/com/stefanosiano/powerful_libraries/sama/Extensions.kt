@@ -316,10 +316,10 @@ inline fun <T,S> T.iterateIndexed(f: (S, index: Int) -> Unit): T where T: Iterab
 /** Creates a [CoroutineExceptionHandler] that calls [PowerfulSama.onCoroutineException] in case of error and logs the stackTrace */
 internal fun CoroutineScope.coroutineSamaHandler(job: Job): CoroutineContext = job + CoroutineExceptionHandler { _, t -> logException(t) }
 
-internal fun Any.logVerbose(m: String) = logger?.logVerbose(this::class.java, m)
-internal fun Any.logDebug(m: String) = logger?.logDebug(this::class.java, m)
-internal fun Any.logInfo(m: String) = logger?.logInfo(this::class.java, m)
-internal fun Any.logWarning(m: String) = logger?.logWarning(this::class.java, m)
-internal fun Any.logError(m: String) = logger?.logError(this::class.java, m)
-internal fun Any.logException(t: Throwable) = logger?.logException(this::class.java, t)
-internal fun Any.logExceptionWorkarounded(t: Throwable) = logger?.logExceptionWorkarounded(this::class.java, t)
+internal fun Any.logVerbose(m: String) { logger?.logVerbose(this::class.java, m) }
+internal fun Any.logDebug(m: String) { logger?.logDebug(this::class.java, m) }
+internal fun Any.logInfo(m: String) { logger?.logInfo(this::class.java, m) }
+internal fun Any.logWarning(m: String) { logger?.logWarning(this::class.java, m) }
+internal fun Any.logError(m: String) { logger?.logError(this::class.java, m) }
+internal fun Any.logException(t: Throwable) { logger?.logException(this::class.java, t) }
+internal fun Any.logExceptionWorkarounded(t: Throwable) { logger?.logExceptionWorkarounded(this::class.java, t) }

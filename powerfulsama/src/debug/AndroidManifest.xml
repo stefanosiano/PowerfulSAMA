@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        package="com.stefanosiano.powerful_libraries.sama">
+
+    <application>
+        <receiver android:name=".SamaDebugReceiver">
+            <intent-filter>
+                <action android:name="com.stefanosiano.powerful_libraries.sama.action.ACTION_COPY_DB"/>
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>
