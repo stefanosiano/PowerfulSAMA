@@ -68,27 +68,28 @@ abstract class SamaListItem : CoroutineScope {
 
     /** Called when the view is reattached to the recyclerview after being detached or the adapter has been reattached after being detatched. Use it if you need to reuse resources freed in [onStop]. By default restart all [observe] methods  */
     open fun onStart() {
-        synchronized(observables) { observables.asSequence().forEach { tryOrNull { it.first.addOnPropertyChangedCallback(it.second) } } }
-        synchronized(listObservables) { listObservables.forEach { tryOrNull { it.first.addOnListChangedCallback(it.second) } } }
+        synchronized(observables) { observables.asSequence().forEach { tryOrPrint { it.first.addOnPropertyChangedCallback(it.second) } } }
+        synchronized(listObservables) { listObservables.forEach { tryOrPrint { it.first.addOnListChangedCallback(it.second) } } }
     }
 
     /** Called when the view is detached from the recyclerview or the adapter is detached. Use it if you need to stop some heavy computation. By default it stops all [observe] methods */
     open fun onStop() {
-        synchronized(observables) { observables.forEach { tryOrNull { it.first.removeOnPropertyChangedCallback(it.second) } } }
-        synchronized(listObservables) { listObservables.forEach { tryOrNull { it.first.removeOnListChangedCallback(it.second) } } }
+        synchronized(observables) { observables.forEach { tryOrPrint { it.first.removeOnPropertyChangedCallback(it.second) } } }
+        synchronized(listObservables) { listObservables.forEach { tryOrPrint { it.first.removeOnListChangedCallback(it.second) } } }
     }
 
     /** Called when it's removed from the recyclerview, or its view was recycled or the recyclerView no longer observes the adapter.
      * [canBeReused] determines whether the item may be reused later (the view was recycled, but the item is still present in the adapter)
      * Use it to completely clear any resource. Its coroutines are cancelled here */
-    open fun onDestroy(canBeReused: Boolean) {
+    open fun onDestroy() {
         onStop()
-        observables.forEach { tryOrNull { it.first.removeOnPropertyChangedCallback(it.second) } }
+        observables.forEach { tryOrPrint { it.first.removeOnPropertyChangedCallback(it.second) } }
         observables.clear()
-        listObservables.forEach { tryOrNull { it.first.removeOnListChangedCallback(it.second) } }
+        listObservables.forEach { tryOrPrint { it.first.removeOnListChangedCallback(it.second) } }
         listObservables.clear()
-        if(canBeReused) coroutineContext.cancelChildren()
-        else coroutineContext.cancel()
+        coroutineContext.cancelChildren()
+//        if(canBeReused) coroutineContext.cancelChildren()
+//        else coroutineContext.cancel()
     }
 
     /** Return if it was lazy initialized. Use it with [onLazyInit] */
@@ -202,7 +203,7 @@ abstract class SamaListItem : CoroutineScope {
                     //increment value of observablesMap[obsId] -> only first call can run this function
                     val id = observablesMap[obsId]?.incrementAndGet() ?: 1
                     if (id != 1) return@onChange
-                    obValue()?.let { logVerbose("${adapterPosition ?: 0} - $it"); obFun(it) }
+                    obValue()?.let { logVerbose("$adapterPosition - $it"); obFun(it) }
                     //clear value of observablesMap[obsId] -> everyone can run this function
                     observablesMap[obsId]?.set(0)
                 }))
@@ -214,7 +215,7 @@ abstract class SamaListItem : CoroutineScope {
                 synchronized(observables) {
                     observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                         observablesMap[obsId]?.set(2)
-                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        obValue()?.let { data -> if (data == it) { logVerbose("$adapterPosition - $data"); obFun(data) } }
                         observablesMap[obsId]?.set(0)
                     }))
                 }
@@ -223,7 +224,7 @@ abstract class SamaListItem : CoroutineScope {
                 synchronized(observables) {
                     observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                         observablesMap[obsId]?.set(2)
-                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        obValue()?.let { data -> if (data == it) { logVerbose("$adapterPosition - $data"); obFun(data) } }
                         observablesMap[obsId]?.set(0)
                     }))
                 }
@@ -232,7 +233,7 @@ abstract class SamaListItem : CoroutineScope {
                 synchronized(observables) {
                     observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                         observablesMap[obsId]?.set(2)
-                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        obValue()?.let { data -> if (data == it) { logVerbose("$adapterPosition - $data"); obFun(data) } }
                         observablesMap[obsId]?.set(0)
                     }))
                 }
@@ -241,7 +242,7 @@ abstract class SamaListItem : CoroutineScope {
                 synchronized(observables) {
                     observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                         observablesMap[obsId]?.set(2)
-                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        obValue()?.let { data -> if (data == it) { logVerbose("$adapterPosition - $data"); obFun(data) } }
                         observablesMap[obsId]?.set(0)
                     }))
                 }
@@ -250,7 +251,7 @@ abstract class SamaListItem : CoroutineScope {
                 synchronized(observables) {
                     observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                         observablesMap[obsId]?.set(2)
-                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        obValue()?.let { data -> if (data == it) { logVerbose("$adapterPosition - $data"); obFun(data) } }
                         observablesMap[obsId]?.set(0)
                     }))
                 }
@@ -259,7 +260,7 @@ abstract class SamaListItem : CoroutineScope {
                 synchronized(observables) {
                     observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                         observablesMap[obsId]?.set(2)
-                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        obValue()?.let { data -> if (data == it) { logVerbose("$adapterPosition - $data"); obFun(data) } }
                         observablesMap[obsId]?.set(0)
                     }))
                 }
@@ -268,7 +269,7 @@ abstract class SamaListItem : CoroutineScope {
                 synchronized(observables) {
                     observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                         observablesMap[obsId]?.set(2)
-                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - $data"); obFun(data) } }
+                        obValue()?.let { data -> if (data == it) { logVerbose("$adapterPosition - $data"); obFun(data) } }
                         observablesMap[obsId]?.set(0)
                     }))
                 }
@@ -277,7 +278,7 @@ abstract class SamaListItem : CoroutineScope {
                 synchronized(observables) {
                     observables.add(Pair(o, o.addOnChangedAndNow (this, skipFirst) {
                         observablesMap[obsId]?.set(2)
-                        obValue()?.let { data -> if (data == it) { logVerbose("${adapterPosition ?: 0} - ${data.toString()}"); obFun(data) } }
+                        obValue()?.let { data -> if (data == it) { logVerbose("$adapterPosition - ${data.toString()}"); obFun(data) } }
                         observablesMap[obsId]?.set(0)
                     }))
                 }

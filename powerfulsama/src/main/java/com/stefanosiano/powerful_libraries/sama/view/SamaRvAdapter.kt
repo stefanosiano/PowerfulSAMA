@@ -105,6 +105,9 @@ open class SamaRvAdapter(
 
     /** List of items to be bound to [SamaMutableListItem] */
     private var mutableBoundItems = LongSparseArray<Any>()
+    
+    /** Last item detached: if the latest item detached is the one being recycled, then the item needs to be restarted */
+    private var lastDetached = -1
 
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
@@ -155,6 +158,7 @@ open class SamaRvAdapter(
 
     override fun onViewDetachedFromWindow(holder: SimpleViewHolder) {
         super.onViewDetachedFromWindow(holder)
+        lastDetached = holder.adapterPosition
         val item = getItem(holder.adapterPosition) ?: return
         item.onStop()
     }
@@ -233,7 +237,7 @@ open class SamaRvAdapter(
             if (forceReload) {
                 if (!isActive) return@launch
                 runOnUi {
-                    items.forEach { it.onDestroy(false) }
+                    items.forEach { it.onDestroy() }
                     items.clear()
                     dataSetChanged()
                     items.addAll(list)
@@ -259,7 +263,7 @@ open class SamaRvAdapter(
                     items = list.mapTo(ObservableArrayList(), {
                         val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
                         if(itemCached?.contentEquals(it) == true) itemCached
-                        else { itemCached?.onDestroy(false); it }
+                        else { itemCached?.onDestroy(); it }
                     })
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                     onLoadFinished?.invoke()
@@ -441,14 +445,14 @@ open class SamaRvAdapter(
 
         coroutineContext.cancel()
         itemUpdatedListeners.clear()
-        items.forEach { it.onDestroy(false) }
+        items.forEach { it.onDestroy() }
         lazyInitializedItemCacheMap.clear()
     }
 
     override fun onViewRecycled(holder: SimpleViewHolder) {
         super.onViewRecycled(holder)
-        //If using pagedLists, the view is recycled and i should stop the item in my list, not the newly added item from mDiffer.list
-        tryOrNull { items[holder.adapterPosition] }?.onDestroy(true)
+        if(holder.adapterPosition == lastDetached)
+            tryOrNull { items[holder.adapterPosition] }?.onStart()
     }
 
 
@@ -512,6 +516,7 @@ open class SamaRvAdapter(
     /** Class that implement the ViewHolder of the Adapter */
     class SimpleViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val binding: WeakReference<ViewDataBinding> = WeakReference(DataBindingUtil.bind(view))
+        override fun toString(): String = "$adapterPosition: " + super.toString()
     }
 
     /** Class that listens for changes of the passed list and calls the methods of the adapter */

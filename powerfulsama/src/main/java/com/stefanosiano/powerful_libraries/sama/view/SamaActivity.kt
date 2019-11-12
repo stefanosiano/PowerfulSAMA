@@ -1,5 +1,7 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.view.MenuItem
@@ -30,6 +32,8 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     private val observablesMap = ConcurrentHashMap<Long, AtomicInteger>()
     private val observablesId = AtomicLong(0)
 
+//    private val debugReceiver = SamaDebugReceiver()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         logVerbose("onCreate")
@@ -42,6 +46,12 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
     override fun onStart() {
         super.onStart()
+        /*
+        if(PowerfulSama.isAppDebug) {
+            val intentFilter = IntentFilter()
+            intentFilter.addAction(ActionDbCopy)
+            tryOrPrint { registerReceiver(debugReceiver, intentFilter) }
+        }*/
         logVerbose("onStart")
     }
 
@@ -52,6 +62,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
     override fun onStop() {
         super.onStop()
+//        if(PowerfulSama.isAppDebug) { tryOrPrint { unregisterReceiver(debugReceiver) } }
         logVerbose("onStop")
     }
     override fun onDestroy() {

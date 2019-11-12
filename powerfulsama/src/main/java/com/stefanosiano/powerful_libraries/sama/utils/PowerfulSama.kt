@@ -9,8 +9,9 @@ import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaIntent
 
 object PowerfulSama {
-
+//todo add annotation to add scripts
     internal var logger: PowerfulSamaLogger? = null
+    internal var isAppDebug: Boolean = false
     internal lateinit var applicationContext: Context
 
     /** Initializes the SAMA library
@@ -26,6 +27,7 @@ object PowerfulSama {
      */
     fun init(
         application: Application,
+        isDebug: Boolean,
         defaultMessagesTheme: Int? = null,
         defaultMessageCustomization: ((Any) -> Unit)? = null,
         defaultYeslabel: Int = android.R.string.yes,
@@ -35,6 +37,7 @@ object PowerfulSama {
         onSignatureChackFailed: ((Array<Signature>) -> Unit)? = null) {
 
         applicationContext = application
+        isAppDebug = isDebug
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPaused(activity: Activity?) {}
             override fun onActivityResumed(activity: Activity?) { setMsgActivity(activity); setResActivity(activity) }
