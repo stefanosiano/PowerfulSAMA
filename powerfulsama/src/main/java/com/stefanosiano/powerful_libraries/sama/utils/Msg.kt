@@ -71,13 +71,13 @@ class Msg private constructor(
     private var iNeutral: Int = 0,
 
     /** Tunnable to run after clicking on positive button */
-    private var onOk: (() -> Unit)? = null,
+    private var onOk: ((Msg?) -> Unit)? = null,
 
     /** Tunnable to run after clicking on negative button */
-    private var onNo: (() -> Unit)? = null,
+    private var onNo: ((Msg) -> Unit)? = null,
 
     /** Tunnable to run after clicking on neutral button */
-    private var onCancel: (() -> Unit)? = null,
+    private var onCancel: ((Msg) -> Unit)? = null,
 
     /** Set if the message is indeterminate (if available) */
     private var indeterminate: Boolean = false,
@@ -258,22 +258,22 @@ class Msg private constructor(
     fun cancelable(cancelable: Boolean): Msg { this.cancelable = cancelable; return this }
 
     /** Sets the runnable to run when positive button is clicked  */
-    fun onOk(onOk: () -> Unit): Msg { this.onOk = onOk; return this }
+    fun onOk(onOk: (Msg?) -> Unit): Msg { this.onOk = onOk; return this }
 
     /** Sets the positive button label and the runnable to run when it's clicked  */
-    fun onOk(positive: Int, onOk: () -> Unit): Msg { this.iPositive = positive; this.onOk = onOk; return this }
+    fun onOk(positive: Int, onOk: (Msg?) -> Unit): Msg { this.iPositive = positive; this.onOk = onOk; return this }
 
     /** Sets the runnable to run when negative button is clicked  */
-    fun onNo(onNo: () -> Unit): Msg { this.onNo = onNo; return this }
+    fun onNo(onNo: (Msg) -> Unit): Msg { this.onNo = onNo; return this }
 
     /** Sets the negative button label and the runnable to run when it's clicked  */
-    fun onNo(negative: Int, onNo: () -> Unit): Msg { this.iNegative = negative; this.onNo = onNo; return this }
+    fun onNo(negative: Int, onNo: (Msg) -> Unit): Msg { this.iNegative = negative; this.onNo = onNo; return this }
 
     /** Sets the runnable to run when neutral button is clicked  */
-    fun onCancel(onCancel: () -> Unit): Msg { this.onCancel = onCancel; return this }
+    fun onCancel(onCancel: (Msg) -> Unit): Msg { this.onCancel = onCancel; return this }
 
     /** Sets the neutral button label and the runnable to run when it's clicked  */
-    fun onCancel(neutral: Int, onCancel: () -> Unit): Msg { this.iNeutral = neutral; this.onCancel = onCancel; return this }
+    fun onCancel(neutral: Int, onCancel: (Msg) -> Unit): Msg { this.iNeutral = neutral; this.onCancel = onCancel; return this }
 
     /** Sets the delay in milliseconds after which the message will automatically dismiss */
     fun autoDismissDelay(autoDismissDelay: Long): Msg { this.autoDismissDelay = autoDismissDelay; return this }
@@ -294,7 +294,7 @@ class Msg private constructor(
 
     /** Shows the message and returns it. Always prefer to pass [context] (an Activity if possible, especially for AlertDialogs and ProgressDialogs).
      * If [showMessage] is met (true, default), then the message will be shown, otherwise [onOk] will be called */
-    fun show(context: Context? = null, showMessage: Boolean = true): Msg? = if(showMessage) showMessage(context) else { onOk?.invoke(); null }
+    fun show(context: Context? = null, showMessage: Boolean = true): Msg? = if(showMessage) showMessage(context) else { onOk?.invoke(null); null }
 
     /** Shows the message and returns its implementation (e.g. AlertDialog). Always prefer to pass [context] (an Activity if possible, especially for AlertDialogs and ProgressDialogs).
      * Optionally calls [f] right after building the message and before showing it.
@@ -427,11 +427,11 @@ class Msg private constructor(
         mAlert.setTitle(title)
         mAlert.setMessage(message)
 
-        mAlert.setPositiveButton(positive) { dialog, _ -> onOk?.invoke(); dialog.dismiss() }
-        mAlert.setNegativeButton(negative) { dialog, _ -> onNo?.invoke(); dialog.dismiss() }
+        mAlert.setPositiveButton(positive) { dialog, _ -> onOk?.invoke(this); dialog.dismiss() }
+        mAlert.setNegativeButton(negative) { dialog, _ -> onNo?.invoke(this); dialog.dismiss() }
 
         if (!TextUtils.isEmpty(neutral))
-            mAlert.setNeutralButton(neutral) { dialog, _ -> onCancel?.invoke(); dialog.dismiss() }
+            mAlert.setNeutralButton(neutral) { dialog, _ -> onCancel?.invoke(this); dialog.dismiss() }
 
 
         implementation = WeakReference(mAlert.create())
@@ -448,7 +448,7 @@ class Msg private constructor(
         mAlert.setTitle(title)
         mAlert.setMessage(message)
 
-        mAlert.setPositiveButton(positive) { dialog, _ -> onOk?.invoke(); dialog.dismiss() }
+        mAlert.setPositiveButton(positive) { dialog, _ -> onOk?.invoke(this); dialog.dismiss() }
 
         implementation = WeakReference(mAlert.create())
         isBuilt = true
@@ -463,7 +463,7 @@ class Msg private constructor(
 
     private fun buildAsSnackbar(view: View): Msg {
         val snackbar = Snackbar.make(view, message, Snackbar.LENGTH_SHORT)
-        if (onOk != null) snackbar.setAction(positive) { onOk?.invoke() }
+        if (onOk != null) snackbar.setAction(positive) { onOk?.invoke(this) }
         implementation = WeakReference(snackbar)
         return this
     }
