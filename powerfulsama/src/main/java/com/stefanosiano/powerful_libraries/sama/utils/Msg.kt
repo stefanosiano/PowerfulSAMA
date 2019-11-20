@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong
  *      indeterminate = true
  *      cancelable = false
  *      autoDismissDelay = 0 (doesn't dismiss)
+ *      duration = LENGHT_SHORT
  */
 class Msg private constructor(
 
@@ -94,8 +95,12 @@ class Msg private constructor(
     /** Delay in milliseconds after which the message will automatically dismiss */
     private var autoDismissDelay: Long = 0,
 
+    /** Duration of the message in milliseconds (for [Toast] and [Snackbar]). Use one of Msg.LENGHT... constants */
+    private var duration: Int = LENGHT_SHORT,
+
     /** Customization function of the message. Note: It will be called on UI thread */
-    private var customize: ((Any) -> Unit)? = null) {
+    private var customize: ((Any) -> Unit)? = null
+) {
 
 
     /** Unique id used to check equality with other messages  */
@@ -129,6 +134,10 @@ class Msg private constructor(
      *      cancelable = false
      */
     companion object : CoroutineScope {
+
+        const val LENGHT_SHORT = -1
+        const val LENGHT_LONG = -2
+        const val LENGHT_INDEFINITE = -3
 
         override val coroutineContext = coroutineSamaHandler(SupervisorJob())
 
@@ -277,6 +286,9 @@ class Msg private constructor(
 
     /** Sets the delay in milliseconds after which the message will automatically dismiss */
     fun autoDismissDelay(autoDismissDelay: Long): Msg { this.autoDismissDelay = autoDismissDelay; return this }
+
+    /** Sets the duration of the message in milliseconds (for [Toast] and [Snackbar]) */
+    fun duration(duration: Int): Msg { this.duration = duration; return this }
 
 
 
@@ -456,13 +468,24 @@ class Msg private constructor(
     }
 
     private fun buildAsToast(context: Context): Msg {
-        implementation = WeakReference(Toast.makeText(context, message, Toast.LENGTH_SHORT))
+        val d = when(duration){
+            LENGHT_SHORT -> Toast.LENGTH_SHORT
+            LENGHT_LONG -> Toast.LENGTH_LONG
+            else -> duration
+        }
+        implementation = WeakReference(Toast.makeText(context, message, d))
         isBuilt = true
         return this
     }
 
     private fun buildAsSnackbar(view: View): Msg {
-        val snackbar = Snackbar.make(view, message, Snackbar.LENGTH_SHORT)
+        val d = when(duration){
+            LENGHT_SHORT -> Snackbar.LENGTH_SHORT
+            LENGHT_LONG -> Snackbar.LENGTH_LONG
+            LENGHT_INDEFINITE -> Snackbar.LENGTH_INDEFINITE
+            else -> duration
+        }
+        val snackbar = Snackbar.make(view, message, d)
         if (onOk != null) snackbar.setAction(positive) { onOk?.invoke(this) }
         implementation = WeakReference(snackbar)
         return this

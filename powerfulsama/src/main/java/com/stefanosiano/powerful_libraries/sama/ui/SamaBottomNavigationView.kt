@@ -84,13 +84,14 @@ open class SamaBottomNavigationView: BottomNavigationView {
 
             if(!pair.second.isAdded) fragmentTransaction.add(containerId, pair.second)
 
+            this.pairs?.filter { it.second() != pair.second && it.second()?.isAdded == false }?.forEach { p -> p.second()?.also {
+                fragmentTransaction.add(containerId, it).hide(it)
+            } }
+
             fragmentTransaction
                 .show(pair.second)
                 .commitAllowingStateLoss()
 
-            this.pairs?.filter { it.second() != pair.second && it.second()?.isAdded == false }?.launch(activity) { p -> p.second()?.also {
-                fragmentTransaction.add(containerId, it).hide(it)
-            } }
             selectedItemId = pair.first
         }
     }

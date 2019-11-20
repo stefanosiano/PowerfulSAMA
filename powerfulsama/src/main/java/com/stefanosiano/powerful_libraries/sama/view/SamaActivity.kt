@@ -34,6 +34,9 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
     private val registeredViewModels = ArrayList<SamaViewModel<*>>()
 
+    /** flag to know if the activity was stopped */
+    private var isStopped = false
+
 //    private val debugReceiver = SamaDebugReceiver()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,6 +50,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     }
 
     override fun onStart() {
+        isStopped = false
         super.onStart()
         /*
         if(PowerfulSama.isAppDebug) {
@@ -66,6 +70,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     }
 
     override fun onStop() {
+        isStopped = true
         super.onStop()
 //        if(PowerfulSama.isAppDebug) { tryOrPrint { unregisterReceiver(debugReceiver) } }
         logVerbose("onStop")
