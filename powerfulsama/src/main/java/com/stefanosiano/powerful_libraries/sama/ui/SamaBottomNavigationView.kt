@@ -8,7 +8,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.stefanosiano.powerful_libraries.sama.launch
 import com.stefanosiano.powerful_libraries.sama.runOnUi
 import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
@@ -64,7 +63,7 @@ open class SamaBottomNavigationView: BottomNavigationView {
 
     fun addItemSelectedListener(listener: (Int) -> Unit) = itemSelectedListeners.add(listener)
 
-    /** Sets pairs of <menuId, fragment> and binds them to the bottom navigation view */
+    /** Sets pairs of <menuId, fragment> and binds them to the bottom navigation view. Remove any preexisting fragment already attached (memory leaks may still occur) */
     fun bindFragments(containerId: Int, activity: SamaActivity, pairs: Array<out Pair<Int, SamaFragment>>) {
 
         this.containerId = containerId
@@ -82,7 +81,7 @@ open class SamaBottomNavigationView: BottomNavigationView {
 
             active = WeakReference(pair.second)
 
-            if(!pair.second.isAdded) fragmentTransaction.add(containerId, pair.second)
+            if(!pair.second.isAdded) fragmentTransaction.replace(containerId, pair.second)
 
             this.pairs?.filter { it.second() != pair.second && it.second()?.isAdded == false }?.forEach { p -> p.second()?.also {
                 fragmentTransaction.add(containerId, it).hide(it)
