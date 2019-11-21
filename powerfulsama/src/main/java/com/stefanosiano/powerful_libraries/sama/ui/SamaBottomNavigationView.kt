@@ -25,7 +25,7 @@ open class SamaBottomNavigationView: BottomNavigationView {
     }
 
     private var containerId = 0
-    private var pairs: Array<WeakPair<Int, out SamaFragment>>? = null
+    private var pairs: Array<WeakPair<Int, out Fragment>>? = null
     private var activityReference: WeakReference<AppCompatActivity>? = null
     private var active: WeakReference<Fragment>? = null
     private val itemSelectedListeners = ArrayList<(Int) -> Unit>()
@@ -64,7 +64,7 @@ open class SamaBottomNavigationView: BottomNavigationView {
     fun addItemSelectedListener(listener: (Int) -> Unit) = itemSelectedListeners.add(listener)
 
     /** Sets pairs of <menuId, fragment> and binds them to the bottom navigation view. Remove any preexisting fragment already attached (memory leaks may still occur) */
-    fun bindFragments(containerId: Int, activity: SamaActivity, pairs: Array<out Pair<Int, SamaFragment>>) {
+    fun bindFragments(containerId: Int, activity: SamaActivity, pairs: Array<out Pair<Int, Fragment>>) {
 
         this.containerId = containerId
         this.pairs = pairs.map { WeakPair(it.first, it.second) }.toTypedArray()
@@ -75,7 +75,7 @@ open class SamaBottomNavigationView: BottomNavigationView {
             selectedItemId = cacheSelectedId.get(containerId)
             cacheSelectedId.delete(containerId)
 
-            val pair: Pair<Int, SamaFragment> = pairs.firstOrNull { it.first == selectedItemId } ?: return@runOnUi
+            val pair: Pair<Int, Fragment> = pairs.firstOrNull { it.first == selectedItemId } ?: return@runOnUi
 
             val fragmentTransaction = activity.supportFragmentManager.beginTransaction()
 
