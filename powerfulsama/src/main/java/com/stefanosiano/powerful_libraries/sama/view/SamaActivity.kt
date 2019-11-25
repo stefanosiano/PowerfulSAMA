@@ -59,8 +59,9 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
             tryOrPrint { registerReceiver(debugReceiver, intentFilter) }
         }*/
         logVerbose("onStart")
-        synchronized(observables) { observables.filter { !it.registered }.forEach { it.registered = true; it.ob.addOnPropertyChangedCallback(it.callback) } }
-        synchronized(listObservables) { listObservables.filter { !it.registered }.forEach { it.registered = true; it.ob.addOnListChangedCallback(it.callback) } }
+
+        synchronized(observables) { observables.filter { !it.registered }.forEach { it.registered = true; it.ob.addOnPropertyChangedCallback(it.callback); launch { it.f() } } }
+        synchronized(listObservables) { listObservables.filter { !it.registered }.forEach { it.registered = true; it.ob.addOnListChangedCallback(it.callback); launch { it.f() } } }
         synchronized(registeredViewModels) { registeredViewModels.forEach { it.restartObserving() } }
     }
 
@@ -145,9 +146,16 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     @Suppress("UNCHECKED_CAST")
     protected fun <T> observe(o: ObservableList<T>, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any {
         val obsId = observablesId.incrementAndGet()
+
+        val f: suspend () -> Unit = {
+            observablesMap[obsId]?.set(2)
+            o.let { logVerbose(it.toString()); obFun(it) }
+            observablesMap[obsId]?.set(0)
+        }
+
         obs.forEach { ob ->
             observablesMap[obsId] = AtomicInteger(0)
-            observables.add(SamaInnerObservable(ob, ob.onChange(this) {
+            observables.add(SamaInnerObservable(ob, f, ob.onChange(this) {
                 //increment value of observablesMap[obsId] -> only first call can run this function
                 val id = observablesMap[obsId]?.incrementAndGet() ?: 1
                 if(id != 1) return@onChange
@@ -165,7 +173,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
                 observablesMap[obsId]?.set(0)
             }
         }
-        listObservables.add(SamaInnerListObservable(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
+        listObservables.add(SamaInnerListObservable(o as ObservableList<Any>, f, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
         if(!skipFirst)
             launchOrNow(this) { obFun(o) }
     }
@@ -236,9 +244,15 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     private fun <T> observePrivate(o: Observable, obValue: () -> T?, obFun: suspend (data: T) -> Unit, skipFirst: Boolean, vararg obs: Observable) {
         val obsId = observablesId.incrementAndGet()
 
+        val f: suspend () -> Unit = {
+            observablesMap[obsId]?.set(2)
+            obValue()?.let { logVerbose(it.toString()); obFun(it) }
+            observablesMap[obsId]?.set(0)
+        }
+
         obs.forEach { ob ->
             observablesMap[obsId] = AtomicInteger(0)
-            observables.add(SamaInnerObservable(ob, ob.onChange(this) {
+            observables.add(SamaInnerObservable(ob, f, ob.onChange(this) {
                 //increment value of observablesMap[obsId] -> only first call can run this function
                 val id = observablesMap[obsId]?.incrementAndGet() ?: 1
                 if(id != 1) return@onChange
@@ -250,56 +264,56 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         //sets the function to call when using an observable: it sets the observablesMap[obsId] to 2 (it won't be called by obs), run obFun and finally set observablesMap[obsId] to 0 (callable by everyone)
         when(o) {
             is ObservableInt -> {
-                observables.add(SamaInnerObservable(o, o.addOnChangedAndNow (this, skipFirst) {
+                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
                     obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableShort -> {
-                observables.add(SamaInnerObservable(o, o.addOnChangedAndNow (this, skipFirst) {
+                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
                     obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableLong -> {
-                observables.add(SamaInnerObservable(o, o.addOnChangedAndNow (this, skipFirst) {
+                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
                     obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableFloat -> {
-                observables.add(SamaInnerObservable(o, o.addOnChangedAndNow (this, skipFirst) {
+                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
                     obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableDouble -> {
-                observables.add(SamaInnerObservable(o, o.addOnChangedAndNow (this, skipFirst) {
+                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
                     obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableBoolean -> {
-                observables.add(SamaInnerObservable(o, o.addOnChangedAndNow (this, skipFirst) {
+                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
                     obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableByte -> {
-                observables.add(SamaInnerObservable(o, o.addOnChangedAndNow (this, skipFirst) {
+                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
                     obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
                     observablesMap[obsId]?.set(0)
                 }))
             }
             is ObservableField<*> -> {
-                observables.add(SamaInnerObservable(o, o.addOnChangedAndNow (this, skipFirst) {
+                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
                     observablesMap[obsId]?.set(2)
                     obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
                     observablesMap[obsId]?.set(0)
@@ -333,8 +347,8 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
 
 
-    private inner class SamaInnerObservable (val ob: Observable, val callback: Observable.OnPropertyChangedCallback, var registered: Boolean = true)
-    private inner class SamaInnerListObservable (val ob: ObservableList<Any>, val callback: ObservableList.OnListChangedCallback<ObservableList<Any>>, var registered: Boolean = true)
+    private inner class SamaInnerObservable (val ob: Observable, val f: suspend () -> Unit, val callback: Observable.OnPropertyChangedCallback, var registered: Boolean = true)
+    private inner class SamaInnerListObservable (val ob: ObservableList<Any>, val f: suspend () -> Unit, val callback: ObservableList.OnListChangedCallback<ObservableList<Any>>, var registered: Boolean = true)
 
 
 }
