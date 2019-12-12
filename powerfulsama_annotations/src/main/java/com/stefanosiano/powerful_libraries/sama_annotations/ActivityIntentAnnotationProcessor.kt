@@ -72,39 +72,29 @@ class ActivityIntentAnnotationProcessor : AbstractProcessor() {
             val activityIntent = method.getAnnotation(ActivityIntent::class.java)
             method as ExecutableElement
 
-
             val clazz = method.enclosingElement.enclosingElement
-            messager.printMessage(Diagnostic.Kind.WARNING, clazz.simpleName.toString())
-            messager.printMessage(Diagnostic.Kind.WARNING, method.returnType.toString())
-            messager.printMessage(Diagnostic.Kind.WARNING, method.receiverType?.toString()?:"")
-            messager.printMessage(Diagnostic.Kind.WARNING, method.isVarArgs.toString())
-            messager.printMessage(Diagnostic.Kind.WARNING, method.modifiers.joinToString())
-
             val params = method.parameters
+            val toPutParams = params.filterIndexed { index, _ -> index != 0 }.joinToString { it.simpleName }.let { if (it.trim().isEmpty()) "" else ", ${it.trim()}" }
 
             val funName = "start${activityIntent.name.trim().ifEmpty { clazz.simpleName } }"
             val funForResultName = "start${activityIntent.name.trim().ifEmpty { clazz.simpleName } }ForResult"
-            val comment = processingEnv.elementUtils.getDocComment(method)?.trim()?.ifEmpty { null }
 
             val function = FunSpec.builder(funName).receiver(getKotlinType("android.app.Activity"))
             val functionForResult = FunSpec.builder(funForResultName).receiver(getKotlinType("android.app.Activity"))
-
-            comment?.let { function.addKdoc(it) }
-
+            val comment = processingEnv.elementUtils.getDocComment(method)?.trim()?.ifEmpty { null }
+            comment?.let { function.addKdoc(it); functionForResult.addKdoc(it) }
 
             method.parameters.filterIndexed { index, _ -> index != 0 }.forEach {
                 function.addParameter(ParameterSpec.builder(it.simpleName.toString(), it.toKotlinType()).build())
                 functionForResult.addParameter(ParameterSpec.builder(it.simpleName.toString(), it.toKotlinType()).build())
             }
+
             functionForResult.addParameter(ParameterSpec.builder("requestCode", Int::class).build())
-            functionForResult.addParameter(
-                ParameterSpec.builder("options", getKotlinType("android.os.Bundle").copy(true)).defaultValue("null").build()
-            )
+            functionForResult.addParameter(ParameterSpec.builder("options", getKotlinType("android.os.Bundle").copy(true)).defaultValue("null").build())
 
-            val toPutParams = params.filterIndexed { index, _ -> index != 0 }.joinToString { it.simpleName }.let { if (it.trim().isEmpty()) "" else ", ${it.trim()}" }
+            function.addStatement("startActivity(%T.getIntent(this$toPutParams))", clazz)
+            functionForResult.addStatement("startActivityForResult(%T.getIntent(this$toPutParams), requestCode, options)", clazz)
 
-            function.addStatement("startActivity(${clazz.simpleName}.getIntent(this$toPutParams))")
-            functionForResult.addStatement("startActivityForResult(${clazz.simpleName}.getIntent(this$toPutParams), requestCode, options)")
             functions.add(function.build())
             functions.add(functionForResult.build())
         }
@@ -114,7 +104,6 @@ class ActivityIntentAnnotationProcessor : AbstractProcessor() {
 
 
         file.build().writeTo(File(genDir))
-        messager.printMessage(Diagnostic.Kind.WARNING, "Generated $genDir/${file.name}")
 
         return false
     }
