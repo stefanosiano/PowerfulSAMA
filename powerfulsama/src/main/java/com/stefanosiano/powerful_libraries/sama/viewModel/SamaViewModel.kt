@@ -314,6 +314,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
         synchronized(listObservables) { listObservables.filterNotNull().filter { it.registered }.forEach { it.registered = false; it.ob.removeOnListChangedCallback(it.callback) } }
         runOnUi { observedLiveData.forEach { it.removeObserver(persistentObserver) } }
         runOnUi { customObservedLiveData.forEach { it.first.removeObserver(it.second) } }
+        liveResponse.postValue(null)
     }
 
 

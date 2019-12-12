@@ -4,10 +4,13 @@ import android.app.Activity
 import android.app.ProgressDialog
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
+import android.os.Build
 import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.snackbar.Snackbar
 import com.stefanosiano.powerful_libraries.sama.*
@@ -71,14 +74,20 @@ class Msg private constructor(
     /** String to show in neutral button. Overwrites neutral if != 0 */
     private var iNeutral: Int = 0,
 
-    /** Tunnable to run after clicking on positive button */
+    /** Runnable to run after clicking on positive button */
     private var onOk: ((Msg?) -> Unit)? = null,
 
-    /** Tunnable to run after clicking on negative button */
+    /** Runnable to run after clicking on negative button */
     private var onNo: ((Msg) -> Unit)? = null,
 
-    /** Tunnable to run after clicking on neutral button */
+    /** Runnable to run after clicking on neutral button */
     private var onCancel: ((Msg) -> Unit)? = null,
+
+    /** Runnable to run right before [show] is called */
+    private var onShow: ((Msg) -> Unit)? = null,
+
+    /** Runnable to run right after [dismiss] is called */
+    private var onDismiss: ((Msg) -> Unit)? = null,
 
     /** Set if the message is indeterminate (if available) */
     private var indeterminate: Boolean = false,
@@ -114,6 +123,9 @@ class Msg private constructor(
 
     /** Flag to know if the buildAs function has been called */
     private var isBuilt = false
+
+    /** Flag to know if the screen orientation should be locked while showing the message */
+    private var lockOrientation = false
 
 
 
@@ -290,6 +302,18 @@ class Msg private constructor(
     /** Sets the duration of the message in milliseconds (for [Toast] and [Snackbar]) */
     fun duration(duration: Int): Msg { this.duration = duration; return this }
 
+    /** Sets the runnable to run right before the message is shown */
+    fun onShow(onShow: (Msg) -> Unit): Msg { this.onShow = onShow; return this }
+
+    /** Sets the runnable to run right after the message is dismissed */
+    fun onDismiss(onDismiss: (Msg) -> Unit): Msg { this.onDismiss = onDismiss; return this }
+
+    @RequiresApi(18)
+    /** Sets whether to lock the orientation while showing the message until it's dismissed.
+     * Be sure to check correctness by calling [Activity.setRequestedOrientation] with [ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED].
+     * If the activity changed while showing the message, it's possible that the orientation will not be restored after dismissing the message */
+    fun lockOrientation(lockOrientation: Boolean): Msg { this.lockOrientation = lockOrientation; return this }
+
 
 
     /** Retrieves the activity name by the context. If the activity is not found, it returns the current activity reference */
@@ -364,11 +388,11 @@ class Msg private constructor(
             if (!isBuilt) build(context)
 
             when (messageImpl) {
-                MessageImpl.ProgressDialog -> (implementation?.get() as ProgressDialog).show()
-                MessageImpl.AlertDialogOneButton -> (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show()
-                MessageImpl.AlertDialog -> (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show()
-                MessageImpl.Toast -> (implementation?.get() as Toast).show()
-                MessageImpl.Snackbar -> (implementation?.get() as? Snackbar?)?.show() ?: (implementation?.get() as? Toast?)?.show()
+                MessageImpl.ProgressDialog -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as ProgressDialog).show() }
+                MessageImpl.AlertDialogOneButton -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
+                MessageImpl.AlertDialog -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
+                MessageImpl.Toast -> { onShow?.invoke(this); (implementation?.get() as Toast).show() }
+                MessageImpl.Snackbar -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as? Snackbar?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
                 else -> { logError("Cannot understand the implementation type of the message. Skipping show") }
             }
 
@@ -378,6 +402,15 @@ class Msg private constructor(
         return this
     }
 
+    private fun lockOrientation(context: Context) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
+            (getActivityFromCtx(context) ?: currentActivity?.get())?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+    }
+
+    private fun unlockOrientation(context: Context) {
+        (getActivityFromCtx(context) ?: currentActivity?.get())?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    }
+
     @Suppress("DEPRECATION")
     /** Dismisses the message */
     fun dismiss() {
@@ -385,10 +418,10 @@ class Msg private constructor(
         logVerbose("Dismiss message")
         runOnUi {
             when (messageImpl) {
-                MessageImpl.ProgressDialog -> (implementation?.get() as? ProgressDialog?)?.let { if (it.isShowing) it.dismiss() }
-                MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> (implementation?.get() as? AlertDialog?)?.let { if (it.isShowing) it.dismiss() }
-                MessageImpl.Toast -> (implementation?.get() as? Toast?)?.cancel()
-                MessageImpl.Snackbar -> (implementation?.get() as? Snackbar?)?.let { if (it.isShown) it.dismiss() }
+                MessageImpl.ProgressDialog -> { onDismiss?.invoke(this); (implementation?.get() as? ProgressDialog?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShowing) it.dismiss() } }
+                MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> { onDismiss?.invoke(this); (implementation?.get() as? AlertDialog?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShowing) it.dismiss() } }
+                MessageImpl.Toast -> { onDismiss?.invoke(this); (implementation?.get() as? Toast?)?.cancel() }
+                MessageImpl.Snackbar -> { onDismiss?.invoke(this); (implementation?.get() as? Snackbar?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShown) it.dismiss() } }
                 else -> logError("Cannot understand the implementation type of the message. Skipping dismiss")
             }
             autoDismissJob?.cancel()
