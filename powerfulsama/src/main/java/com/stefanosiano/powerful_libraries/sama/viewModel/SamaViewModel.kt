@@ -310,17 +310,18 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     /** Clear the liveData observer (if any) */
     internal fun stopObserving() {
         logVerbose("stopObserving")
+        //need all these filterNotNull: if this is initialized in background it could happen that lists contain null values (because they are being created now)
         synchronized(observables) { observables.filterNotNull().filter { it.registered }.forEach { it.registered = false; it.ob.removeOnPropertyChangedCallback(it.callback) } }
         synchronized(listObservables) { listObservables.filterNotNull().filter { it.registered }.forEach { it.registered = false; it.ob.removeOnListChangedCallback(it.callback) } }
-        runOnUi { observedLiveData.forEach { it.removeObserver(persistentObserver) } }
-        runOnUi { customObservedLiveData.forEach { it.first.removeObserver(it.second) } }
+        runOnUi { observedLiveData.filterNotNull().forEach { it.removeObserver(persistentObserver) } }
+        runOnUi { customObservedLiveData.filterNotNull().forEach { it.first.removeObserver(it.second) } }
         liveResponse.postValue(null)
     }
 
 
     /** Clear the liveData observer (if any) */
     internal fun restartObserving() {
-        logVerbose("stopObserving")
+        logVerbose("restartObserving")
         synchronized(observables) { observables.filterNotNull().filter { !it.registered }.forEach {
             it.registered = true
             it.ob.addOnPropertyChangedCallback(it.callback)
@@ -339,8 +340,8 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
             }
         } }
         synchronized(listObservables) { listObservables.filterNotNull().filter { !it.registered }.forEach { it.registered = true; it.ob.addOnListChangedCallback(it.callback); launch { it.f(it.ob) } } }
-        runOnUi { observedLiveData.forEach { it.observeForever(persistentObserver); persistentObserver.onChanged(it.value) } }
-        runOnUi { customObservedLiveData.forEach { it.first.observeForever(it.second); it.second.onChanged(it.first.value) } }
+        runOnUi { observedLiveData.filterNotNull().forEach { it.observeForever(persistentObserver); persistentObserver.onChanged(it.value) } }
+        runOnUi { customObservedLiveData.filterNotNull().forEach { it.first.observeForever(it.second); it.second.onChanged(it.first.value) } }
     }
 
 

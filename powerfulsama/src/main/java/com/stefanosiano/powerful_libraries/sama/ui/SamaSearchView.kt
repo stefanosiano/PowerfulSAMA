@@ -81,6 +81,8 @@ open class SamaSearchView : SearchView {
                     searchView.get()?.setQuery(obs.get(), false)
             }
         }
+        if(currentQuery.isEmpty())
+            currentQuery = queryObs.get() ?: ""
         queryObs.set(currentQuery)
 
         obserablesSet.add(WeakPair(weakObs.get() ?: return, callback))
