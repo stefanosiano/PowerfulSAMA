@@ -2,6 +2,7 @@ package com.stefanosiano.powerful_libraries.sama_annotations
 
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import org.jetbrains.annotations.Nullable
 import java.io.File
 import javax.annotation.processing.*
 import javax.lang.model.SourceVersion
@@ -27,7 +28,7 @@ class ActivityIntentAnnotationProcessor : AbstractProcessor() {
     }
 
     override fun process(set: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
-        messager.printMessage(Diagnostic.Kind.NOTE, "start running checks")
+        messager.printMessage(Diagnostic.Kind.WARNING, "start creating ActivityIntents")
 
         val methods = roundEnv.getElementsAnnotatedWith(ActivityIntent::class.java)
             .filter { it.kind == ElementKind.METHOD }
@@ -84,8 +85,9 @@ class ActivityIntentAnnotationProcessor : AbstractProcessor() {
             val comment = processingEnv.elementUtils.getDocComment(method)?.trim()?.ifEmpty { null }
             comment?.let { function.addKdoc(it); functionForResult.addKdoc(it) }
 
-            method.parameters.filterIndexed { index, _ -> index != 0 }.forEach {
-                function.addParameter(ParameterSpec.builder(it.simpleName.toString(), it.toKotlinType()).build())
+            method.parameters.filterIndexed { index, _ -> index != 0 }.forEach { it ->
+                val nullable = it.annotationMirrors.map { it.annotationType }.firstOrNull { it.toString() == Nullable::class.qualifiedName } != null
+                function.addParameter(ParameterSpec.builder(it.simpleName.toString(), it.toKotlinType().let { t -> if(nullable) t.copy(true) else t }).build())
                 functionForResult.addParameter(ParameterSpec.builder(it.simpleName.toString(), it.toKotlinType()).build())
             }
 

@@ -27,7 +27,7 @@ class Activity2 : Activity() {
 
         @ActivityIntent
         /** asd */
-        fun getIntent(context: Context, sync: Boolean, isTempPassword: Boolean = true): Intent =
+        fun getIntent(context: Context, sync: Boolean?, isTempPassword: Boolean = true): Intent =
             Intent(context, Activity2::class.java).apply {
                 putExtra(ExtraSync, sync)
                 putExtra(ExtraIsTempPassword, isTempPassword)
@@ -41,7 +41,7 @@ class Activity2 : Activity() {
             }
 
         /** */
-        @ActivityIntent("A2")
+//        @ActivityIntent("A2")
         fun getIntent2(context: Activity, sync: Boolean): Intent =
             Intent(context, Activity2::class.java).apply {
                 putExtra(ExtraSync, sync)

@@ -388,10 +388,10 @@ class Msg private constructor(
             if (!isBuilt) build(context)
 
             when (messageImpl) {
-                MessageImpl.ProgressDialog -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as ProgressDialog).show() }
+                MessageImpl.ProgressDialog -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as ProgressDialog?)?.show() }
                 MessageImpl.AlertDialogOneButton -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
                 MessageImpl.AlertDialog -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
-                MessageImpl.Toast -> { onShow?.invoke(this); (implementation?.get() as Toast).show() }
+                MessageImpl.Toast -> { onShow?.invoke(this); (implementation?.get() as? Toast?)?.show() }
                 MessageImpl.Snackbar -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as? Snackbar?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
                 else -> { logError("Cannot understand the implementation type of the message. Skipping show") }
             }
