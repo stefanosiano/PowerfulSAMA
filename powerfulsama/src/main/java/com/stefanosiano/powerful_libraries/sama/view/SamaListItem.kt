@@ -209,6 +209,16 @@ abstract class SamaListItem : CoroutineScope {
                 }))
             }
         }
+
+        synchronized(observables) {
+            //sets the function to call when using an observable: it sets the observablesMap[obsId] to 2 (it won't be called by obs), run obFun and finally set observablesMap[obsId] to 0 (callable by everyone)
+            observables.add(Pair(o, o.addOnChangedAndNowBase (this, skipFirst) {
+                observablesMap[obsId]?.set(2)
+                obValue()?.let { data -> if (data == it) { logVerbose("$adapterPosition - $data"); obFun(data) } }
+                observablesMap[obsId]?.set(0)
+            }))
+        }
+        /*
         //sets the function to call when using an observable: it sets the observablesMap[obsId] to 2 (it won't be called by obs), run obFun and finally set observablesMap[obsId] to 0 (callable by everyone)
         when(o) {
             is ObservableInt -> {
@@ -283,7 +293,7 @@ abstract class SamaListItem : CoroutineScope {
                     }))
                 }
             }
-        }
+        }*/
     }
 
 }

@@ -232,6 +232,9 @@ inline fun ObservableFloat.addOnChangedAndNow(c: CoroutineScope? = null, skipFir
 /** Called by an Observable whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
 inline fun ObservableDouble.addOnChangedAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend (Double) -> Unit ) = onChange(c) { f(get()) }.also { if(!skipFirst) launchOrNow(c) { f(get()) } }
 
+/** Called by an Observable whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
+inline fun Observable.addOnChangedAndNowBase(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend (Any?) -> Unit ) = onChange(c) { f(get()) }.also { if(!skipFirst) launchOrNow(c) { f(get()) } }
+
 /** Calls [f] whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
 inline fun Observable.onChangeAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend () -> Unit) = onChange(c, f).also { if(!skipFirst) launchOrNow(c) { f() } }
 
@@ -253,6 +256,18 @@ fun <T> ObservableList<T>.onAnyChange(f: (ObservableList<T>) -> Unit): Observabl
     return callback
 }
 
+/** Calls get on the right extending class (e.g. ObservableInt). If no class is found, null is returned */
+fun Observable.get() = when(this) {
+    is ObservableInt -> get()
+    is ObservableShort -> get()
+    is ObservableLong -> get()
+    is ObservableFloat -> get()
+    is ObservableDouble -> get()
+    is ObservableBoolean -> get()
+    is ObservableByte -> get()
+    is ObservableField<*> -> get()
+    else -> null
+}
 
 
 

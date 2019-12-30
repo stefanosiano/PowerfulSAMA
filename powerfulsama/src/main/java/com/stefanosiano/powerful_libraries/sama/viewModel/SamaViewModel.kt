@@ -45,6 +45,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     private val persistentObserver = Observer<Any?>{}
 
     private val observablesMap = ConcurrentHashMap<Long, AtomicInteger>()
+    private val observablesIsChangedMap = ConcurrentHashMap<Long, suspend () -> Unit>()
     private val observablesId = AtomicLong(0)
 
     /** Flag to understand whether multiple actions can be pushed at once (e.g. multiple buttons clicked at the same time) */
@@ -55,6 +56,9 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
 
     /** Flag to understand whether this [SamaViewModel] is already initialized. Used to check if [onFirtstTime] should be called */
     internal var isInitialized = AtomicBoolean(false)
+
+    /** Flag to understand whether the activity attached to this [SamaViewModel] is stopped, so that no observable functions are called */
+    private var isObservePaused = false
 
 
     /** Clears the LiveData of the response to avoid the observer receives it over and over on configuration changes */
@@ -83,18 +87,24 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     protected fun <T> observe(o: ObservableList<T>, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any {
         val obsId = observablesId.incrementAndGet()
 
-        val f: suspend (Any?) -> Unit = { oldData ->
+        val f: suspend () -> Unit = {
             val id = observablesMap[obsId]?.incrementAndGet() ?: 1
-            if(id == 1 && oldData != o) {
-                o.let { logVerbose(it.toString()); obFun(it) }
+            if(id == 1) {
+                logVerbose(o.toString())
+                obFun(o)
                 observablesMap[obsId]?.set(0)
             }
+            observablesIsChangedMap.remove(obsId)
         }
 
         obs.forEach { ob ->
 
             observablesMap[obsId] = AtomicInteger(0)
-            observables.add(SamaInnerObservable(ob, f, ob.onChange(this) {
+            observables.add(SamaInnerObservable(ob, ob.onChange(this) {
+                if(isObservePaused) {
+                    observablesIsChangedMap[obsId] = f
+                    return@onChange
+                }
                 //increment value of observablesMap[obsId] -> only first call can run this function
                 val id = observablesMap[obsId]?.incrementAndGet() ?: 1
                 if(id != 1) return@onChange
@@ -112,7 +122,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
                 observablesMap[obsId]?.set(0)
             }
         }
-        listObservables.add(SamaInnerListObservable(o as ObservableList<Any>, f, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
+        listObservables.add(SamaInnerListObservable(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
         if(!skipFirst)
             launchOrNow(this) { obFun(o) }
     }
@@ -195,18 +205,23 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
         val obsId = observablesId.incrementAndGet()
 
 
-        val f: suspend (Any?) -> Unit = { oldData ->
+        val f: suspend () -> Unit = {
             val id = observablesMap[obsId]?.incrementAndGet() ?: 1
             val newData = obValue()
-            if(id == 1 && oldData != newData) {
+            if(id == 1) {
                 newData?.let { logVerbose(it.toString()); obFun(it) }
                 observablesMap[obsId]?.set(0)
             }
+            observablesIsChangedMap.remove(obsId)
         }
 
         obs.forEach { ob ->
             observablesMap[obsId] = AtomicInteger(0)
-            observables.add(SamaInnerObservable(ob, f, ob.onChange(this) {
+            observables.add(SamaInnerObservable(ob, ob.onChange(this) {
+                if(isObservePaused) {
+                    observablesIsChangedMap[obsId] = f
+                    return@onChange
+                }
                 //increment value of observablesMap[obsId] -> only first call can run this function
                 val id = observablesMap[obsId]?.incrementAndGet() ?: 1
                 if(id != 1) return@onChange
@@ -216,79 +231,32 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
             }))
         }
 
-        //sets the function to call when using an observable: it sets the observablesMap[obsId] to 2 (it won't be called by obs), run obFun and finally set observablesMap[obsId] to 0 (callable by everyone)
-        when(o) {
-            is ObservableInt -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
+        val obF: suspend (obValue: Any?) -> Unit = {
+            if(isObservePaused) {
+                observablesIsChangedMap[obsId] = f
             }
-            is ObservableShort -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableLong -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableFloat -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableDouble -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableBoolean -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableByte -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableField<*> -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
+            else {
+                observablesMap[obsId]?.set(2)
+                obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                observablesMap[obsId]?.set(0)
             }
         }
+
+        //sets the function to call when using an observable: it sets the observablesMap[obsId] to 2 (it won't be called by obs), run obFun and finally set observablesMap[obsId] to 0 (callable by everyone)
+        observables.add(SamaInnerObservable(o, o.addOnChangedAndNowBase (this, skipFirst) { obF(it) }))
+/*
+        when(o) {
+            is ObservableInt -> { observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) { obF(it) })) }
+            is ObservableShort -> { observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) { obF(it) })) }
+            is ObservableLong -> { observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) { obF(it) })) }
+            is ObservableFloat -> { observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) { obF(it) })) }
+            is ObservableDouble -> { observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) { obF(it) })) }
+            is ObservableBoolean -> { observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) { obF(it) })) }
+            is ObservableByte -> { observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) { obF(it) })) }
+            is ObservableField<*> -> { observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) { obF(it) })) }
+        }*/
     }
 
-
-/*
-    /** Observes a sharedPreference until the ViewModel is destroyed, using a custom live data. It also calls [obFun]. Does nothing if the value of the preference is null */
-    protected fun <T> observe(preference: PowerfulPreference<T>, obFun: (data: T) -> Unit) { observe(preference.asLiveData()) { obFun(it ?: return@observe) }; obFun(preference.get() ?: return) }
-
-    /** Observes a sharedPreference until the ViewModel is destroyed, using a custom live data, and transforms it into an observable field. Does not update the observable if the value of the preference is null */
-    protected fun <T> observeAsOf(preference: PowerfulPreference<T>): ObservableField<T> {
-        val observable = ObservableField<T>()
-        observe(preference.asLiveData()) { observable.set(it ?: return@observe) }
-        observable.set(preference.get() ?: return observable)
-        return observable
-    }*/
 
 
     /** Clear the liveData observer (if any) */
@@ -310,11 +278,13 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     /** Clear the liveData observer (if any) */
     internal fun stopObserving() {
         logVerbose("stopObserving")
+        isObservePaused = true
+        /*
         //need all these filterNotNull: if this is initialized in background it could happen that lists contain null values (because they are being created now)
         synchronized(observables) { observables.filterNotNull().filter { it.registered }.forEach { it.registered = false; it.ob.removeOnPropertyChangedCallback(it.callback) } }
         synchronized(listObservables) { listObservables.filterNotNull().filter { it.registered }.forEach { it.registered = false; it.ob.removeOnListChangedCallback(it.callback) } }
         runOnUi { observedLiveData.filterNotNull().forEach { it.removeObserver(persistentObserver) } }
-        runOnUi { customObservedLiveData.filterNotNull().forEach { it.first.removeObserver(it.second) } }
+        runOnUi { customObservedLiveData.filterNotNull().forEach { it.first.removeObserver(it.second) } }*/
         liveResponse.postValue(null)
     }
 
@@ -322,6 +292,9 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     /** Clear the liveData observer (if any) */
     internal fun restartObserving() {
         logVerbose("restartObserving")
+        isObservePaused = false
+        observablesIsChangedMap.values.filterNotNull().launch(this) { it() }
+        /*
         synchronized(observables) { observables.filterNotNull().filter { !it.registered }.forEach {
             it.registered = true
             it.ob.addOnPropertyChangedCallback(it.callback)
@@ -341,7 +314,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
         } }
         synchronized(listObservables) { listObservables.filterNotNull().filter { !it.registered }.forEach { it.registered = true; it.ob.addOnListChangedCallback(it.callback); launch { it.f(it.ob) } } }
         runOnUi { observedLiveData.filterNotNull().forEach { it.observeForever(persistentObserver); persistentObserver.onChanged(it.value) } }
-        runOnUi { customObservedLiveData.filterNotNull().forEach { it.first.observeForever(it.second); it.second.onChanged(it.first.value) } }
+        runOnUi { customObservedLiveData.filterNotNull().forEach { it.first.observeForever(it.second); it.second.onChanged(it.first.value) } }*/
     }
 
 
@@ -399,8 +372,8 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     fun allowConcurrentActions(allow: Boolean) { allowConcurrentActions = allow }
 
 
-    private inner class SamaInnerObservable (val ob: Observable, val f: suspend (Any?) -> Unit, val callback: Observable.OnPropertyChangedCallback, var registered: Boolean = true)
-    private inner class SamaInnerListObservable (val ob: ObservableList<Any>, val f: suspend (ObservableList<Any>) -> Unit, val callback: ObservableList.OnListChangedCallback<ObservableList<Any>>, var registered: Boolean = true)
+    private inner class SamaInnerObservable (val ob: Observable, val callback: Observable.OnPropertyChangedCallback, var registered: Boolean = true)
+    private inner class SamaInnerListObservable (val ob: ObservableList<Any>, val callback: ObservableList.OnListChangedCallback<ObservableList<Any>>, var registered: Boolean = true)
 
 }
 
