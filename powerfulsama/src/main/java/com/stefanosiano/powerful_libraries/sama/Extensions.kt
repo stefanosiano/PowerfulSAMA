@@ -11,8 +11,10 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
+import androidx.room.RoomDatabase
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.logger
+import com.stefanosiano.powerful_libraries.sama.utils.RoomTransaction
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import kotlin.coroutines.CoroutineContext
@@ -273,6 +275,8 @@ fun Observable.get() = when(this) {
 
 class Extensions
 
+/** Run a transaction using a coroutine */
+suspend fun RoomDatabase.runInTransactionK(f: suspend () -> Unit): Boolean = RoomTransaction.run(this, f)
 
 /** Run a function for each element and wait for the completion of all of them, using coroutines */
 inline fun <T> Iterable<T>.runAndWait(crossinline run: suspend (x: T) -> Unit) = runBlocking { map { async {run(it)} }.map { it.await() } }
