@@ -474,6 +474,30 @@ open class SamaRvAdapter(
     /** Returns all the items in the adapter */
     fun getItems(): List<SamaListItem> = this.items
 
+
+    fun getItemPosition(id: String): Int {
+        for(i in 0 until itemCount) {
+            if(getItem(i)?.getStableIdString() == id)
+                return i
+        }
+        return -1
+    }
+
+    fun getItemPosition(id: Long): Int {
+        for(i in 0 until itemCount) {
+            if(getItem(i)?.getStableId() == id) return i
+        }
+        return -1
+    }
+
+    fun getItemPosition(item: SamaListItem): Int {
+        val stableId = getItemStableId(item)
+        for(i in 0 until itemCount) {
+            if(getItem(i)?.let { getItemStableId(it) } == stableId) return i
+        }
+        return -1
+    }
+
     /** Returns the currently shown PagedList, but not necessarily the most recent passed via
      *  [bindPagedItems], because a diff is computed asynchronously before updating the currentList value.
      * May be null if no PagedList is being presented or adapter is not using a paged list */

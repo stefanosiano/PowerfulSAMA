@@ -1,20 +1,15 @@
 package com.stefanosiano.powerful_libraries.sama
 
-import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import androidx.appcompat.content.res.AppCompatResources
-import androidx.core.content.ContextCompat
 import androidx.databinding.*
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
-import androidx.room.RoomDatabase
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.logger
-import com.stefanosiano.powerful_libraries.sama.utils.RoomTransaction
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import kotlin.coroutines.CoroutineContext
@@ -194,7 +189,8 @@ inline fun <T, D> LiveData<T>.map(context: CoroutineScope? = null, crossinline o
 
 
 /** Run [f] on ui thread, waits for its completion and return its value */
-inline fun <T> runOnUiAndWait(crossinline f: () -> T): T? {
+fun <T> runOnUiAndWait(f: () -> T): T? {
+    if(Looper.myLooper() == mainThreadHandler.looper) return f.invoke()
     var ret: T? = null
     var finished = false
     runBlocking { runOnUi { if(isActive) ret = f(); finished = true }; while (isActive && !finished) delay(10) }
@@ -274,9 +270,6 @@ fun Observable.get() = when(this) {
 
 
 class Extensions
-
-/** Run a transaction using a coroutine */
-suspend fun RoomDatabase.runInTransactionK(f: suspend () -> Unit): Boolean = RoomTransaction.run(this, f)
 
 /** Run a function for each element and wait for the completion of all of them, using coroutines */
 inline fun <T> Iterable<T>.runAndWait(crossinline run: suspend (x: T) -> Unit) = runBlocking { map { async {run(it)} }.map { it.await() } }
