@@ -134,7 +134,7 @@ private fun initFormatter(locale: Int, minFractionDigits: Int, maxFractionDigits
 }
 
 private fun <T> setTextBd(v: T, oldValue: BigDecimal, newValue: BigDecimal?, formatter: NumberFormat) where T: TextView {
-    if(oldValue.toDouble() != newValue?.toDouble()) {
+    if(oldValue.toDouble() != newValue?.toDouble() || v.text.isEmpty()) {
         val cursorPosition = v.selectionEnd
         val toSet = formatter.format(newValue ?: BigDecimal.ZERO)
         v.setText(toSet)
