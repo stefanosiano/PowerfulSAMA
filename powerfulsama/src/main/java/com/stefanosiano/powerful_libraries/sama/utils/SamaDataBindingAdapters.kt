@@ -4,20 +4,26 @@ import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.drawable.Drawable
+import android.text.Editable
 import android.text.TextUtils
+import android.text.TextWatcher
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.widget.ImageViewCompat
 import androidx.databinding.BindingAdapter
+import androidx.databinding.InverseBindingAdapter
+import androidx.databinding.InverseBindingListener
 import androidx.databinding.ObservableField
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputLayout
+import com.stefanosiano.powerful_libraries.sama.ui.BigDecimalEditText
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
+import java.math.BigDecimal
 
 
 class SamaDataBindingAdapters
@@ -133,3 +139,19 @@ fun bindSpinnerItems(spinner: SamaSpinner, value: Collection<SamaSpinner.SamaSpi
 @BindingAdapter("items")
 fun bindSpinnerItemsArray(spinner: SamaSpinner, value: Array<out SamaSpinner.SamaSpinnerItem>?) { spinner.setItems(value) }
 
+
+
+@BindingAdapter("app:textAttrChanged")
+fun setListeners(view: BigDecimalEditText, attrChange: InverseBindingListener) {
+    view.addTextChangedListener( object : TextWatcher {
+        override fun afterTextChanged(s: Editable?) { attrChange.onChange() }
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+    })
+}
+
+@BindingAdapter("text")
+fun setText155(view: BigDecimalEditText, newValue: BigDecimal) { view.setTextBd(newValue) }
+
+@InverseBindingAdapter(attribute = "text")
+fun getText155(view: BigDecimalEditText) : BigDecimal { return view.getTextBd() }

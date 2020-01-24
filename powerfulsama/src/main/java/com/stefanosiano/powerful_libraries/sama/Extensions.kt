@@ -307,6 +307,13 @@ fun daysToMillis(days : Long) :Long = days * 86_400_000
 /** Transforms passed [weeks] into milliseconds */
 fun weeksToMillis(weeks : Long) :Long = weeks * 7 * 86_400_000
 
+/** Replace all occurrences except the first one of [old] with [new].
+ * Return [missingDelimeter] (which defaults to the string itself) if [old] is not present */
+fun String.replaceAfterFirst(old: String, new: String, missingDelimeter: String = this): String =
+    if(contains(old)) "${substringBefore(old)}$old${substringAfter(old, "").replace(old, new)}"
+    else missingDelimeter
+
+
 /** Returns a weakReference to this object */
 fun <T> T.toWeakReference() = WeakReference<T>(this)
 
