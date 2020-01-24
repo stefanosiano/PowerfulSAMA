@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputLayout
 import com.stefanosiano.powerful_libraries.sama.ui.BigDecimalEditText
+import com.stefanosiano.powerful_libraries.sama.ui.BigDecimalTextInputEditText
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
 import java.math.BigDecimal
@@ -151,7 +152,23 @@ fun setListeners(view: BigDecimalEditText, attrChange: InverseBindingListener) {
 }
 
 @BindingAdapter("text")
-fun setText155(view: BigDecimalEditText, newValue: BigDecimal) { view.setTextBd(newValue) }
+fun setBdetText(view: BigDecimalEditText, newValue: BigDecimal) { view.setTextBd(newValue) }
 
 @InverseBindingAdapter(attribute = "text")
-fun getText155(view: BigDecimalEditText) : BigDecimal { return view.getTextBd() }
+fun getBdetText(view: BigDecimalEditText) : BigDecimal { return view.getTextBd() }
+
+
+@BindingAdapter("app:textAttrChanged")
+fun setListeners(view: BigDecimalTextInputEditText, attrChange: InverseBindingListener) {
+    view.addTextChangedListener( object : TextWatcher {
+        override fun afterTextChanged(s: Editable?) { attrChange.onChange() }
+        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+    })
+}
+
+@BindingAdapter("text")
+fun setTietText(view: BigDecimalTextInputEditText, newValue: BigDecimal) { view.setTextBd(newValue) }
+
+@InverseBindingAdapter(attribute = "text")
+fun getTietText(view: BigDecimalTextInputEditText) : BigDecimal { return view.getTextBd() }
