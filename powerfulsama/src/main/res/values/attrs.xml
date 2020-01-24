@@ -23,7 +23,7 @@
     <declare-styleable name="BigDecimalEditText">
         <!-- Sets the locale used to show the number -->
         <attr name="bdetLocale" format="enum" >
-            <enum name="default" value="0"/>
+            <enum name="current" value="0"/>
             <enum name="us" value="1"/>
         </attr>
 
@@ -38,7 +38,7 @@
     <declare-styleable name="BigDecimalTextView">
         <!-- Sets the locale used to show the number -->
         <attr name="bdtvLocale" format="enum" >
-            <enum name="default" value="0"/>
+            <enum name="current" value="0"/>
             <enum name="us" value="1"/>
         </attr>
 
