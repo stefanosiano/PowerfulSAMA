@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.databinding.*
 import androidx.lifecycle.*
 import com.stefanosiano.powerful_libraries.sama.*
+import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
 import kotlinx.coroutines.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -217,6 +218,65 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     /** Observes [o] until the ViewModel is destroyed, calling [obFun] (in the background) now and whenever [o] or any of [obs] change passing the current value of [o].
      * Does nothing if [o] is null or already changed. If multiple [obs] change at the same time, [obFun] is called only once */
     protected fun <T> observe(o: ObservableField<T>, vararg obs: Observable, obFun: suspend (data: T) -> Unit): Unit = observePrivate(o, { o.get() }, obFun, false, *obs)
+
+
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeInto(ob: ObservableByte, f: (Byte) -> R): ObservableF<R> = ObservableF<R>(f(ob.get())).also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeInto(ob: ObservableInt, f: (Int) -> R): ObservableF<R> = ObservableF<R>(f(ob.get())).also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeInto(ob: ObservableShort, f: (Short) -> R): ObservableF<R> = ObservableF<R>(f(ob.get())).also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeInto(ob: ObservableLong, f: (Long) -> R): ObservableF<R> = ObservableF<R>(f(ob.get())).also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeInto(ob: ObservableFloat, f: (Float) -> R): ObservableF<R> = ObservableF<R>(f(ob.get())).also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeInto(ob: ObservableDouble, f: (Double) -> R): ObservableF<R> = ObservableF<R>(f(ob.get())).also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableF] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeInto(ob: ObservableBoolean, f: (Boolean) -> R): ObservableF<R> = ObservableF<R>(f(ob.get())).also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <T, R> observeInto(ob: ObservableField<T>, f: (T?) -> R): ObservableF<R> = ObservableF<R>(f(ob.get())).also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableF] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <T, R> observeInto(ob: ObservableF<T>, f: (T) -> R): ObservableF<R> = ObservableF<R>(f(ob.get())).also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeIntoN(ob: ObservableByte, f: (Byte) -> R?): ObservableField<R> = ObservableField<R>().also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeIntoN(ob: ObservableInt, f: (Int) -> R?): ObservableField<R> = ObservableField<R>().also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeIntoN(ob: ObservableShort, f: (Short) -> R?): ObservableField<R> = ObservableField<R>().also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeIntoN(ob: ObservableLong, f: (Long) -> R?): ObservableField<R> = ObservableField<R>().also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeIntoN(ob: ObservableFloat, f: (Float) -> R?): ObservableField<R> = ObservableField<R>().also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeIntoN(ob: ObservableDouble, f: (Double) -> R?): ObservableField<R> = ObservableField<R>().also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableF] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <R> observeIntoN(ob: ObservableBoolean, f: (Boolean) -> R?): ObservableField<R> = ObservableField<R>().also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableField] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <T, R> observeIntoN(ob: ObservableField<T>, f: (T?) -> R?): ObservableField<R> = ObservableField<R>().also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableF] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <T, R> observeIntoN(ob: ObservableF<T>, f: (T) -> R?): ObservableField<R> = ObservableField<R>().also { observe(ob) { o -> it.set(f(o)) } }
+
+    /** Observes [ob] until the ViewModel is destroyed, mapping it to an [ObservableF] by calling [f] (in the background) now and whenever [ob] changes passing the current value of [ob] */
+    protected fun <T, R> observeIntoN(ob: LiveData<T>, f: (T?) -> R?): ObservableField<R> = ObservableField<R>(f(ob.value)).also { observe(ob) { o -> it.set(f(o)) } }
 
 
     /** Observes a liveData until the ViewModel is destroyed and transforms it into an observable field.
