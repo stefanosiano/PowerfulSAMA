@@ -45,7 +45,7 @@ abstract class SamaListItem : CoroutineScope {
 
     /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] after [millis] milliseconds, optionally passing an [action].
      * If called again before [millis] milliseconds are passed, previous call is cancelled */
-    protected fun <T> postAction(action: T? = null, millis: Long = 0, data: Any? = null) where T: SamaListItemAction, T: Enum<SamaListItemAction> {
+    protected fun <T> postAction(action: T? = null, millis: Long = 0, data: Any? = null) where T: SamaListItemAction, T: Enum<T> {
         updateJobs[action?.name ?: ""]?.cancel()
         updateJobs[action?.name ?: ""] = launch { delay(millis); if(isActive) onPostAction?.invoke(action, this@SamaListItem, data) }
     }
