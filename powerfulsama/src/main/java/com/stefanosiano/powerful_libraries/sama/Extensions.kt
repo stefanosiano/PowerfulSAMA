@@ -313,6 +313,19 @@ fun String.replaceAfterFirst(old: String, new: String, missingDelimeter: String 
     if(contains(old)) "${substringBefore(old)}$old${substringAfter(old, "").replace(old, new)}"
     else missingDelimeter
 
+/** Returns a list containing only elements matching the given [predicate] */
+inline fun <T> Iterable<T>.filterK(crossinline predicate: suspend (T) -> Boolean): List<T> {
+    val filtered = ArrayList<T>()
+    this.runAndWait { if (predicate(it)) filtered.add(it) }
+    return filtered
+}
+
+/** Returns a list containing the results of applying the given [transform] function to each element in the original collection */
+inline fun <T, R> Iterable<T>.mapK(crossinline transform: suspend (T) -> R): List<R> {
+    val destination = ArrayList<R>()
+    this.runAndWait { destination.add(transform(it)) }
+    return destination
+}
 
 /** Returns a weakReference to this object */
 fun <T> T.toWeakReference() = WeakReference<T>(this)

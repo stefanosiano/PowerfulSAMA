@@ -27,10 +27,10 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore private val coroutineJob: Job = SupervisorJob()
     @Ignore override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
-    @Ignore internal var onPostAction : (suspend (SamaListItemAction?, SamaListItem) -> Unit)? = null
+    @Ignore internal var onPostAction : (suspend (SamaListItemAction?, SamaListItem, Any?) -> Unit)? = null
     @Ignore internal var isLazyInit = false
 
-    @Ignore internal var updateJob: Job? = null
+    @Ignore internal var updateJobs = HashMap<String, Job>()
 
     /** current position given by the [SamaRvAdapter] (0 at beginning). Use it only in [onBind] and [onBindInBackground].
      * It's not reliable out of these methods! To get the item position call [SamaRvAdapter.getItemPosition] */
@@ -45,10 +45,13 @@ abstract class SamaListItem : CoroutineScope {
 
     /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] after [millis] milliseconds, optionally passing an [action].
      * If called again before [millis] milliseconds are passed, previous call is cancelled */
-    protected fun postAction(action: SamaListItemAction? = null, millis: Long = 0) { updateJob?.cancel(); updateJob = launch { delay(millis); if(isActive) onPostAction?.invoke(action, this@SamaListItem) } }
+    protected fun <T> postAction(action: T? = null, millis: Long = 0, data: Any? = null) where T: SamaListItemAction, T: Enum<SamaListItemAction> {
+        updateJobs[action?.name ?: ""]?.cancel()
+        updateJobs[action?.name ?: ""] = launch { delay(millis); if(isActive) onPostAction?.invoke(action, this@SamaListItem, data) }
+    }
 
     /** Sets a listener through [SamaRvAdapter] to be called by the item */
-    internal fun setPostActionListener(f: suspend (SamaListItemAction?, SamaListItem) -> Unit) { onPostAction = f }
+    internal fun setPostActionListener(f: suspend (SamaListItemAction?, SamaListItem, Any?) -> Unit) { onPostAction = f }
 
     /** Returns the unique id of the item (defaults to [RecyclerView.NO_ID]). Overrides [getStableIdString] if specified */
     open fun getStableId(): Long = RecyclerView.NO_ID
