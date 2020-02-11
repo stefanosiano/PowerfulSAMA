@@ -190,9 +190,17 @@ open class SamaRvAdapter(
     }
 
 
-    /** Observe the items of this [RecyclerView] passing the updated item when it changes (when [SamaListItem.onPostAction] is called) */
+    /** Observe the items of this [RecyclerView] passing an action, the item and optional data when they change (when [SamaListItem.onPostAction] is called) */
     @Suppress("UNCHECKED_CAST")
     fun <T> observe(f: suspend (action: SamaListItem.SamaListItemAction?, item: T, data: Any?) -> Unit) where T: SamaListItem { this.itemUpdatedListeners.add(f as suspend (SamaListItem.SamaListItemAction?, SamaListItem, Any?) -> Unit) }
+
+    /** Observe the items of this [RecyclerView] passing an action and the item when they change (when [SamaListItem.onPostAction] is called) */
+    @Suppress("UNCHECKED_CAST")
+    fun <T> observe(f: suspend (action: SamaListItem.SamaListItemAction?, item: T) -> Unit) where T: SamaListItem { observe<T> { action, item, _ -> f(action, item) } }
+
+    /** Observe the items of this [RecyclerView] passing an action when they change (when [SamaListItem.onPostAction] is called) */
+    @Suppress("UNCHECKED_CAST")
+    fun <T> observe(f: suspend (action: SamaListItem.SamaListItemAction?) -> Unit) where T: SamaListItem { observe<T> { action, _, _ -> f(action) } }
 
     /**
      * Binds the items of the adapter to the passed list
