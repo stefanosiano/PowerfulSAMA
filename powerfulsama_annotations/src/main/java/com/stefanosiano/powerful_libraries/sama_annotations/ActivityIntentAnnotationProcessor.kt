@@ -15,17 +15,9 @@ import javax.tools.Diagnostic
 import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
 import kotlin.reflect.jvm.internal.impl.name.FqName
 
-class ActivityIntentAnnotationProcessor : AbstractProcessor() {
+class ActivityIntentAnnotationProcessor : BaseAnnotationProcessor() {
 
-    lateinit var messager: Messager
-    lateinit var filer: Filer
-
-    @Synchronized
-    override fun init(processingEnv: ProcessingEnvironment) {
-        super.init(processingEnv)
-        messager = processingEnv.messager
-        filer = processingEnv.filer
-    }
+    override fun getSupportedAnnotationTypes(): Set<String> = setOf(ActivityIntent::class.java.name)
 
     override fun process(set: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         messager.printMessage(Diagnostic.Kind.WARNING, "start creating ActivityIntents")
@@ -34,10 +26,7 @@ class ActivityIntentAnnotationProcessor : AbstractProcessor() {
             .filter { it.kind == ElementKind.METHOD }
         if(methods.isEmpty()) return false
 
-        val genDir = processingEnv.options["kapt.kotlin.generated"]!!
-        val moduleDir = genDir.substringBeforeLast("/build")
-
-
+        val genDir = getGenDir()
 
         val generatedPackage = "com.stefanosiano.powerful_libraries.sama.generated"
         val generatedSimpleName = "ActivityIntentsExtensions"
@@ -110,36 +99,5 @@ class ActivityIntentAnnotationProcessor : AbstractProcessor() {
         return false
     }
 
-    override fun getSupportedAnnotationTypes(): Set<String> = setOf(ActivityIntent::class.java.name)
 
-    override fun getSupportedSourceVersion(): SourceVersion = SourceVersion.latest()
-
-
-
-    /** Return the kotlin type of the this variable */
-    fun VariableElement.toKotlinType(): TypeName {
-        val tn = asType().asTypeName()
-        if(tn.isNullable) return tn.javaToKotlinType().copy(nullable = true)
-        else return tn.javaToKotlinType()
-    }
-
-
-    /** Return the kotlin type of this typeMirror */
-    fun TypeMirror.toKotlinType() = asTypeName().javaToKotlinType()
-
-
-    /** Transforms a java type to the corresponding kotlin type */
-    private fun TypeName.javaToKotlinType(): TypeName = if (this is ParameterizedTypeName) {
-        (rawType.javaToKotlinType() as ClassName).parameterizedBy(
-            *typeArguments.map { it.javaToKotlinType() }.toTypedArray()
-        )
-    } else {
-        val className = JavaToKotlinClassMap.INSTANCE
-            .mapJavaToKotlin(FqName(toString()))?.asSingleFqName()?.asString()
-        if (className == null) this
-        else ClassName.bestGuess(className)
-    }
-
-    private fun getKotlinType(qualifiedName: String) =
-        ClassName(qualifiedName.substringBeforeLast(".", ""), qualifiedName.substringAfterLast(".", "")).javaToKotlinType()
 }

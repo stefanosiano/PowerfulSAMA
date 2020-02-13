@@ -22,19 +22,3 @@ annotation class Cmd (
     /** Optional parameters of the command */
     val params: Array<String> = []
 )
-
-/*
-package com.example;	// PackageElement
-
-public class Foo {		// TypeElement
-
-	private int a;		// VariableElement
-	private Foo other; 	// VariableElement
-
-	public Foo () {} 	// ExecuteableElement
-
-	public void setA ( 	// ExecuteableElement
-	                 int newA	// TypeElement
-	                 ) {}
-}
- */

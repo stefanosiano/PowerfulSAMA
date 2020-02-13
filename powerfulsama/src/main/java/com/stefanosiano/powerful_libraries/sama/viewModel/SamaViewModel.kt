@@ -141,7 +141,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
 
     /** Observes a liveData until the ViewModel is destroyed, using a custom observer */
     @Suppress("unchecked_cast")
-    protected fun <T> observe(liveData: LiveData<T>, observerFunction: suspend (data: T) -> Unit): LiveData<T> {
+    fun <T> observe(liveData: LiveData<T>, observerFunction: suspend (data: T) -> Unit): LiveData<T> {
         val observer: Observer<Any?> = Observer { launchOrNow(this) { observerFunction(it as? T ?: return@launchOrNow) } }
         customObservedLiveData.add(Pair(liveData as LiveData<Any?>, observer))
         runOnUi { liveData.observeForever(observer) }

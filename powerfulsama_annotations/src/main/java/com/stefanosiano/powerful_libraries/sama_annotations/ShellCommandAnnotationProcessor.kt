@@ -9,17 +9,9 @@ import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 
 
-class ShellCommandAnnotationProcessor : AbstractProcessor() {
+class ShellCommandAnnotationProcessor : BaseAnnotationProcessor() {
 
-    lateinit var messager: Messager
-    lateinit var filer: Filer
-
-    @Synchronized
-    override fun init(processingEnv: ProcessingEnvironment) {
-        super.init(processingEnv)
-        messager = processingEnv.messager
-        filer = processingEnv.filer
-    }
+    override fun getSupportedAnnotationTypes(): Set<String> = setOf(ShellCommand::class.java.name)
 
     override fun process(set: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         messager.printMessage(Diagnostic.Kind.NOTE, "start running checks")
@@ -28,8 +20,7 @@ class ShellCommandAnnotationProcessor : AbstractProcessor() {
             .filter { it.kind == ElementKind.CLASS }
             .map { it.getAnnotation(ShellCommand::class.java) }.firstOrNull() ?: return false
 
-        val genDir = processingEnv.options["kapt.kotlin.generated"]!!
-        val moduleDir = genDir.substringBeforeLast("/build")
+        val moduleDir = getModuleDir()
 
         annotation.cmds.forEach {
             val cmd = it.value
@@ -87,8 +78,4 @@ class ShellCommandAnnotationProcessor : AbstractProcessor() {
         }
         return result
     }
-
-    override fun getSupportedAnnotationTypes(): Set<String> = setOf(ShellCommand::class.java.name)
-
-    override fun getSupportedSourceVersion(): SourceVersion = SourceVersion.latest()
 }

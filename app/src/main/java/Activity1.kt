@@ -7,8 +7,9 @@ import android.os.Bundle
 import com.stefanosiano.powerful_libraries.sama.generated.startActivity2
 import com.stefanosiano.powerful_libraries.sama.generated.startActivity2ForResult
 import com.stefanosiano.powerful_libraries.sama_annotations.ActivityIntent
+import com.stefanosiano.powerful_libraries.sama_annotations.SamaExtensions
 
-
+@SamaExtensions
 class Activity1 : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
