@@ -15,7 +15,7 @@ open class SimpleSamaDialogFragment: DialogFragment() {
     private var layoutId: Int = 0
     private var fullScreen: Boolean = false
     private val bindingPairs: MutableList<Pair<Int, Any>> = ArrayList()
-    private var onViewCreated: (() -> Unit)? = null
+    private var onViewCreated: ((view: View) -> Unit)? = null
 
     private lateinit var binding: ViewDataBinding
 
@@ -79,7 +79,7 @@ open class SimpleSamaDialogFragment: DialogFragment() {
      *
      * @param onViewCreated function to call when the view is created
      */
-    fun setOnViewCreated(onViewCreated: () -> Unit): SimpleSamaDialogFragment {
+    fun setOnViewCreated(onViewCreated: (view: View) -> Unit): SimpleSamaDialogFragment {
         this.onViewCreated = onViewCreated
         return this
     }
@@ -137,7 +137,7 @@ open class SimpleSamaDialogFragment: DialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        onViewCreated?.invoke()
+        onViewCreated?.invoke(view)
     }
 
     /** Function used to call [dismiss] from dataBinding */
