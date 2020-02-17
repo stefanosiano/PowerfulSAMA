@@ -8,6 +8,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
+import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.logger
 import kotlinx.coroutines.*
@@ -205,6 +206,9 @@ fun runOnUi(f: () -> Unit) { if(Looper.myLooper() == mainThreadHandler.looper) f
 
 
 class ObservableFieldExtensions
+
+/** Called by an Observable whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
+inline fun <T> ObservableF<T>.addOnChangedAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend (T) -> Unit) = onChange(c) { f(get()) }.also { if(!skipFirst) launchOrNow(c) { f(get()) } }
 
 /** Called by an Observable whenever an observable property changes. It also runs the same function now if [skipFirst] is not set. You can optionally pass a CoroutineScope [c] to execute it in the background */
 inline fun <T> ObservableField<T>.addOnChangedAndNow(c: CoroutineScope? = null, skipFirst: Boolean = false, crossinline f: suspend (T?) -> Unit) = onChange(c) { f(get()) }.also { if(!skipFirst) launchOrNow(c) { f(get()) } }
