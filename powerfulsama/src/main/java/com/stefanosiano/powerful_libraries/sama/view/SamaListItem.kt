@@ -46,6 +46,11 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore var adapter: WeakReference<SamaRvAdapter>? = null
         internal set
 
+    /** Get the adapter this item is in (may be null) */
+    fun getAdapter() = adapter?.get()
+
+    /** Get the recyclerview of the adapter this item is in (may be null) */
+    fun getRecyclerView() = adapter?.get()?.recyclerView?.get()
 
 
     /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] after [millis] milliseconds, optionally passing an [action].

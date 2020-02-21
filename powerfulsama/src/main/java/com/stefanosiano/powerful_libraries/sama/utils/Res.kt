@@ -49,4 +49,7 @@ object Res {
 
     /** Returns [dimenId] in px */
     fun dimensInPx(dimenId: Int, context: Context? = null) = (context ?: currentActivity?.get() ?: appContext).resources.getDimension(dimenId)
+
+    /** Returns the int bound to the [resourceId] */
+    fun integer(resourceId: Int) = appContext.resources.getInteger(resourceId)
 }
