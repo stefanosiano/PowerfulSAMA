@@ -15,7 +15,6 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
     override fun getSupportedAnnotationTypes(): Set<String> = setOf(SamaExtensions::class.java.name, JvmField::class.java.name)
 
     override fun process(set: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
-        logw("start creating Sama extensions")
 
         val annotation = roundEnv.getElementsAnnotatedWith(SamaExtensions::class.java)
             .filter { it.kind == ElementKind.CLASS }
@@ -29,7 +28,9 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
 
         val functions = ArrayList<FunSpec>()
         functions.addAll(addDefaultContentEquals(roundEnv))
-        functions.addAll(addPowerfulPreferenceLiveDataObserve(roundEnv))
+
+        if(annotation.observePowerfulSharedPreference)
+            functions.addAll(addPowerfulPreferenceLiveDataObserve(roundEnv))
 
 
 //        roundEnv.rootElements.filter { it.kind == ElementKind.CLASS }.forEach {

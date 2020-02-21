@@ -86,7 +86,8 @@ open class SamaRvAdapter(
     private val pagedLiveDataObserver = Observer<PagedList<SamaListItem>> { if(it != null) bindPagedItems(it) }
 
     /** Reference to the recyclerView. Will be used to post runnables to the UIthread */
-    private var recyclerView: WeakReference<RecyclerView>? = null
+    var recyclerView: WeakReference<RecyclerView>? = null
+        private set
 
     /** Set used to understand if the item is being initialized, to be sure to lazy init only once */
     private val lazyInitSet = ConcurrentSkipListSet<Long>()
@@ -176,6 +177,7 @@ open class SamaRvAdapter(
         runBlocking(listItem.coroutineContext) { job?.join() }
         listItem.adapterPosition = adapterPosition
         listItem.adapterSize = itemCount
+        listItem.adapter = WeakReference(this)
         if(listItem is SamaMutableListItem<*>) {
             val bound = mutableBoundItems.get(getItemStableId(listItem)) ?: {
                 listItem.newBoundItem().also { mutableBoundItems.put(getItemStableId(listItem), it) }

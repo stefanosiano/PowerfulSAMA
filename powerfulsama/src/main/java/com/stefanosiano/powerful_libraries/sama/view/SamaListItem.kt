@@ -8,6 +8,7 @@ import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
 import com.stefanosiano.powerful_libraries.sama.logVerbose
 import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
 import kotlinx.coroutines.*
+import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -39,6 +40,10 @@ abstract class SamaListItem : CoroutineScope {
 
     /** current adapter size given by the [SamaRvAdapter] (0 at beginning). It may be inaccurate on item list reload. Surely set in [onBind] and [onBindInBackground] */
     @Ignore var adapterSize: Int = 0
+        internal set
+
+    /** adapter this item is attached to (null at beginning). Surely set in [onBind] and [onBindInBackground]. Do not store references to real value: leak memory danger! */
+    @Ignore var adapter: WeakReference<SamaRvAdapter>? = null
         internal set
 
 

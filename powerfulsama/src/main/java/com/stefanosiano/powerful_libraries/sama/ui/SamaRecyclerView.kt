@@ -40,6 +40,8 @@ open class SamaRecyclerView: RecyclerView {
         resetLayoutManager()
     }
 
+    fun getColumnCount() = if(columns == 0) 0 else columns
+
     fun setSrvHorizontal(horizontal: Boolean) {
         this.horizontal = horizontal
         resetLayoutManager()

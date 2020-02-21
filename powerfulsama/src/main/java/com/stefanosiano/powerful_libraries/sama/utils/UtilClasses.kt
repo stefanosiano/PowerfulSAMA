@@ -20,4 +20,5 @@ open class WeakPair<T, R>(first: T, second: R) {
 /** An [ObservableField] with non-nullable values */
 class ObservableF<T>(value: T) : ObservableField<T>(value) {
     override fun get(): T = super.get()!!
+    override fun set(value: T) = super.set(value)
 }
