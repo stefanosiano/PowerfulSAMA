@@ -189,6 +189,9 @@ class Msg private constructor(
             messageImpl = MessageImpl.AlertDialogOneButton,
             customize = defaultCustomization)
 
+        /** Alias for [alertDialogOneButton] with specified [messageId] */
+        fun adob(messageId: Int) = alertDialogOneButton().message(messageId)
+
         /**
          * Creates a ProgressDialog with specified options, with an optional [theme].
          *
@@ -198,6 +201,9 @@ class Msg private constructor(
          */
         fun progressDialog(theme: Int? = null) = Msg(theme = theme ?: defaultTheme, messageImpl = MessageImpl.ProgressDialog, customize = defaultCustomization)
 
+        /** Alias for [progressDialog] with specified [messageId] */
+        fun pd(messageId: Int) = progressDialog().message(messageId)
+
         /**
          * Creates an alertDialog with specified options, with an optional [theme].
          * Default values:
@@ -205,6 +211,9 @@ class Msg private constructor(
          *      messageImpl = MessageImpl.AlertDialog
          */
         fun alertDialog(theme: Int? = null) = Msg(theme = theme ?: defaultTheme, messageImpl = MessageImpl.AlertDialog, customize = defaultCustomization)
+
+        /** Alias for [alertDialog] with specified [messageId] */
+        fun ad(messageId: Int) = alertDialog().message(messageId)
 
         /**
          * Creates a Toast with specified message.
@@ -215,6 +224,9 @@ class Msg private constructor(
          */
         fun toast() = Msg(messageImpl = MessageImpl.Toast, customize = defaultCustomization)
 
+        /** Alias for [toast] with specified [messageId] */
+        fun ts(messageId: Int) = toast().message(messageId)
+
 
         /**
          * Creates a Snackbar with specified title and okRunnable.
@@ -224,6 +236,9 @@ class Msg private constructor(
          *      messageImpl = MessageImpl.Snackbar
          */
         fun snackbar(view: View) = Msg(messageImpl = MessageImpl.Snackbar, snackbarView = view, customize = defaultCustomization)
+
+        /** Alias for [snackbar] with specified [messageId] */
+        fun sb(view: View, messageId: Int) = snackbar(view).message(messageId)
 
         internal fun setCurrentActivity(activity: Activity) { currentActivity?.clear(); currentActivity = WeakReference(activity) }
     }
@@ -333,8 +348,8 @@ class Msg private constructor(
     /** Shows the message and returns it */
     fun show(context: Context? = null): Msg = showMessage(context)
 
-    /** Simple method that returns a [Unit]. Useful for "return Msg.show().end" */
-    fun end(): Unit {}
+    /** Shows the message and returns a [Unit]. Useful for "return Msg.showOff()". If [showMessage] is true, then the message will be shown, otherwise [onOk] will be called */
+    fun showOff(context: Context? = null, showMessage: Boolean = true): Unit { if(showMessage) showMessage(context) else { onOk?.invoke(null) } }
 
     /** Shows the message and returns its implementation (e.g. AlertDialog). Optionally calls [f] right after building the message and before showing it.
     * If [showMessage] is met (true by default), then the message will be shown, otherwise [onOk] will be called */
