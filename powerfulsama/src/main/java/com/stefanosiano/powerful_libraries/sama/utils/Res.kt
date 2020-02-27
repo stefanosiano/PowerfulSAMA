@@ -7,6 +7,10 @@ import android.graphics.drawable.Drawable
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.databinding.ObservableInt
+import com.stefanosiano.powerful_libraries.sama.tryOrNull
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
 import java.lang.ref.WeakReference
 
 
@@ -52,4 +56,26 @@ object Res {
 
     /** Returns the int bound to the [resourceId] */
     fun integer(resourceId: Int) = appContext.resources.getInteger(resourceId)
+
+    /** Returns an [InputStream] for the resource in the raw directory */
+    fun raw(id: Int): InputStream = appContext.resources.openRawResource(id)
+
+    /** Writes the raw resource to a [File] in the cache directory with the name [outputName] */
+    fun rawToCache(id: Int, outputName: String): File? = appContext.resources.openRawResource(id).use { inputStream ->
+        val f = File(appContext.cacheDir, outputName)
+        if (f.exists()) f.delete()
+        FileOutputStream(f).use { it.write(inputStream.readBytes()) }
+        return f
+    }
+
+    /** Returns an [InputStream] for the resource [assetName] in the assets directory */
+    fun assets(assetName: String): InputStream = appContext.resources.assets.open(assetName)
+
+    /** Writes the assets resource [assetName] to a [File] in the cache directory with the name [outputName] */
+    fun assetsToCache(assetName: String, outputName: String): File? = tryOrNull { appContext.resources.assets.open(assetName) }?.use { inputStream ->
+        val f = File(appContext.cacheDir, outputName)
+        if (f.exists()) f.delete()
+        FileOutputStream(f).use { it.write(inputStream.readBytes()) }
+        return f
+    }
 }

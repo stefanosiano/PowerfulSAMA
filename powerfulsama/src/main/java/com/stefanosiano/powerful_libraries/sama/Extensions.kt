@@ -311,6 +311,11 @@ fun daysToMillis(days : Long) :Long = days * 86_400_000
 /** Transforms passed [weeks] into milliseconds */
 fun weeksToMillis(weeks : Long) :Long = weeks * 7 * 86_400_000
 
+/** Returns `true` if all of [elements] are found in the array */
+fun <T> Array<out T>.contains(elements: Collection<T>): Boolean =
+    elements.map { indexOf(it) >= 0 }.firstOrNull { !it } ?: true
+
+
 /** Replace all occurrences except the first one of [old] with [new].
  * Return [missingDelimeter] (which defaults to the string itself) if [old] is not present */
 fun String.replaceAfterFirst(old: String, new: String, missingDelimeter: String = this): String =

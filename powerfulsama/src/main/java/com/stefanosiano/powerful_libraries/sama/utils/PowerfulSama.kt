@@ -9,7 +9,6 @@ import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaIntent
 
 object PowerfulSama {
-//todo add annotation to add scripts
     internal var logger: PowerfulSamaLogger? = null
     internal var isAppDebug: Boolean = false
     internal lateinit var applicationContext: Context
@@ -40,12 +39,12 @@ object PowerfulSama {
         isAppDebug = isDebug
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPaused(activity: Activity?) {}
-            override fun onActivityResumed(activity: Activity?) { setMsgActivity(activity); setResActivity(activity) }
-            override fun onActivityStarted(activity: Activity?) { setMsgActivity(activity); setResActivity(activity) }
+            override fun onActivityResumed(activity: Activity?) { setMsgActivity(activity); setResActivity(activity); setPermsActivity(activity) }
+            override fun onActivityStarted(activity: Activity?) { setMsgActivity(activity); setResActivity(activity); setPermsActivity(activity) }
             override fun onActivityDestroyed(activity: Activity?) { clearIntent(activity) }
             override fun onActivitySaveInstanceState(activity: Activity?, outState: Bundle?) {}
             override fun onActivityStopped(activity: Activity?) {}
-            override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) { setMsgActivity(activity); setResActivity(activity) }
+            override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) { setMsgActivity(activity); setResActivity(activity); setPermsActivity(activity) }
         })
 
         Res.setApplicationContext(application)
@@ -64,6 +63,9 @@ object PowerfulSama {
 
     /** Sets the current activity on which to show the messages */
     private fun setMsgActivity(activity: Activity?) = activity?.let { Msg.setCurrentActivity(it) }
+
+    /** Sets the current activity on which to show the messages */
+    private fun setPermsActivity(activity: Activity?) = activity?.let { Perms.setCurrentActivity(it) }
 
     /** Sets the current activity on which to show the messages */
     private fun setResActivity(activity: Activity?) = activity?.let { Res.setCurrentActivity(it) }

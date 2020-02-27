@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">PowerfulSAMA</string>
+    <string name="app_name">PowerfulSAMA Sample</string>
+    <string name="app_name2">Sample</string>
 </resources>
