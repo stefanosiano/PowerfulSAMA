@@ -321,34 +321,40 @@ class Msg private constructor(
         var c = context
         while (c is ContextWrapper) {
             if (c is Activity) return c
-
             c = c.baseContext
         }
         return currentActivity?.get()
     }
 
 
-    /** Shows the message and returns it. Always prefer to pass [context] (an Activity if possible, especially for AlertDialogs and ProgressDialogs).
-     * If [showMessage] is met (true, default), then the message will be shown, otherwise [onOk] will be called */
+    /** Shows the message and returns it. If [showMessage] is met (true, default), then the message will be shown, otherwise [onOk] will be called */
     fun show(context: Context? = null, showMessage: Boolean = true): Msg? = if(showMessage) showMessage(context) else { onOk?.invoke(null); null }
 
-    /** Shows the message and returns its implementation (e.g. AlertDialog). Always prefer to pass [context] (an Activity if possible, especially for AlertDialogs and ProgressDialogs).
-     * Optionally calls [f] right after building the message and before showing it.
-     * If [showMessage] is met (true, default), then the message will be shown, otherwise [onOk] will be called */
+    /** Shows the message and returns it */
+    fun show(context: Context? = null): Msg = showMessage(context)
+
+    /** Simple method that returns a [Unit]. Useful for "return Msg.show().end" */
+    fun end(): Unit {}
+
+    /** Shows the message and returns its implementation (e.g. AlertDialog). Optionally calls [f] right after building the message and before showing it.
+    * If [showMessage] is met (true by default), then the message will be shown, otherwise [onOk] will be called */
     @Suppress("UNCHECKED_CAST")
     fun <T> showAs(context: Context? = null, f: ((T?) -> Unit)? = null, showMessage: Boolean = true): Msg?
-            = build(context)?.also { f?.invoke(it.implementation?.get() as? T?) }?.show(context, showMessage)
+            = build(context).also { f?.invoke(it.implementation?.get() as? T?) }.show(context, showMessage)
 
-    /** Build the message and returns it. Optionally calls [f] right after building the message and before showing it.
-     * Always prefer to pass [ctx] (an Activity if possible, especially for AlertDialogs and ProgressDialogs) */
+    /** Shows the message and returns its implementation (e.g. AlertDialog). Optionally calls [f] right after building the message and before showing it */
     @Suppress("UNCHECKED_CAST")
-    fun <T> buildAs(ctx: Context? = null, f: ((T?) -> Unit)? = null): T? = build(ctx)?.also { f?.invoke(it.implementation?.get() as? T?) }?.implementation?.get() as? T?
+    fun <T> showAs(context: Context? = null, f: ((T?) -> Unit)? = null): Msg = build(context).also { f?.invoke(it.implementation?.get() as? T?) }.show(context)
 
-    /** Build the message and returns it. Always prefer to pass [ctx] (an Activity if possible, especially for AlertDialogs and ProgressDialogs) */
-    fun build(ctx: Context?): Msg? {
+    /** Build the message and returns it. Optionally calls [f] right after building the message and before showing it */
+    @Suppress("UNCHECKED_CAST")
+    fun <T> buildAs(ctx: Context? = null, f: ((T?) -> Unit)? = null): T? = build(ctx).also { f?.invoke(it.implementation?.get() as? T?) }.implementation?.get() as? T?
+
+    /** Build the message and returns it */
+    fun build(ctx: Context?): Msg {
 
         logVerbose("Building message")
-        val context = ctx ?: currentActivity?.get() ?: return null
+        val context = ctx ?: currentActivity?.get() ?: PowerfulSama.applicationContext
         initStrings(context.applicationContext)
 
         when (messageImpl) {
@@ -368,10 +374,10 @@ class Msg private constructor(
 
 
     @Suppress("DEPRECATION")
-    private fun showMessage(ctx: Context?): Msg? {
+    private fun showMessage(ctx: Context?): Msg {
 
         logVerbose("Showing message")
-        val context = ctx ?: currentActivity?.get() ?: return null
+        val context = ctx ?: currentActivity?.get() ?: PowerfulSama.applicationContext
         initStrings(context.applicationContext)
 
         autoDismissJob?.cancel()
