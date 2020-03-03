@@ -1,5 +1,7 @@
 package com.stefanosiano.powerful_libraries.sama
 
+import android.content.Context
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -12,6 +14,10 @@ import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.logger
 import kotlinx.coroutines.*
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.lang.ref.WeakReference
 import java.util.LinkedHashMap
 import kotlin.coroutines.CoroutineContext
@@ -209,6 +215,10 @@ fun <T> runOnUiAndWait(f: () -> T): T? {
 /** Run [f] on ui thread */
 fun runOnUi(f: () -> Unit) { if(Looper.myLooper() == mainThreadHandler.looper) f.invoke() else mainThreadHandler.post { f.invoke() } }
 
+/** Return a copy of the file retrieved through the uri using Android providers into app internal cache directory, using [fileName] */
+fun Uri.toFileFromProviders(context: Context, fileName: String): File? =
+    tryOrNull { File(context.cacheDir, fileName).also { f -> context.contentResolver.openInputStream(this)?.use { it.into(FileOutputStream(f)) } } }
+        ?: tryOrNull { File(path) }
 
 
 
@@ -303,6 +313,9 @@ inline fun <T> tryOrPrint(toTry: () -> T): T? { return try { toTry() } catch (e:
 
 /** Gets an enum from a string through enumValueOf<T>(). Useful to use in [string?.toEnum<>() ?: default] */
 inline fun <reified T : Enum<T>> String.toEnum(default: T) : T = try{ enumValueOf(this) } catch (e: Exception) { default }
+
+/** Copies content from this [InputStream] to [output], managing open and close stream */
+fun InputStream.into(output: OutputStream) = use { inp -> output.use { outp -> inp.copyTo(outp) } }
 
 /** Transforms passed [secs] into milliseconds */
 fun secsToMillis(secs : Long) :Long = secs * 1000

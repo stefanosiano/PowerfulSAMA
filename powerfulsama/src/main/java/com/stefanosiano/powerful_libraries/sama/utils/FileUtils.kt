@@ -9,13 +9,19 @@ import android.os.Build
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import com.stefanosiano.powerful_libraries.sama.into
 import com.stefanosiano.powerful_libraries.sama.logDebug
 import com.stefanosiano.powerful_libraries.sama.logError
 import java.io.File
+import java.io.FileOutputStream
 
-
+/*
 /** Return the file from the uri using Android providers (if needed) or using uri's path as path. If scheme is not recognized, null is returned */
-fun Uri.toFileFromProviders(context: Context): File? {
+fun Uri.toFileFromProviders(context: Context, fileName: String): File? {
+    val f = File(context.cacheDir, fileName)
+    context.contentResolver.openInputStream(this)?.use { it.into(FileOutputStream(f)) }
+    return f
+    /*
     logDebug("File Uri: $this, with scheme: $scheme")
     val path = when {
         // MediaStore (and general)
@@ -27,7 +33,7 @@ fun Uri.toFileFromProviders(context: Context): File? {
         "file".equals(scheme, ignoreCase = true) -> path
         else -> { logError("Uri's scheme unknown: $scheme"); null }
     }
-    return path?.let { File(it) }
+    return path?.let { File(it) }*/
 }
 
 object FileUtils {
@@ -45,12 +51,6 @@ object FileUtils {
                 // TODO handle non-primary volumes
                 if ("primary".equals(type, ignoreCase = true)) Environment.getExternalStorageDirectory().toString() + "/" + docTypePath[1] else null
             }
-            //isDownloadsDocument
-            "com.android.providers.downloads.documents" -> {
-                logDebug("Downloads External Document URI")
-                val contentUri: Uri = ContentUris.withAppendedId(Uri.parse("content://downloads/public_downloads"), docId.toLongOrNull() ?: -1)
-                getDataColumn(context, contentUri, null, null)
-            }
             //isMediaDocument -> {
             "com.android.providers.media.documents" -> {
                 val split = docId.split(":").toTypedArray()
@@ -65,6 +65,20 @@ object FileUtils {
                 val selection = "_id=?"
                 val selectionArgs = arrayOf(split[1])
                 getDataColumn(context, contentUri, selection, selectionArgs)
+            }
+            //isDownloadsDocument
+            "com.android.providers.downloads.documents" -> {
+                logDebug("Downloads External Document URI")
+
+                if (docId.startsWith("raw:"))
+                    return docId.substring(4)
+
+                val contentUriPrefixesToTry = arrayOf("content://downloads/public_downloads", "content://downloads/my_downloads", "content://downloads/all_downloads")
+
+                contentUriPrefixesToTry.map {
+                    val contentUri: Uri = ContentUris.withAppendedId(Uri.parse(it), docId.toLongOrNull() ?: -1)
+                    getDataColumn(context, contentUri, null, null)
+                }.firstOrNull()
             }
             else -> null
         }
@@ -89,4 +103,5 @@ object FileUtils {
         }
         finally { cursor?.close() }
     }
-}
+}*/
+
