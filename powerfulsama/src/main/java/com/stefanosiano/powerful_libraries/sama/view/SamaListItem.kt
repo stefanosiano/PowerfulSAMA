@@ -46,6 +46,10 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore var adapter: WeakReference<SamaRvAdapter>? = null
         internal set
 
+    /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind] and [onBindInBackground] */
+    @Ignore var adapterColumnCount = 1
+        internal set
+
     /** Get the adapter this item is in (may be null) */
     fun getAdapter() = adapter?.get()
 
@@ -71,6 +75,10 @@ abstract class SamaListItem : CoroutineScope {
 
     /** Returns the viewType of the item. Use it to provide different layouDefaults to -1 */
     open fun getViewType() = -1
+
+    /** Returns the span size requested by the item. Can use only with [SamaRecyclerView] using more than 1 column.
+     * Span previous item to full row if this span is too long. Passes the total column count to simplify management */
+    open fun getItemSpanSize(columns: Int) = 1
 
     /** Called when it's bound to the view */
     open fun onBind(initObjects: Map<String, Any>) { launch { onBindInBackground(initObjects) } }

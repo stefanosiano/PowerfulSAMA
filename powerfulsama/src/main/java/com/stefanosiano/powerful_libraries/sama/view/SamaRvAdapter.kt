@@ -45,8 +45,6 @@ open class SamaRvAdapter(
 
     var isPaged = false
 
-
-
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
@@ -88,6 +86,8 @@ open class SamaRvAdapter(
     /** Reference to the recyclerView. Will be used to post runnables to the UIthread */
     var recyclerView: WeakReference<RecyclerView>? = null
         private set
+
+    internal var recyclerViewColumnCount = 1
 
     /** Set used to understand if the item is being initialized, to be sure to lazy init only once */
     private val lazyInitSet = ConcurrentSkipListSet<Long>()
@@ -144,6 +144,8 @@ open class SamaRvAdapter(
 
     override fun getItemViewType(position: Int): Int = getItem(position)?.getViewType() ?: -1
 
+    fun getItemSpanSize(position: Int, columns: Int): Int = getItem(position)?.getItemSpanSize(columns) ?: -1
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SimpleViewHolder {
         val layoutId = if(itemLayoutIds.get(viewType) != 0) itemLayoutIds.get(viewType) else itemLayoutId
         val view: View = LayoutInflater.from(parent.context).inflate(layoutId, parent, false)
@@ -177,6 +179,7 @@ open class SamaRvAdapter(
         runBlocking(listItem.coroutineContext) { job?.join() }
         listItem.adapterPosition = adapterPosition
         listItem.adapterSize = itemCount
+        listItem.adapterColumnCount = recyclerViewColumnCount
         listItem.adapter = WeakReference(this)
         if(listItem is SamaMutableListItem<*>) {
             val bound = mutableBoundItems.get(getItemStableId(listItem)) ?: {
