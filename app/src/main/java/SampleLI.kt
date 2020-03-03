@@ -19,7 +19,11 @@ class SampleLI(
     val tags: BigDecimal,
     val state: Double,
     val img: Int
-) : SamaListItem()
+) : SamaListItem() {
+    companion object {
+        val aaa = ""
+    }
+}
 
 abstract class S2: SamaListItem()
 
