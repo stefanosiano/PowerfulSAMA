@@ -182,10 +182,9 @@ open class SamaRvAdapter(
         listItem.adapterColumnCount = recyclerViewColumnCount
         listItem.adapter = WeakReference(this)
         if(listItem is SamaMutableListItem<*>) {
-            val bound = mutableBoundItems.get(getItemStableId(listItem)) ?: {
-                listItem.newBoundItem().also { mutableBoundItems.put(getItemStableId(listItem), it) }
-                listItem.editBoundItem = { mutableBoundItems.put(getItemStableId(listItem), it) }
-            }
+            val bound = mutableBoundItems.get(getItemStableId(listItem)) ?: listItem.newBoundItem().also { mutableBoundItems.put(getItemStableId(listItem), it) }
+
+            listItem.mEditBoundItem = { mutableBoundItems.put(getItemStableId(listItem), it) }
             listItem.bind(bound, passedObjects)
         }
         else
@@ -474,12 +473,12 @@ open class SamaRvAdapter(
     @Suppress("UNCHECKED_CAST")
     fun <T> getBoundItems(): List<T> {
         val size = mutableBoundItems.size()
-        val boundItems = ArrayList<T>(size)
-        for(i in 0..size) {
-            val key = mutableBoundItems.keyAt(i)
-            boundItems.add(mutableBoundItems.get(key) as T)
-        }
-        return boundItems
+
+        val boundItems = ArrayList<T?>(size)
+        for(i in 0..size)
+            boundItems.add(mutableBoundItems.valueAt(i) as T?)
+
+        return boundItems.filterNotNull()
     }
 
     /** Returns the stableId of the item at position [position], if available and if adapter hasStableId. */

@@ -4,13 +4,13 @@ import androidx.room.Ignore
 import kotlinx.coroutines.launch
 
 
-abstract class SamaMutableListItem<T> : SamaListItem() {
+abstract class SamaMutableListItem<T> : SamaListItem() where T: Any {
 
     @Deprecated(message = "Use method with bound object, since this is a mutableListItem", replaceWith = ReplaceWith("onBind(bound, initObjects)"))
     final override suspend fun onBind() = super.onBind()
 
     /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind] */
-    @Ignore internal var editBoundItem: (T) -> Unit = {}
+    @Ignore internal var mEditBoundItem: (T) -> Unit = {}
 
     /** Called the first time the bound item needs to be created */
     abstract fun newBoundItem(): T
@@ -19,7 +19,7 @@ abstract class SamaMutableListItem<T> : SamaListItem() {
     open suspend fun onBind(bound: T) {  }
 
     /** Edit the item bound to this list item */
-    protected fun editBoundItem(item: T) { editBoundItem(item) }
+    protected fun editBoundItem(item: T) { mEditBoundItem(item) }
 
     /** Called to bind the item to the view */
     @Suppress("UNCHECKED_CAST")
