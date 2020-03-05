@@ -33,22 +33,26 @@ abstract class SamaListItem : CoroutineScope {
 
     @Ignore internal var updateJobs = HashMap<String, Job>()
 
-    /** current position given by the [SamaRvAdapter] (0 at beginning). Use it only in [onBind] and [onBindInBackground].
+    /** current position given by the [SamaRvAdapter] (0 at beginning). Use it only in [onBind].
      * It's not reliable out of these methods! To get the item position call [SamaRvAdapter.getItemPosition] */
     @Ignore var adapterPosition: Int = 0
         internal set
 
-    /** current adapter size given by the [SamaRvAdapter] (0 at beginning). It may be inaccurate on item list reload. Surely set in [onBind] and [onBindInBackground] */
+    /** current adapter size given by the [SamaRvAdapter] (0 at beginning). It may be inaccurate on item list reload. Surely set in [onBind] */
     @Ignore var adapterSize: Int = 0
         internal set
 
-    /** adapter this item is attached to (null at beginning). Surely set in [onBind] and [onBindInBackground]. Do not store references to real value: leak memory danger! */
+    /** adapter this item is attached to (null at beginning). Surely set in [onBind]. Do not store references to real value: leak memory danger! */
     @Ignore var adapter: WeakReference<SamaRvAdapter>? = null
         internal set
 
-    /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind] and [onBindInBackground] */
+    /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind] */
     @Ignore var adapterColumnCount = 1
         internal set
+
+    /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind] */
+    @Ignore internal var passedObjects: Map<String, Any>? = null
+//        internal set
 
     /** Get the adapter this item is in (may be null) */
     fun getAdapter() = adapter?.get()
@@ -81,10 +85,14 @@ abstract class SamaListItem : CoroutineScope {
     open fun getItemSpanSize(columns: Int) = 1
 
     /** Called when it's bound to the view */
-    open fun onBind(initObjects: Map<String, Any>) { launch { onBindInBackground(initObjects) } }
+    internal fun onBind(passedObjects: Map<String, Any>) { this.passedObjects = passedObjects; launch { onBind() } }
+
+    @Suppress("UNCHECKED_CAST")
+    /** Get an item passed from the adapter from its key. Safe to call in [onBind] */
+    protected fun <T> getPassed(key: String): T? = passedObjects?.get(key) as? T
 
     /** Called when it's bound to the view, in background after [onBind] */
-    protected open suspend fun onBindInBackground(initObjects: Map<String, Any>) {}
+    protected open suspend fun onBind() {}
 
     /** Compares this to another item to decide if they are the same when the list is reloaded. By default it calls == */
     open fun contentEquals(other: SamaListItem) = this == other

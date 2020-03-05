@@ -1,26 +1,28 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
+import androidx.room.Ignore
 import kotlinx.coroutines.launch
 
 
 abstract class SamaMutableListItem<T> : SamaListItem() {
 
     @Deprecated(message = "Use method with bound object, since this is a mutableListItem", replaceWith = ReplaceWith("onBind(bound, initObjects)"))
-    final override fun onBind(initObjects: Map<String, Any>) = super.onBind(initObjects)
-    final override suspend fun onBindInBackground(initObjects: Map<String, Any>) = super.onBindInBackground(initObjects)
+    final override suspend fun onBind() = super.onBind()
 
+    /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind] */
+    @Ignore internal var editBoundItem: (T) -> Unit = {}
 
-    /** Called when it's bound to the view */
+    /** Called the first time the bound item needs to be created */
     abstract fun newBoundItem(): T
 
     /** Called when it's bound to the view */
-    open fun onBind(bound: T, initObjects: Map<String, Any>) { launch { onBindInBackground(bound, initObjects) } }
+    open fun onBind(bound: T) {  }
 
-    /** Called when it's bound to the view */
+    /** Edit the item bound to this list item */
+    protected fun editBoundItem(item: T) { editBoundItem(item) }
+
+    /** Called to bind the item to the view */
     @Suppress("UNCHECKED_CAST")
-    internal fun bind(bound: Any, initObjects: Map<String, Any>) = onBind(bound as T, initObjects)
-
-    /** Called when it's bound to the view, in background after [onBind] */
-    protected open suspend fun onBindInBackground(bound: T, initObjects: Map<String, Any>) {}
+    internal fun bind(bound: Any, initObjects: Map<String, Any>) { this.passedObjects = initObjects; launch { onBind(bound as T) } }
 
 }

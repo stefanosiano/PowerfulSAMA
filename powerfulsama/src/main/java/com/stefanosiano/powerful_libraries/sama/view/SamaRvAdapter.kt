@@ -51,7 +51,7 @@ open class SamaRvAdapter(
     private val itemLayoutIds = SparseIntArray()
 
     /** Objects passed to items during onBind */
-    private val initObjects = HashMap<String, Any>()
+    private val passedObjects = HashMap<String, Any>()
 
     /** callback called when the item list changes */
     private val onListChangedCallback: WeakReferenceOnListChangedCallback = WeakReferenceOnListChangedCallback(this)
@@ -184,11 +184,12 @@ open class SamaRvAdapter(
         if(listItem is SamaMutableListItem<*>) {
             val bound = mutableBoundItems.get(getItemStableId(listItem)) ?: {
                 listItem.newBoundItem().also { mutableBoundItems.put(getItemStableId(listItem), it) }
+                listItem.editBoundItem = { mutableBoundItems.put(getItemStableId(listItem), it) }
             }
-            listItem.bind(bound, initObjects)
+            listItem.bind(bound, passedObjects)
         }
         else
-            listItem.onBind(initObjects)
+            listItem.onBind(passedObjects)
 
         listItem.setPostActionListener { action, item, data -> itemUpdatedListeners.forEach { it.invoke(action, item, data) } }
         //listItem.onStart()
@@ -369,7 +370,7 @@ open class SamaRvAdapter(
             lazyInitializedItemCacheMap.clear()
             runOnUi {
                 mDiffer.submitList(list as PagedList<SamaListItem>) {
-                    items = list.filterNotNull().mapTo(ObservableArrayList(), { it })
+                    items = list.filterNotNull<SamaListItem>().mapTo(ObservableArrayList()) { it }
                     onLoadFinished?.invoke()
                     startLazyInits()
                 }
@@ -403,8 +404,8 @@ open class SamaRvAdapter(
 
     /** Pass the [ob] to all the items in the list, using [key] */
     fun passToItems(key: String, ob: Any) : SamaRvAdapter {
-        initObjects.remove(key)
-        initObjects[key] = ob
+        passedObjects.remove(key)
+        passedObjects[key] = ob
         return this
     }
 
@@ -552,7 +553,7 @@ open class SamaRvAdapter(
 
     /** Class that implement the ViewHolder of the Adapter */
     class SimpleViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val binding: WeakReference<ViewDataBinding> = WeakReference(DataBindingUtil.bind(view))
+        val binding: WeakReference<ViewDataBinding?> = WeakReference(DataBindingUtil.bind(view))
         override fun toString(): String = "$adapterPosition: " + super.toString()
     }
 

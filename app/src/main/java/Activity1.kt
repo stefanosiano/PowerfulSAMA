@@ -5,10 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import com.stefanosiano.powerful_libraries.sama.generated.startActivity2
-import com.stefanosiano.powerful_libraries.sama.generated.startActivity2ForResult
+import com.stefanosiano.powerful_libraries.sama.toFileFromProviders
 import com.stefanosiano.powerful_libraries.sama.utils.Perms
-import com.stefanosiano.powerful_libraries.sama.utils.toFileFromProviders
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama_annotations.ActivityIntent
 import com.stefanosiano.powerful_libraries.sama_annotations.SamaExtensions
@@ -23,7 +21,7 @@ class Activity1 : SamaActivity() {
 
         val perms = arrayListOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
         Perms.call(perms, R.string.app_name, R.string.app_name2) {
-            Uri.fromFile(File("")).toFileFromProviders(this)
+            Uri.fromFile(File("")).toFileFromProviders(this, "a")
             println("asd")
         }
 

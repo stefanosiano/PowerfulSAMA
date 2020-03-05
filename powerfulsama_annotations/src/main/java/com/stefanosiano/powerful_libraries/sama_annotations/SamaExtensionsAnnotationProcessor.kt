@@ -67,9 +67,6 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
                 .addStatement("\tother !is ${cls.qualifiedName} -> false")
 
             cls.enclosedElements.filter { it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && !it.modifiers.contains(Modifier.STATIC) }.map { it as VariableElement }.forEach { v ->
-                logw(v.simpleName.toString())
-                logw(v.modifiers.joinToString())
-                logw(v.kind.toString())
                 function.addStatement("\tthis.${v.simpleName} != other.${v.simpleName} -> false")
             }
 
