@@ -16,7 +16,7 @@ abstract class SamaMutableListItem<T> : SamaListItem() {
     abstract fun newBoundItem(): T
 
     /** Called when it's bound to the view */
-    open fun onBind(bound: T) {  }
+    open suspend fun onBind(bound: T) {  }
 
     /** Edit the item bound to this list item */
     protected fun editBoundItem(item: T) { editBoundItem(item) }
