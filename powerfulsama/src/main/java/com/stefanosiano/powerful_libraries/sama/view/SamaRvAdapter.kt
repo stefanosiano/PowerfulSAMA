@@ -471,7 +471,7 @@ open class SamaRvAdapter(
 
     /** Returns the list of bound items to [SamaMutableListItem], if adapter hasStableId */
     @Suppress("UNCHECKED_CAST")
-    fun <T> getBoundItems(): List<T> {
+    fun <T> getBoundItems(): List<T> where T: Any {
         val size = mutableBoundItems.size()
 
         val boundItems = ArrayList<T?>(size)
