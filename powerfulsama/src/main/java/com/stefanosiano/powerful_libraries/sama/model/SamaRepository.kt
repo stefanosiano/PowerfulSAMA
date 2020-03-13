@@ -37,4 +37,22 @@ abstract class SamaRepository : CoroutineScope {
         return mediatorLiveData
     }
 
+    /** Run [f] to get a value every time any of [obs] changes. It return a [LiveData] of the same type as [f] */
+    fun <T> observeF(vararg obs: BaseObservable, f: suspend () -> T): LiveData<T> {
+        val mediatorLiveData = MediatorLiveData<T>()
+
+        val onChanged = suspend { mediatorLiveData.postValue(f()) }
+
+        //the first time this function is called nothing is changed, so i force the reload manually
+        var lastJob = launch { onChanged() }
+        obs.forEach {
+            it.onChange(this) {
+                lastJob.cancel()
+                lastJob = launch { if(isActive) onChanged() }
+            }
+        }
+
+        return mediatorLiveData
+    }
+
 }
