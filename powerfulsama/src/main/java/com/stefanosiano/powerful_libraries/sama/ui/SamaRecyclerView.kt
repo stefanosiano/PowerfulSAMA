@@ -37,8 +37,8 @@ open class SamaRecyclerView: RecyclerView {
     override fun setAdapter(adapter: Adapter<*>?) {
         super.setAdapter(adapter)
 
+        (adapter as? SamaRvAdapter)?.recyclerViewColumnCount = columns
         if(columns > 1 && adapter is SamaRvAdapter) { (layoutManager as? GridLayoutManager)?.let {
-            adapter.recyclerViewColumnCount = columns
 
             it.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
                 override fun getSpanSize(position: Int): Int {

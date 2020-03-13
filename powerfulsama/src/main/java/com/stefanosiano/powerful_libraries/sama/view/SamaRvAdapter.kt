@@ -181,7 +181,7 @@ open class SamaRvAdapter(
         listItem ?: return
         runBlocking(listItem.coroutineContext) { job?.join() }
         listItem.adapterPosition = adapterPosition
-        listItem.adapterSpannedPosition = if(adapterPosition == 0) 0 else
+        listItem.adapterSpannedPosition = if(recyclerViewColumnCount == 1 || adapterPosition == 0) adapterPosition else
             (getItem(adapterPosition-1)?.adapterSpannedPosition?.plus(spannedSizes.get(adapterPosition-1, 1))) ?: adapterPosition
         listItem.adapterSize = itemCount
         listItem.adapterColumnCount = recyclerViewColumnCount

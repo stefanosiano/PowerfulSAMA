@@ -22,7 +22,7 @@ android {
 }
 
 dependencies {
-    String room = "2.2.3"
+    String room = "2.2.4"
 
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
