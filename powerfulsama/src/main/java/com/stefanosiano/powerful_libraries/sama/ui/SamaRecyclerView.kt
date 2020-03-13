@@ -55,6 +55,7 @@ open class SamaRecyclerView: RecyclerView {
                         else -> columns-rem
                     }
                     spans.put(position, res)
+                    (adapter as? SamaRvAdapter)?.setSpannedSize(position, res)
                     return res
                 }
             }

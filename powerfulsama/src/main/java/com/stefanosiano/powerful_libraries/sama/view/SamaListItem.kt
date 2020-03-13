@@ -38,6 +38,11 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore var adapterPosition: Int = 0
         internal set
 
+    /** current position given by the [SamaRvAdapter] (0 at beginning). Use it only in [onBind].
+     * It's not reliable out of this method! It takes into account the spanned size passed through [getItemSpanSize] */
+    @Ignore var adapterSpannedPosition: Int = 0
+        internal set
+
     /** current adapter size given by the [SamaRvAdapter] (0 at beginning). It may be inaccurate on item list reload. Surely set in [onBind] */
     @Ignore var adapterSize: Int = 0
         internal set

@@ -110,6 +110,9 @@ open class SamaRvAdapter(
     /** Last item detached: if the latest item detached is the one being recycled, then the item needs to be restarted */
     private var lastDetached = -1
 
+    /** Last item detached: if the latest item detached is the one being recycled, then the item needs to be restarted */
+    private val spannedSizes = SparseIntArray()
+
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
      * [hasStableId] defaults to true
@@ -178,6 +181,8 @@ open class SamaRvAdapter(
         listItem ?: return
         runBlocking(listItem.coroutineContext) { job?.join() }
         listItem.adapterPosition = adapterPosition
+        listItem.adapterSpannedPosition = if(adapterPosition == 0) 0 else
+            (getItem(adapterPosition-1)?.adapterSpannedPosition?.plus(spannedSizes.get(adapterPosition-1, 1))) ?: adapterPosition
         listItem.adapterSize = itemCount
         listItem.adapterColumnCount = recyclerViewColumnCount
         listItem.adapter = WeakReference(this)
@@ -524,6 +529,8 @@ open class SamaRvAdapter(
     fun getItem(position: Int): SamaListItem? = tryOrNull { if(isPaged) mDiffer.getItem(position) else items[position] }
 
 
+
+    internal fun setSpannedSize(position: Int, size: Int) = spannedSizes.put(position, size)
 
 
 
