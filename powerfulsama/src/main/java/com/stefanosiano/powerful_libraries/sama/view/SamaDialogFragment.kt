@@ -27,4 +27,7 @@ abstract class SamaDialogFragment(
 
     /** Return the data binding id used to create the dialog fragment. Defaults to [dataBindingId] of constructor */
     protected open fun getDialogDataBindingId(): Int = dataBindingId
+
+    /** Dismiss the dialog through [dismissAllowingStateLoss]. Always use it in [SamaActivity.onSaveInstanceState] */
+    fun dismissDialog() { if(dialogFragment.isAdded) dialogFragment.dismissAllowingStateLoss() }
 }
