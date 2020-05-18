@@ -1,5 +1,6 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
+import android.view.View
 import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
 import com.stefanosiano.powerful_libraries.sama.view.SimpleSamaFragment.Companion.new
 import kotlinx.coroutines.CoroutineScope
@@ -30,4 +31,9 @@ abstract class SamaDialogFragment(
 
     /** Dismiss the dialog through [dismissAllowingStateLoss]. Always use it in [SamaActivity.onSaveInstanceState] */
     fun dismissDialog() { if(dialogFragment.isAdded) dialogFragment.dismissAllowingStateLoss() }
+
+    /** Dismiss the dialog through [dismissAllowingStateLoss]. Always use it in [SamaActivity.onSaveInstanceState] */
+    fun dismissDialog(v: View) { if(dialogFragment.isAdded) dialogFragment.dismissAllowingStateLoss() }
+
+    fun getSamaActivity() = dialogFragment.activity as? SamaActivity?
 }

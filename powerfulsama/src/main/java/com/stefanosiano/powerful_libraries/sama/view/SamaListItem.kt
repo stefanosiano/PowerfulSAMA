@@ -1,5 +1,6 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
+import android.view.View
 import androidx.databinding.*
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Ignore
@@ -30,6 +31,10 @@ abstract class SamaListItem : CoroutineScope {
 
     @Ignore internal var onPostAction : (suspend (SamaListItemAction?, SamaListItem, Any?) -> Unit)? = null
     @Ignore internal var isLazyInit = false
+
+    /** Root View this item is bound to. Use it only in [onBind] method */
+    @Ignore lateinit var root: View
+        internal set
 
     @Ignore internal var updateJobs = HashMap<String, Job>()
 

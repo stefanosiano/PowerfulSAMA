@@ -158,7 +158,10 @@ open class SamaRvAdapter(
     override fun onBindViewHolder(holder: SimpleViewHolder, position: Int) {
         val item = getItem(position) ?: return
         runBlocking { bindListJob?.join() }
-        val bindJob = item.launch { holder.binding.get()?.setVariable(itemBindingId, getItem(holder.adapterPosition)) }
+        val bindJob = item.launch {
+            holder.binding.get()?.root?.let { item.root = it }
+            holder.binding.get()?.setVariable(itemBindingId, item)
+        }
         bindItemToViewHolder(bindJob, getItem(holder.adapterPosition), holder.adapterPosition)
     }
 
