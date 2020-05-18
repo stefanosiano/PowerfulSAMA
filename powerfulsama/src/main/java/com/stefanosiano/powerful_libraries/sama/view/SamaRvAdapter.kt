@@ -159,7 +159,7 @@ open class SamaRvAdapter(
         val item = getItem(position) ?: return
         runBlocking { bindListJob?.join() }
         val bindJob = item.launch {
-            holder.binding.get()?.root?.let { item.root = it }
+            holder.binding.get()?.root?.let { item.root = WeakReference(it) }
             holder.binding.get()?.setVariable(itemBindingId, item)
         }
         bindItemToViewHolder(bindJob, getItem(holder.adapterPosition), holder.adapterPosition)

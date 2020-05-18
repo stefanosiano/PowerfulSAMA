@@ -33,7 +33,7 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore internal var isLazyInit = false
 
     /** Root View this item is bound to. Use it only in [onBind] method */
-    @Ignore lateinit var root: View
+    @Ignore lateinit var root: WeakReference<View>
         internal set
 
     @Ignore internal var updateJobs = HashMap<String, Job>()
