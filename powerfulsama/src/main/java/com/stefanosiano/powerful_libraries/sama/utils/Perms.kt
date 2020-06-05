@@ -12,9 +12,10 @@ import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
 import android.content.Intent
 import com.stefanosiano.powerful_libraries.sama.contains
 import com.stefanosiano.powerful_libraries.sama.logError
+import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.applicationContext
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 
-
+/** Utility class to manage permissions */
 object Perms {
 
     /** Permissions requested in the manifest of the app */
@@ -39,6 +40,14 @@ object Perms {
         permHelperMap.remove(requestCode)
         return permHelper.onRequestPermissionsResult(activity, permissions, grantResults)
     }
+
+    /** Checks if all [perms] are granted. Return true only if all of them are granted */
+    fun hasPermissions(perms: List<String>): Boolean =
+        perms.all { ActivityCompat.checkSelfPermission(applicationContext, it) == PackageManager.PERMISSION_GRANTED }
+
+    /** Checks if [perm] is granted */
+    fun hasPermissions(perm: String): Boolean =
+        ActivityCompat.checkSelfPermission(applicationContext, perm) == PackageManager.PERMISSION_GRANTED
 
 
     /** Ask for [perms] and [optionalPerms] (if they are not already granted). If they are asked and then granted, [f] will be called.
