@@ -156,9 +156,6 @@ class Msg private constructor(
         /** Shared unique id used to check equality with other messages  */
         private val uniqueId: AtomicLong = AtomicLong(0)
 
-        /** Weak reference to the current activity */
-        private var currentActivity : WeakReference<Activity>? = null
-
         /** Default "Yes" string id */
         internal var defaultYes : Int = android.R.string.yes
 
@@ -239,8 +236,6 @@ class Msg private constructor(
 
         /** Alias for [snackbar] with specified [messageId] */
         fun sb(view: View, messageId: Int) = snackbar(view).message(messageId)
-
-        internal fun setCurrentActivity(activity: Activity) { currentActivity?.clear(); currentActivity = WeakReference(activity) }
     }
 
 
@@ -338,7 +333,7 @@ class Msg private constructor(
             if (c is Activity) return c
             c = c.baseContext
         }
-        return currentActivity?.get()
+        return PowerfulSama.getCurrentActivity()
     }
 
 
@@ -369,11 +364,11 @@ class Msg private constructor(
     fun build(ctx: Context?): Msg {
 
         logVerbose("Building message")
-        val context = ctx ?: currentActivity?.get() ?: PowerfulSama.applicationContext
+        val context = ctx ?: PowerfulSama.getCurrentActivity() ?: PowerfulSama.applicationContext
         initStrings(context.applicationContext)
 
         when (messageImpl) {
-            MessageImpl.ProgressDialog -> runOnUiAndWait { buildAsProgressDialog(context) }
+            MessageImpl.ProgressDialog -> runOnUiAndWait { getActivityFromCtx(context)?.let { buildAsProgressDialog(context) } ?: buildAsToast(context) }
             MessageImpl.AlertDialogOneButton -> runOnUiAndWait { getActivityFromCtx(context)?.let { buildAsAlertDialogOneButton(it) } ?: buildAsToast(context) }
             MessageImpl.AlertDialog -> runOnUiAndWait { getActivityFromCtx(context)?.let { buildAsAlertDialog(it) } ?: buildAsToast(context) }
             MessageImpl.Toast -> runOnUiAndWait { buildAsToast(context) }
@@ -392,7 +387,7 @@ class Msg private constructor(
     private fun showMessage(ctx: Context?): Msg {
 
         logVerbose("Showing message")
-        val context = ctx ?: currentActivity?.get() ?: PowerfulSama.applicationContext
+        val context = ctx ?: PowerfulSama.getCurrentActivity() ?: PowerfulSama.applicationContext
         initStrings(context.applicationContext)
 
         autoDismissJob?.cancel()
@@ -409,7 +404,7 @@ class Msg private constructor(
             if (!isBuilt) build(context)
 
             when (messageImpl) {
-                MessageImpl.ProgressDialog -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as ProgressDialog?)?.show() }
+                MessageImpl.ProgressDialog -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as ProgressDialog?)?.show() ?: logError("No activity found to show this progress dialog. Skipping show") }
                 MessageImpl.AlertDialogOneButton -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
                 MessageImpl.AlertDialog -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
                 MessageImpl.Toast -> { onShow?.invoke(this); (implementation?.get() as? Toast?)?.show() }
@@ -425,11 +420,11 @@ class Msg private constructor(
 
     private fun lockOrientation(context: Context) {
         if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
-            (getActivityFromCtx(context) ?: currentActivity?.get())?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+            (getActivityFromCtx(context) ?: PowerfulSama.getCurrentActivity())?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
     }
 
     private fun unlockOrientation(context: Context) {
-        (getActivityFromCtx(context) ?: currentActivity?.get())?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        (getActivityFromCtx(context) ?: PowerfulSama.getCurrentActivity())?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 
     @Suppress("DEPRECATION")

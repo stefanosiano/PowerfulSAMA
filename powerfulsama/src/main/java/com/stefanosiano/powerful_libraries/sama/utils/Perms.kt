@@ -19,19 +19,13 @@ import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 object Perms {
 
     /** Permissions requested in the manifest of the app */
-    private val requestedPermissions by lazy { currentActivity?.get()?.let { it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_PERMISSIONS).requestedPermissions } ?: arrayOf<String>() }
-
-    /** Weak reference to the current activity */
-    private var currentActivity : WeakReference<Activity>? = null
+    private val requestedPermissions by lazy { applicationContext.let { it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_PERMISSIONS).requestedPermissions } ?: arrayOf<String>() }
 
     /** Array of helpers for asking permissions */
     private val permHelperMap = SparseArray<PermHelper>()
 
     /** Request codes used to pass to activity's onRequestPermissionsResult method */
     private val requestCodes = AtomicInteger(42000)
-
-    /** Set a weak reference to the current activity */
-    internal fun setCurrentActivity(activity: Activity) { currentActivity?.clear(); currentActivity = WeakReference(activity) }
 
     /** Manages the permissions request results. Activities extending [SamaActivity] already call it */
     fun onRequestPermissionsResult(activity: Activity, requestCode: Int, permissions: Array<out String>, grantResults: IntArray): Boolean {
@@ -72,7 +66,7 @@ object Perms {
         }
 
         val reqCode = requestCodes.incrementAndGet()
-        val permHelper = PermHelper(currentActivity!!, reqCode, optionalPerms.minus(perms).distinct(), onShowRationale, onPermanentlyDenied, f)
+        val permHelper = PermHelper(reqCode, optionalPerms.minus(perms).distinct(), onShowRationale, onPermanentlyDenied, f)
         permHelperMap.put(reqCode, permHelper)
         val shouldAsk = permHelper.askPermissions(perms.distinct())
         if(shouldAsk) return true
@@ -189,7 +183,6 @@ object Perms {
 
 
     private class PermHelper(
-        private val activityReference: WeakReference<Activity>,
         private val requestCode: Int,
         private val optionalPermissions: List<String>,
         private val onShowRationale: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
@@ -200,7 +193,7 @@ object Perms {
 
         fun askPermissions(permissions: List<String>): Boolean {
 
-            val activity = activityReference.get() ?: return true
+            val activity = PowerfulSama.getCurrentActivity() ?: return true
 
             val permissionsToAsk = ArrayList<String>()
             val permissionsToRationale = ArrayList<String>()

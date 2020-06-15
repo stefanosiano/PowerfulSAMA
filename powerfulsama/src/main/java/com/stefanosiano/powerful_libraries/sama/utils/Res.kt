@@ -17,17 +17,11 @@ import java.lang.ref.WeakReference
 /** Class that retrieves resources using current activity context or application context if no activity is available */
 object Res {
 
-    /** Weak reference to the current activity */
-    private var currentActivity : WeakReference<Activity>? = null
-
     /** Application context */
     private lateinit var appContext: Context
 
     /** Set the application context, used as fallback for methods */
     internal fun setApplicationContext(application: Application) { appContext = application.applicationContext }
-
-    /** Set [activity] as the current activity (as a weak reference) */
-    internal fun setCurrentActivity(activity: Activity) { currentActivity?.clear(); currentActivity = WeakReference(activity) }
 
     /** [ObservableInt] containing an user defined id of the current theme in use. Call [changeTheme] to update its value */
     val theme = ObservableInt()
@@ -36,7 +30,7 @@ object Res {
     fun changeTheme(themeId: Int) { theme.set(themeId) }
 
     /** Retrieve a color based on the current theme. NOTE: calling this method when there is no visible activity will use application context, losing theme information */
-    fun color(resourceId: Int, context: Context? = null): Int = (context ?: currentActivity?.get() ?: appContext).let { ContextCompat.getColor(it, resourceId) }
+    fun color(resourceId: Int, context: Context? = null): Int = (context ?: PowerfulSama.getCurrentActivity() ?: appContext).let { ContextCompat.getColor(it, resourceId) }
 
     /** Retrieve a string from resources using application context, passing [args]. Can be used anywhere */
     fun string(resourceId: Int, vararg args: Any): String = appContext.getString(resourceId, *args)
@@ -45,14 +39,14 @@ object Res {
     fun string(resourceId: Int): String = appContext.getString(resourceId)
 
     /** Retrieve a drawable from resources based on the current theme. NOTE: calling this method when there is no visible activity will use application context, losing theme information */
-    fun drawable(resourceId: Int, context: Context? = null): Drawable? = (context ?: currentActivity?.get() ?: appContext).let { AppCompatResources.getDrawable(it, resourceId) }
+    fun drawable(resourceId: Int, context: Context? = null): Drawable? = (context ?: PowerfulSama.getCurrentActivity() ?: appContext).let { AppCompatResources.getDrawable(it, resourceId) }
 
 
     /** Returns [dimenId] in dp */
-    fun dimensInDp(dimenId: Int, context: Context? = null) = (context ?: currentActivity?.get() ?: appContext).let { it.resources.getDimension(dimenId)/it.resources.displayMetrics.density }
+    fun dimensInDp(dimenId: Int, context: Context? = null) = (context ?: PowerfulSama.getCurrentActivity() ?: appContext).let { it.resources.getDimension(dimenId)/it.resources.displayMetrics.density }
 
     /** Returns [dimenId] in px */
-    fun dimensInPx(dimenId: Int, context: Context? = null) = (context ?: currentActivity?.get() ?: appContext).resources.getDimension(dimenId)
+    fun dimensInPx(dimenId: Int, context: Context? = null) = (context ?: PowerfulSama.getCurrentActivity() ?: appContext).resources.getDimension(dimenId)
 
     /** Returns the int bound to the [resourceId] */
     fun integer(resourceId: Int) = appContext.resources.getInteger(resourceId)

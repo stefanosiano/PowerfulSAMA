@@ -7,11 +7,15 @@ import android.content.pm.Signature
 import android.os.Bundle
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaIntent
+import java.lang.ref.WeakReference
 
 object PowerfulSama {
     internal var logger: PowerfulSamaLogger? = null
     internal var isAppDebug: Boolean = false
     internal lateinit var applicationContext: Context
+
+    /** Weak reference to the current activity */
+    private var currentActivity : WeakReference<Activity>? = null
 
     /** Initializes the SAMA library
      *
@@ -39,12 +43,12 @@ object PowerfulSama {
         isAppDebug = isDebug
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityPaused(activity: Activity?) {}
-            override fun onActivityResumed(activity: Activity?) { setMsgActivity(activity); setResActivity(activity); setPermsActivity(activity) }
-            override fun onActivityStarted(activity: Activity?) { setMsgActivity(activity); setResActivity(activity); setPermsActivity(activity) }
+            override fun onActivityResumed(activity: Activity?) { setCurrentActivity(activity) }
+            override fun onActivityStarted(activity: Activity?) { setCurrentActivity(activity) }
             override fun onActivityDestroyed(activity: Activity?) { clearIntent(activity) }
             override fun onActivitySaveInstanceState(activity: Activity?, outState: Bundle?) {}
             override fun onActivityStopped(activity: Activity?) {}
-            override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) { setMsgActivity(activity); setResActivity(activity); setPermsActivity(activity) }
+            override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) { setCurrentActivity(activity) }
         })
 
         Res.setApplicationContext(application)
@@ -62,13 +66,14 @@ object PowerfulSama {
     private fun clearIntent(activity: Activity?) = activity?.let { if(it is SamaActivity) SamaIntent.clear("${it.samaIntent.uid} ") }
 
     /** Sets the current activity on which to show the messages */
-    private fun setMsgActivity(activity: Activity?) = activity?.let { Msg.setCurrentActivity(it) }
+    private fun setCurrentActivity(activity: Activity?) = activity?.let {
+        currentActivity?.clear()
+        currentActivity = WeakReference(activity)
+    }
 
-    /** Sets the current activity on which to show the messages */
-    private fun setPermsActivity(activity: Activity?) = activity?.let { Perms.setCurrentActivity(it) }
-
-    /** Sets the current activity on which to show the messages */
-    private fun setResActivity(activity: Activity?) = activity?.let { Res.setCurrentActivity(it) }
+    /** Get the current activity as a weak reference. Can be null if no activities are running
+     * (e.g. in services, broadcast receivers, threads finishing after activity's onDestroy, etc.) */
+    fun getCurrentActivity(): Activity? = currentActivity?.get()
 }
 
 interface PowerfulSamaLogger {
