@@ -127,6 +127,9 @@ class Msg private constructor(
     /** Flag to know if the screen orientation should be locked while showing the message */
     private var lockOrientation = false
 
+    /** Flag to know if the caller should wait for the message to dismiss to continue its work */
+    private var waitForDismiss = false
+
 
 
     /**
@@ -189,6 +192,9 @@ class Msg private constructor(
         /** Alias for [alertDialogOneButton] with specified [messageId] */
         fun adob(messageId: Int) = alertDialogOneButton().message(messageId)
 
+        /** Alias for [alertDialogOneButton] with specified [message] */
+        fun adob(message: String) = alertDialogOneButton().message(message)
+
         /**
          * Creates a ProgressDialog with specified options, with an optional [theme].
          *
@@ -201,6 +207,9 @@ class Msg private constructor(
         /** Alias for [progressDialog] with specified [messageId] */
         fun pd(messageId: Int) = progressDialog().message(messageId)
 
+        /** Alias for [progressDialog] with specified [message] */
+        fun pd(message: String) = progressDialog().message(message)
+
         /**
          * Creates an alertDialog with specified options, with an optional [theme].
          * Default values:
@@ -211,6 +220,9 @@ class Msg private constructor(
 
         /** Alias for [alertDialog] with specified [messageId] */
         fun ad(messageId: Int) = alertDialog().message(messageId)
+
+        /** Alias for [alertDialog] with specified [message] */
+        fun ad(message: String) = alertDialog().message(message)
 
         /**
          * Creates a Toast with specified message.
@@ -224,6 +236,9 @@ class Msg private constructor(
         /** Alias for [toast] with specified [messageId] */
         fun ts(messageId: Int) = toast().message(messageId)
 
+        /** Alias for [toast] with specified [message] */
+        fun ts(message: String) = toast().message(message)
+
 
         /**
          * Creates a Snackbar with specified title and okRunnable.
@@ -236,6 +251,9 @@ class Msg private constructor(
 
         /** Alias for [snackbar] with specified [messageId] */
         fun sb(view: View, messageId: Int) = snackbar(view).message(messageId)
+
+        /** Alias for [snackbar] with specified [message] */
+        fun sb(view: View, message: String) = snackbar(view).message(message)
     }
 
 
@@ -343,6 +361,14 @@ class Msg private constructor(
     /** Shows the message and returns it */
     fun show(context: Context? = null): Msg = showMessage(context)
 
+
+    /** Shows the message and waits until it's dismissed. If [showMessage] is met (true, default), then the message will be shown, otherwise [onOk] will be called */
+    suspend fun showAndWait(context: Context? = null, showMessage: Boolean = true) {
+        waitForDismiss = true
+        show(context, showMessage)
+        delayUntil { !waitForDismiss }
+    }
+
     /** Shows the message and returns a [Unit]. Useful for "return Msg.showOff()". If [showMessage] is true, then the message will be shown, otherwise [onOk] will be called */
     fun showOff(context: Context? = null, showMessage: Boolean = true): Unit { if(showMessage) showMessage(context) else { onOk?.invoke(null) } }
 
@@ -434,10 +460,10 @@ class Msg private constructor(
         logVerbose("Dismiss message")
         runOnUi {
             when (messageImpl) {
-                MessageImpl.ProgressDialog -> { onDismiss?.invoke(this); (implementation?.get() as? ProgressDialog?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShowing) it.dismiss() } }
-                MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> { onDismiss?.invoke(this); (implementation?.get() as? AlertDialog?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShowing) it.dismiss() } }
-                MessageImpl.Toast -> { onDismiss?.invoke(this); (implementation?.get() as? Toast?)?.cancel() }
-                MessageImpl.Snackbar -> { onDismiss?.invoke(this); (implementation?.get() as? Snackbar?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShown) it.dismiss() } }
+                MessageImpl.ProgressDialog -> { (implementation?.get() as? ProgressDialog?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShowing) it.dismiss() } }
+                MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> { (implementation?.get() as? AlertDialog?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShowing) it.dismiss() } }
+                MessageImpl.Toast -> { onDismiss?.invoke(this); (implementation?.get() as? Toast?)?.cancel(); waitForDismiss = false }
+                MessageImpl.Snackbar -> { onDismiss?.invoke(this); (implementation?.get() as? Snackbar?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShown) it.dismiss(); waitForDismiss = false } }
                 else -> logError("Cannot understand the implementation type of the message. Skipping dismiss")
             }
             autoDismissJob?.cancel()
@@ -474,6 +500,7 @@ class Msg private constructor(
         progressDialog.setMessage(message)
         progressDialog.isIndeterminate = indeterminate
         progressDialog.setCancelable(cancelable)
+        progressDialog.setOnDismissListener { onDismiss?.invoke(this); waitForDismiss = false }
         implementation = WeakReference(progressDialog)
         isBuilt = true
         return this
@@ -490,6 +517,7 @@ class Msg private constructor(
 
         mAlert.setPositiveButton(positive) { dialog, _ -> onOk?.invoke(this); dialog.dismiss() }
         mAlert.setNegativeButton(negative) { dialog, _ -> onNo?.invoke(this); dialog.dismiss() }
+        mAlert.setOnDismissListener { onDismiss?.invoke(this); waitForDismiss = false }
 
         if (!TextUtils.isEmpty(neutral))
             mAlert.setNeutralButton(neutral) { dialog, _ -> onCancel?.invoke(this); dialog.dismiss() }
@@ -510,6 +538,7 @@ class Msg private constructor(
         mAlert.setMessage(message)
 
         mAlert.setPositiveButton(positive) { dialog, _ -> onOk?.invoke(this); dialog.dismiss() }
+        mAlert.setOnDismissListener { onDismiss?.invoke(this); waitForDismiss = false }
 
         implementation = WeakReference(mAlert.create())
         isBuilt = true
