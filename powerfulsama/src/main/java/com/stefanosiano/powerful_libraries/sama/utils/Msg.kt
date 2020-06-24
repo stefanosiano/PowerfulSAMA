@@ -115,8 +115,8 @@ class Msg private constructor(
     /** Unique id used to check equality with other messages  */
     private val uid: Long = uniqueId.incrementAndGet()
 
-    /** Implementation of the message */
-    private var implementation: WeakReference<Any>? = null
+    /** Implementation of the message. Careful when using it! */
+    var implementation: WeakReference<Any>? = null
 
     /** Job of the auto dismiss feature. When the message is dismissed, the job should be canceled */
     private var autoDismissJob: Job? = null
