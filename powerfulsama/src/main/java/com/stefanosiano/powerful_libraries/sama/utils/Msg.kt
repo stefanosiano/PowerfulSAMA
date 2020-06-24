@@ -115,7 +115,8 @@ class Msg private constructor(
     /** Unique id used to check equality with other messages  */
     private val uid: Long = uniqueId.incrementAndGet()
 
-    /** Implementation of the message. Careful when using it! */
+    /** Implementation of the message. Careful when using it. This is a weakReference to the underlying implementation
+     * (AlertDialog, ProgressDialog, Toast or Snackbar). Cast it to the right class and bear in mind it can be null */
     var implementation: WeakReference<Any>? = null
 
     /** Job of the auto dismiss feature. When the message is dismissed, the job should be canceled */
