@@ -32,6 +32,10 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore internal var onPostAction : (suspend (SamaListItemAction?, SamaListItem, Any?) -> Unit)? = null
     @Ignore internal var isLazyInit = false
 
+    /** Delay in milliseconds after which a function in "observe(ob, ob, ob...)" can be called again.
+     * Used to avoid calling the same method multiple times due to observing multiple variables */
+    @Ignore protected var multiObservableDelay: Long = 100L
+
     /** Root View this item is bound to. Use it only in [onBind] method */
     @Ignore lateinit var root: WeakReference<View>
         internal set
@@ -161,29 +165,37 @@ abstract class SamaListItem : CoroutineScope {
     @Suppress("UNCHECKED_CAST")
     protected fun <T> observe(o: ObservableList<T>, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any {
         val obsId = observablesId.incrementAndGet()
-        obs.forEach { ob ->
-            observablesMap[obsId] = AtomicInteger(0)
-            synchronized(observables) {
+        observablesMap[obsId] = AtomicInteger(0)
+
+        val c = o.onAnyChange {
+            launchOrNow(this) {
+                //increment value of observablesMap[obsId] -> only first call can run this function
+                val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+                if (id != 1) return@launchOrNow
+                logVerbose("$adapterPosition - $o")
+                obFun(it)
+                if(multiObservableDelay > 0)
+                    delay(multiObservableDelay)
+                observablesMap[obsId]?.set(0)
+            }
+        }
+
+        synchronized(observables) {
+            obs.forEach { ob ->
                 observables.add(Pair(ob, ob.onChange(this) {
                     //increment value of observablesMap[obsId] -> only first call can run this function
                     val id = observablesMap[obsId]?.incrementAndGet() ?: 1
                     if (id != 1) return@onChange
-                    o.let { logVerbose("$adapterPosition - $it"); obFun(it) }
+                    logVerbose("$adapterPosition - $o");
+                    obFun(o)
+                    if(multiObservableDelay > 0)
+                        delay(multiObservableDelay)
                     //clear value of observablesMap[obsId] -> everyone can run this function
                     observablesMap[obsId]?.set(0)
                 }))
             }
+            listObservables.add(Pair(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
         }
-
-        val c = o.onAnyChange {
-            launchOrNow(this) {
-                observablesMap[obsId]?.set(2)
-                logVerbose("$adapterPosition - $o")
-                obFun(it)
-                observablesMap[obsId]?.set(0)
-            }
-        }
-        synchronized(listObservables) { listObservables.add(Pair(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>)) }
         if(!skipFirst)
             launchOrNow(this) { obFun(o) }
     }
@@ -316,26 +328,30 @@ abstract class SamaListItem : CoroutineScope {
      * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing if the value of [o] is null or already changed */
     private fun <T> observePrivate(o: Observable, obValue: () -> T?, obFun: suspend (data: T) -> Unit, skipFirst: Boolean, vararg obs: Observable) {
         val obsId = observablesId.incrementAndGet()
+        observablesMap[obsId] = AtomicInteger(0)
 
-        obs.forEach { ob ->
-            observablesMap[obsId] = AtomicInteger(0)
-            synchronized(observables) {
+        synchronized(observables) {
+            obs.forEach { ob ->
                 observables.add(Pair(ob, ob.onChange(this) {
                     //increment value of observablesMap[obsId] -> only first call can run this function
                     val id = observablesMap[obsId]?.incrementAndGet() ?: 1
                     if (id != 1) return@onChange
                     obValue()?.let { logVerbose("$adapterPosition - $it"); obFun(it) }
+                    if(multiObservableDelay > 0)
+                        delay(multiObservableDelay)
                     //clear value of observablesMap[obsId] -> everyone can run this function
                     observablesMap[obsId]?.set(0)
                 }))
             }
-        }
 
-        synchronized(observables) {
             //sets the function to call when using an observable: it sets the observablesMap[obsId] to 2 (it won't be called by obs), run obFun and finally set observablesMap[obsId] to 0 (callable by everyone)
             observables.add(Pair(o, o.addOnChangedAndNowBase (this, skipFirst) {
-                observablesMap[obsId]?.set(2)
+                //increment value of observablesMap[obsId] -> only first call can run this function
+                val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+                if (id != 1) return@addOnChangedAndNowBase
                 obValue()?.let { data -> if (data == it) { logVerbose("$adapterPosition - $data"); obFun(data) } }
+                if(multiObservableDelay > 0)
+                    delay(multiObservableDelay)
                 observablesMap[obsId]?.set(0)
             }))
         }

@@ -38,6 +38,10 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     /** flag to know if the activity was stopped */
     private var isStopped = false
 
+    /** Delay in milliseconds after which a function in "observe(ob, ob, ob...)" can be called again.
+     * Used to avoid calling the same method multiple times due to observing multiple variables */
+    protected var multiObservableDelay: Long = 100L
+
 //    private val debugReceiver = SamaDebugReceiver()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -147,30 +151,39 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     @Suppress("UNCHECKED_CAST")
     protected fun <T> observe(o: ObservableList<T>, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any {
         val obsId = observablesId.incrementAndGet()
+        observablesMap[obsId] = AtomicInteger(0)
 
         val f: suspend () -> Unit = {
             observablesMap[obsId]?.set(2)
             o.let { logVerbose(it.toString()); obFun(it) }
+            if(multiObservableDelay > 0)
+                delay(multiObservableDelay)
             observablesMap[obsId]?.set(0)
         }
 
         obs.forEach { ob ->
-            observablesMap[obsId] = AtomicInteger(0)
             observables.add(SamaInnerObservable(ob, f, ob.onChange(this) {
                 //increment value of observablesMap[obsId] -> only first call can run this function
                 val id = observablesMap[obsId]?.incrementAndGet() ?: 1
                 if(id != 1) return@onChange
                 o.let { logVerbose(it.toString()); obFun(it) }
                 //clear value of observablesMap[obsId] -> everyone can run this function
+                if(multiObservableDelay > 0)
+                    delay(multiObservableDelay)
                 observablesMap[obsId]?.set(0)
             }))
         }
 
         val c = o.onAnyChange {
             launchOrNow(this) {
-                observablesMap[obsId]?.set(2)
+                //increment value of observablesMap[obsId] -> only first call can run this function
+                val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+                if(id != 1) return@launchOrNow
                 logVerbose(o.toString())
                 obFun(it)
+                //clear value of observablesMap[obsId] -> everyone can run this function
+                if(multiObservableDelay > 0)
+                    delay(multiObservableDelay)
                 observablesMap[obsId]?.set(0)
             }
         }
@@ -301,6 +314,8 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         val f: suspend () -> Unit = {
             observablesMap[obsId]?.set(2)
             obValue()?.let { logVerbose(it.toString()); obFun(it) }
+            if(multiObservableDelay > 0)
+                delay(multiObservableDelay)
             observablesMap[obsId]?.set(0)
         }
 
@@ -312,68 +327,21 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
                 if(id != 1) return@onChange
                 obValue()?.let { logVerbose(it.toString()); obFun(it) }
                 //clear value of observablesMap[obsId] -> everyone can run this function
+                if(multiObservableDelay > 0)
+                    delay(multiObservableDelay)
                 observablesMap[obsId]?.set(0)
             }))
         }
-        //sets the function to call when using an observable: it sets the observablesMap[obsId] to 2 (it won't be called by obs), run obFun and finally set observablesMap[obsId] to 0 (callable by everyone)
-        when(o) {
-            is ObservableInt -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableShort -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableLong -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableFloat -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableDouble -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableBoolean -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableByte -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-            is ObservableField<*> -> {
-                observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNow (this, skipFirst) {
-                    observablesMap[obsId]?.set(2)
-                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                    observablesMap[obsId]?.set(0)
-                }))
-            }
-        }
+        observables.add(SamaInnerObservable(o, f, o.addOnChangedAndNowBase (this, skipFirst) {
+            //increment value of observablesMap[obsId] -> only first call can run this function
+            val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+            if(id != 1) return@addOnChangedAndNowBase
+            obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+            //clear value of observablesMap[obsId] -> everyone can run this function
+            if(multiObservableDelay > 0)
+                delay(multiObservableDelay)
+            observablesMap[obsId]?.set(0)
+        }))
     }
 
     /**

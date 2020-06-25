@@ -3,6 +3,7 @@ package com.stefanosiano.powerful_libraries.sama.viewModel
 import android.util.Log
 import androidx.databinding.*
 import androidx.lifecycle.*
+import androidx.room.Ignore
 import com.stefanosiano.powerful_libraries.sama.*
 import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
 import kotlinx.coroutines.*
@@ -61,6 +62,10 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     /** Flag to understand whether the activity attached to this [SamaViewModel] is stopped, so that no observable functions are called */
     private var isObservePaused = false
 
+    /** Delay in milliseconds after which a function in "observe(ob, ob, ob...)" can be called again.
+     * Used to avoid calling the same method multiple times due to observing multiple variables */
+    protected var multiObservableDelay: Long = 100L
+
 
     /** Clears the LiveData of the response to avoid the observer receives it over and over on configuration changes */
     fun clearVmResponse() = liveResponse.postValue(null)
@@ -87,20 +92,19 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     @Suppress("UNCHECKED_CAST")
     protected fun <T> observe(o: ObservableList<T>, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any {
         val obsId = observablesId.incrementAndGet()
+        observablesMap[obsId] = AtomicInteger(0)
 
         val f: suspend () -> Unit = {
-            val id = observablesMap[obsId]?.incrementAndGet() ?: 1
-            if(id == 1) {
-                logVerbose(o.toString())
-                obFun(o)
-                observablesMap[obsId]?.set(0)
-            }
+            observablesMap[obsId]?.set(2)
+            logVerbose(o.toString())
+            obFun(o)
             observablesIsChangedMap.remove(obsId)
+            if(multiObservableDelay > 0)
+                delay(multiObservableDelay)
+            observablesMap[obsId]?.set(0)
         }
 
         obs.forEach { ob ->
-
-            observablesMap[obsId] = AtomicInteger(0)
             observables.add(SamaInnerObservable(ob, ob.onChange(this) {
                 if(isObservePaused) {
                     observablesIsChangedMap[obsId] = f
@@ -111,15 +115,20 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
                 if(id != 1) return@onChange
                 o.let { logVerbose(it.toString()); obFun(it) }
                 //clear value of observablesMap[obsId] -> everyone can run this function
+                if(multiObservableDelay > 0)
+                    delay(multiObservableDelay)
                 observablesMap[obsId]?.set(0)
             }))
         }
 
         val c = o.onAnyChange {
             launchOrNow(this) {
-                observablesMap[obsId]?.set(2)
+                val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+                if(id != 1) return@launchOrNow
                 logVerbose(o.toString())
                 obFun(it)
+                if(multiObservableDelay > 0)
+                    delay(multiObservableDelay)
                 observablesMap[obsId]?.set(0)
             }
         }
@@ -287,20 +296,19 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
      * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing if the value of [o] is null or already changed */
     private fun <T> observePrivate(o: Observable, obValue: () -> T?, obFun: suspend (data: T) -> Unit, skipFirst: Boolean, vararg obs: Observable) {
         val obsId = observablesId.incrementAndGet()
-
+        observablesMap[obsId] = AtomicInteger(0)
 
         val f: suspend () -> Unit = {
-            val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+            observablesMap[obsId]?.set(2)
             val newData = obValue()
-            if(id == 1) {
-                newData?.let { logVerbose(it.toString()); obFun(it) }
-                observablesMap[obsId]?.set(0)
-            }
+            newData?.let { logVerbose(it.toString()); obFun(it) }
             observablesIsChangedMap.remove(obsId)
+            if(multiObservableDelay > 0)
+                delay(multiObservableDelay)
+            observablesMap[obsId]?.set(0)
         }
 
         obs.forEach { ob ->
-            observablesMap[obsId] = AtomicInteger(0)
             observables.add(SamaInnerObservable(ob, ob.onChange(this) {
                 if(isObservePaused) {
                     observablesIsChangedMap[obsId] = f
@@ -311,18 +319,24 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
                 if(id != 1) return@onChange
                 obValue()?.let { logVerbose(it.toString()); obFun(it) }
                 //clear value of observablesMap[obsId] -> everyone can run this function
+                if(multiObservableDelay > 0)
+                    delay(multiObservableDelay)
                 observablesMap[obsId]?.set(0)
             }))
         }
 
         val obF: suspend (obValue: Any?) -> Unit = {
-            if(isObservePaused) {
+            if(isObservePaused)
                 observablesIsChangedMap[obsId] = f
-            }
             else {
-                observablesMap[obsId]?.set(2)
-                obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
-                observablesMap[obsId]?.set(0)
+                //increment value of observablesMap[obsId] -> only first call can run this function
+                val id = observablesMap[obsId]?.incrementAndGet() ?: 1
+                if(id == 1) {
+                    obValue()?.let { data -> if (data == it) { logVerbose(data.toString()); obFun(data) } }
+                    if(multiObservableDelay > 0)
+                        delay(multiObservableDelay)
+                    observablesMap[obsId]?.set(0)
+                }
             }
         }
 
