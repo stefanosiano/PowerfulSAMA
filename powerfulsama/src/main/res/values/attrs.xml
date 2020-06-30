@@ -14,6 +14,9 @@
         <!-- Sets whether to use a workaround for the inconsistencyDetected: IndexOutOfBoundsException (Only when using srv_columns). See https://stackoverflow.com/questions/31759171/recyclerview-and-java-lang-indexoutofboundsexception-inconsistency-detected-in/33822747#33822747 -->
         <attr name="srvInconsistencyWorkaround" format="boolean" />
 
+        <!-- Sets whether to use a workaround for the inconsistencyDetected: IndexOutOfBoundsException (Only when using srv_columns). See https://stackoverflow.com/questions/31759171/recyclerview-and-java-lang-indexoutofboundsexception-inconsistency-detected-in/33822747#33822747 -->
+        <attr name="srvDisableAdapterAutoStop" format="boolean" />
+
         <!-- Sets whether to remove the adapter from the RecyclerView when it is detached from the layout -->
         <attr name="srvAutoDetach" format="boolean" />
 

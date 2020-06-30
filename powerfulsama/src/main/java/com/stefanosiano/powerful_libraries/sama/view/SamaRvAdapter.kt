@@ -44,6 +44,7 @@ open class SamaRvAdapter(
     })
 
     var isPaged = false
+    var isObservableList = false
 
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
@@ -64,6 +65,9 @@ open class SamaRvAdapter(
 
     /** items implemented through live data */
     private var liveDataPagedItems: LiveData<out PagedList<SamaListItem>>? = null
+
+    /** Whether liveData observers have been stopped by [stopLiveDataObservers] */
+    private var liveDataObserversStopped = false
 
     /** map that saves initialized variables to avoid to reinitialize them when reloaded */
     private val lazyInitializedItemCacheMap = LongSparseArray<SamaListItem>()
@@ -106,7 +110,7 @@ open class SamaRvAdapter(
 
     /** List of items to be bound to [SamaMutableListItem] */
     private var mutableBoundItems = LongSparseArray<Any>()
-    
+
     /** Last item detached: if the latest item detached is the one being recycled, then the item needs to be restarted */
     private var lastDetached = -1
 
@@ -224,6 +228,7 @@ open class SamaRvAdapter(
     @Suppress("unchecked_cast")
     @Synchronized fun bindItems(list: ObservableList<out SamaListItem>) : SamaRvAdapter {
         isPaged = false
+        isObservableList = true
         lazyInitializedItemCacheMap.clear()
         bindListJob?.cancel()
         bindListJob = launch {
@@ -250,6 +255,7 @@ open class SamaRvAdapter(
      */
     @Synchronized fun bindItems(list: List<SamaListItem>, forceReload: Boolean = false) : SamaRvAdapter {
         isPaged = false
+        isObservableList = false
         this.items.removeOnListChangedCallback(onListChangedCallback)
         bindListJob?.cancel()
         bindListJob = launch {
@@ -336,9 +342,11 @@ open class SamaRvAdapter(
      */
     @Synchronized fun bindItems(list: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
         isPaged = false
+        isObservableList = false
         lazyInitializedItemCacheMap.clear()
         //remove the observer from the optional current liveData
         runOnUi {
+            liveDataPagedItems?.removeObserver(pagedLiveDataObserver)
             liveDataItems?.removeObserver(liveDataObserver)
             liveDataItems = list
             liveDataItems?.observeForever(liveDataObserver)
@@ -346,6 +354,26 @@ open class SamaRvAdapter(
         return this
     }
 
+    fun stopLiveDataObservers() {
+        logDebug("Stop observing liveData in adapter")
+        liveDataObserversStopped = true
+        runOnUi {
+            if(isObservableList) items.removeOnListChangedCallback(onListChangedCallback)
+            liveDataPagedItems?.removeObserver(pagedLiveDataObserver)
+            liveDataItems?.removeObserver(liveDataObserver)
+        }
+    }
+
+    fun restartLiveDataObservers() {
+        if(!liveDataObserversStopped) return
+        logDebug("Restart observing liveData in adapter")
+        liveDataObserversStopped = false
+        runOnUi { when {
+            isObservableList -> items.addOnListChangedCallback(onListChangedCallback)
+            isPaged -> liveDataPagedItems?.observeForever(pagedLiveDataObserver)
+            else -> liveDataItems?.observeForever(liveDataObserver)
+        } }
+    }
 
 
     /**
@@ -357,6 +385,7 @@ open class SamaRvAdapter(
     @Synchronized fun bindPagedItems(list: PagedList<out SamaListItem?>) : SamaRvAdapter {
 
         isPaged = true
+        isObservableList = false
         this.items.removeOnListChangedCallback(onListChangedCallback)
         bindListJob?.cancel()
         bindListJob = launch {
@@ -399,9 +428,11 @@ open class SamaRvAdapter(
     @Suppress("UNCHECKED_CAST")
     @Synchronized fun bindPagedItems(list: LiveData<out PagedList<out SamaListItem>>?) : SamaRvAdapter {
         isPaged = true
+        isObservableList = false
         lazyInitializedItemCacheMap.clear()
         //remove the observer from the optional current liveData
         runOnUi {
+            liveDataItems?.removeObserver(liveDataObserver)
             liveDataPagedItems?.removeObserver(pagedLiveDataObserver)
             liveDataPagedItems = list as LiveData<PagedList<SamaListItem>>?
             liveDataPagedItems?.observeForever(pagedLiveDataObserver)

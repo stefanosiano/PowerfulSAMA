@@ -1,6 +1,8 @@
 package com.stefanosiano.powerful_libraries.sama
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -220,7 +222,15 @@ fun Uri.toFileFromProviders(context: Context, fileName: String): File? =
     tryOrNull { File(context.cacheDir, fileName).also { f -> context.contentResolver.openInputStream(this)?.use { it.into(FileOutputStream(f)) } } }
         ?: tryOrNull { File(path) }
 
-
+/** Retrieves the activity this context is associated with. If no activity is found (e.g. activity destroyed, service, etc.) returns null */
+fun Context.findActivity(): Activity? {
+    var c = this
+    while (c is ContextWrapper) {
+        if (c is Activity) return c
+        c = c.baseContext
+    }
+    return null
+}
 
 
 class ObservableFieldExtensions

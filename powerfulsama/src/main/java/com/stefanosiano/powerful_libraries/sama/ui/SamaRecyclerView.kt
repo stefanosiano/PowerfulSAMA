@@ -1,13 +1,20 @@
 package com.stefanosiano.powerful_libraries.sama.ui
 
+import android.app.Activity
+import android.app.Application
 import android.content.Context
+import android.os.Bundle
 import android.util.AttributeSet
 import android.util.SparseIntArray
+import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.R
+import com.stefanosiano.powerful_libraries.sama.findActivity
 import com.stefanosiano.powerful_libraries.sama.toWeakReference
+import com.stefanosiano.powerful_libraries.sama.utils.SamaActivityCallback
+import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaRvAdapter
 import java.lang.ref.WeakReference
 
@@ -15,23 +22,34 @@ import java.lang.ref.WeakReference
 open class SamaRecyclerView: RecyclerView {
 
     private var inconsistencyWorkaround = true
+    private var disableAdapterAutoStop = false
     private var horizontal = false
-    private var autoDetach = false
+    private var autoDetach = true
     private var columns = 0
 
     private val spans = SparseIntArray()
+    private val activityCallback = SamaActivityCallback(
+        onStart = { if(!disableAdapterAutoStop) (adapter as? SamaRvAdapter)?.restartLiveDataObservers() },
+        onStop = { if(!disableAdapterAutoStop) (adapter as? SamaRvAdapter)?.stopLiveDataObservers() }
+    )
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle) {
 
         val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.SamaRecyclerView, defStyle, 0)
-        columns = attrSet.getInt(R.styleable.SamaRecyclerView_srvColumns, 0)
-        horizontal = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvHorizontal, false)
-        autoDetach = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvAutoDetach, true)
-        inconsistencyWorkaround = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvInconsistencyWorkaround, true)
+        columns = attrSet.getInt(R.styleable.SamaRecyclerView_srvColumns, columns)
+        horizontal = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvHorizontal, horizontal)
+        autoDetach = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvAutoDetach, autoDetach)
+        inconsistencyWorkaround = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvInconsistencyWorkaround, inconsistencyWorkaround)
+        disableAdapterAutoStop = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvDisableAdapterAutoStop, disableAdapterAutoStop)
         attrSet.recycle()
         resetLayoutManager()
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        (context.findActivity() as? SamaActivity)?.registerSamaCallback(activityCallback)
     }
 
     override fun setAdapter(adapter: Adapter<*>?) {
@@ -64,6 +82,7 @@ open class SamaRecyclerView: RecyclerView {
 
     override fun onDetachedFromWindow() {
         if(autoDetach) adapter = null
+        (context.findActivity() as? SamaActivity)?.unregisterSamaCallback(activityCallback)
         super.onDetachedFromWindow()
     }
 
