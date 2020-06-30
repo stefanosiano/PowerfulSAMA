@@ -43,8 +43,8 @@ open class SamaRvAdapter(
         override fun areContentsTheSame(old: SamaListItem, new: SamaListItem) = old.contentEquals(new)
     })
 
-    var isPaged = false
-    var isObservableList = false
+    private var isPaged = false
+    private var isObservableList = false
 
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
@@ -116,6 +116,9 @@ open class SamaRvAdapter(
 
     /** Last item detached: if the latest item detached is the one being recycled, then the item needs to be restarted */
     private val spannedSizes = SparseIntArray()
+
+    /** Whether the adapter has just been restarted through [restartLiveDataObservers] */
+    private var justRestarted = false
 
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
@@ -240,6 +243,10 @@ open class SamaRvAdapter(
                 items.addOnListChangedCallback(onListChangedCallback)
                 itemRangeInserted(0, list.size)
                 onLoadFinished?.invoke()
+                if(justRestarted) {
+                    notifyDataSetChanged()
+                    justRestarted = false
+                }
                 startLazyInits()
             }
         }
@@ -270,6 +277,10 @@ open class SamaRvAdapter(
                     items.addAll(list)
                     notifyDataSetChanged()
                     onLoadFinished?.invoke()
+                    if(justRestarted) {
+                        notifyDataSetChanged()
+                        justRestarted = false
+                    }
                     startLazyInits()
                 }
             } else {
@@ -294,6 +305,10 @@ open class SamaRvAdapter(
                     })
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                     onLoadFinished?.invoke()
+                    if(justRestarted) {
+                        notifyDataSetChanged()
+                        justRestarted = false
+                    }
                     startLazyInits()
                 }
             }
@@ -358,6 +373,8 @@ open class SamaRvAdapter(
         logDebug("Stop observing liveData in adapter")
         liveDataObserversStopped = true
         runOnUi {
+            bindListJob?.cancel()
+            lazyInitsJob?.cancel()
             if(isObservableList) items.removeOnListChangedCallback(onListChangedCallback)
             liveDataPagedItems?.removeObserver(pagedLiveDataObserver)
             liveDataItems?.removeObserver(liveDataObserver)
@@ -368,6 +385,7 @@ open class SamaRvAdapter(
         if(!liveDataObserversStopped) return
         logDebug("Restart observing liveData in adapter")
         liveDataObserversStopped = false
+        justRestarted = true
         runOnUi { when {
             isObservableList -> items.addOnListChangedCallback(onListChangedCallback)
             isPaged -> liveDataPagedItems?.observeForever(pagedLiveDataObserver)
@@ -408,6 +426,10 @@ open class SamaRvAdapter(
                 mDiffer.submitList(list as PagedList<SamaListItem>) {
                     items = list.filterNotNull<SamaListItem>().mapTo(ObservableArrayList()) { it }
                     onLoadFinished?.invoke()
+                    if(justRestarted) {
+                        notifyDataSetChanged()
+                        justRestarted = false
+                    }
                     startLazyInits()
                 }
             }
