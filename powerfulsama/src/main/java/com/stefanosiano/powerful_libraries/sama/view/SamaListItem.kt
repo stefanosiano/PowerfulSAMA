@@ -11,6 +11,7 @@ import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
@@ -68,6 +69,9 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore internal var passedObjects: Map<String, Any>? = null
 //        internal set
 
+    /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind] */
+    @Ignore private var isStarted = AtomicBoolean(false)
+
     /** Get the adapter this item is in (may be null) */
     fun getAdapter() = adapter?.get()
 
@@ -113,12 +117,14 @@ abstract class SamaListItem : CoroutineScope {
 
     /** Called when the view is reattached to the recyclerview after being detached or the adapter has been reattached after being detatched. Use it if you need to reuse resources freed in [onStop]. By default restart all [observe] methods  */
     open fun onStart() {
+        if(isStarted.getAndSet(true)) return
         synchronized(observables) { observables.asSequence().forEach { tryOrPrint { it.first.addOnPropertyChangedCallback(it.second) } } }
         synchronized(listObservables) { listObservables.forEach { tryOrPrint { it.first.addOnListChangedCallback(it.second) } } }
     }
 
     /** Called when the view is detached from the recyclerview or the adapter is detached. Use it if you need to stop some heavy computation. By default it stops all [observe] methods */
     open fun onStop() {
+        if(!isStarted.getAndSet(false)) return
         synchronized(observables) { observables.forEach { tryOrPrint { it.first.removeOnPropertyChangedCallback(it.second) } } }
         synchronized(listObservables) { listObservables.forEach { tryOrPrint { it.first.removeOnListChangedCallback(it.second) } } }
     }

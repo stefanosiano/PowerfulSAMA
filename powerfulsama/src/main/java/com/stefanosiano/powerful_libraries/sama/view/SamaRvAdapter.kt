@@ -206,7 +206,7 @@ open class SamaRvAdapter(
             listItem.onBind(passedObjects)
 
         listItem.setPostActionListener { action, item, data -> itemUpdatedListeners.forEach { it.invoke(action, item, data) } }
-        //listItem.onStart()
+        listItem.onStart()
     }
 
 
