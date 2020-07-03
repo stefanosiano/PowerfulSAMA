@@ -169,7 +169,7 @@ open class SamaRvAdapter(
             holder.binding.get()?.root?.let { item.root = WeakReference(it) }
             holder.binding.get()?.setVariable(itemBindingId, item)
         }
-        bindItemToViewHolder(bindJob, getItem(holder.adapterPosition), holder.adapterPosition)
+        bindItemToViewHolder(bindJob, item, holder.adapterPosition)
     }
 
     override fun onViewDetachedFromWindow(holder: SimpleViewHolder) {
