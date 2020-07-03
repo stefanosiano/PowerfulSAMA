@@ -146,7 +146,7 @@ open class SamaRvAdapter(
     /** Changes the layout of the rows and reload the list */
     fun setItemLayoutId(itemLayoutId: Int) {
         this.itemLayoutId = itemLayoutId
-        runOnUi { notifyDataSetChanged() }
+        launch { notifyDataSetChangedUi() }
     }
 
 
@@ -244,7 +244,7 @@ open class SamaRvAdapter(
                 itemRangeInserted(0, list.size)
                 onLoadFinished?.invoke()
                 if(justRestarted) {
-                    notifyDataSetChanged()
+                    launch { notifyDataSetChangedUi() }
                     justRestarted = false
                 }
                 startLazyInits()
@@ -270,17 +270,14 @@ open class SamaRvAdapter(
             onLoadStarted?.invoke()
             if (forceReload) {
                 if (!isActive) return@launch
+                lazyInitializedItemCacheMap.clear()
                 runOnUi {
                     items.forEach { it.onDestroy() }
                     items.clear()
-                    dataSetChanged()
+                    runBlocking { notifyDataSetChangedUi() }
                     items.addAll(list)
-                    notifyDataSetChanged()
+                    launch { notifyDataSetChangedUi() }
                     onLoadFinished?.invoke()
-                    if(justRestarted) {
-                        notifyDataSetChanged()
-                        justRestarted = false
-                    }
                     startLazyInits()
                 }
             } else {
@@ -306,7 +303,7 @@ open class SamaRvAdapter(
                     diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                     onLoadFinished?.invoke()
                     if(justRestarted) {
-                        notifyDataSetChanged()
+                        launch { notifyDataSetChangedUi() }
                         justRestarted = false
                     }
                     startLazyInits()
@@ -427,7 +424,7 @@ open class SamaRvAdapter(
                     items = list.filterNotNull<SamaListItem>().mapTo(ObservableArrayList()) { it }
                     onLoadFinished?.invoke()
                     if(justRestarted) {
-                        notifyDataSetChanged()
+                        launch { notifyDataSetChangedUi() }
                         justRestarted = false
                     }
                     startLazyInits()
@@ -572,6 +569,26 @@ open class SamaRvAdapter(
         return -1
     }
 
+    /** Calls [notifyDataSetChanged] on the main thread and perform some calculation to check if it should wait to do so */
+    suspend fun notifyDataSetChangedUi() {
+        delayUntil { recyclerView?.get()?.isComputingLayout != true }
+            runOnUi { super.notifyDataSetChanged() }
+    }
+
+    /** Calls [notifyDataSetChanged] on the main thread and perform some calculation to check if it should wait to do so */
+    suspend fun notifyItemRangeRemovedUi(positionStart: Int, itemCount: Int) {
+        delayUntil { recyclerView?.get()?.isComputingLayout != true }
+            runOnUi { super.notifyItemRangeRemoved(positionStart, itemCount) }
+    }
+    suspend fun notifyItemRangeInsertedUi(positionStart: Int, itemCount: Int) {
+        delayUntil { recyclerView?.get()?.isComputingLayout != true }
+            runOnUi { super.notifyItemRangeInserted(positionStart, itemCount) }
+    }
+    suspend fun notifyItemRangeChangedUi(positionStart: Int, itemCount: Int) {
+        delayUntil { recyclerView?.get()?.isComputingLayout != true }
+            runOnUi { super.notifyItemRangeChanged(positionStart, itemCount) }
+    }
+
     /** Returns the currently shown PagedList, but not necessarily the most recent passed via
      *  [bindPagedItems], because a diff is computed asynchronously before updating the currentList value.
      * May be null if no PagedList is being presented or adapter is not using a paged list */
@@ -594,10 +611,10 @@ open class SamaRvAdapter(
 
     //list observer stuff
     /** Function to be called when some items change */
-    private fun itemRangeChanged(positionStart: Int, itemCount: Int) = runOnUi { notifyItemRangeChanged(positionStart, itemCount) }
+    private fun itemRangeChanged(positionStart: Int, itemCount: Int) = launch { notifyItemRangeChangedUi(positionStart, itemCount) }
 
     /** Function to be called when some items are added */
-    private fun itemRangeInserted(positionStart: Int, itemCount: Int) = runOnUi { notifyItemRangeInserted(positionStart, itemCount) }
+    private fun itemRangeInserted(positionStart: Int, itemCount: Int) = launch { notifyItemRangeInsertedUi(positionStart, itemCount) }
 
     /** Function to be called when some items are moved */
     private fun itemRangeMoved(fromPosition: Int, toPosition: Int, itemCount: Int){
@@ -606,10 +623,10 @@ open class SamaRvAdapter(
     }
 
     /** Function to be called when some items are removed */
-    private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = runOnUi { notifyItemRangeRemoved(positionStart, itemCount) }
+    private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = launch { notifyItemRangeRemovedUi(positionStart, itemCount) }
 
-    /** Function to be called when the whole list changes. Calls [notifyDataSetChanged] and clears the lazy init cache */
-    fun dataSetChanged() { lazyInitializedItemCacheMap.clear(); notifyDataSetChanged() }
+    /** Function to be called when the whole list changes. Calls [notifyDataSetChanged] on ui and clears the lazy init cache */
+    suspend fun dataSetChanged() { lazyInitializedItemCacheMap.clear(); notifyDataSetChangedUi() }
 
 
 
@@ -624,7 +641,7 @@ open class SamaRvAdapter(
 
         private val adapterReference = WeakReference(bindingRvAdapter)
 
-        @Synchronized override fun onChanged(sender: ObservableList<SamaListItem>?) { runOnUi { adapterReference.get()?.dataSetChanged() } }
+        @Synchronized override fun onChanged(sender: ObservableList<SamaListItem>?) { launch { adapterReference.get()?.notifyDataSetChangedUi() } }
         @Synchronized override fun onItemRangeRemoved(sender: ObservableList<SamaListItem>?, positionStart: Int, itemCount: Int) { runOnUi { adapterReference.get()?.itemRangeRemoved(positionStart, itemCount) } }
         @Synchronized override fun onItemRangeMoved(sender: ObservableList<SamaListItem>?, fromPosition: Int, toPosition: Int, itemCount: Int) { runOnUi { adapterReference.get()?.itemRangeMoved(fromPosition, toPosition, itemCount) } }
         @Synchronized override fun onItemRangeInserted(sender: ObservableList<SamaListItem>?, positionStart: Int, itemCount: Int) { runOnUi { adapterReference.get()?.itemRangeInserted(positionStart, itemCount) } }
