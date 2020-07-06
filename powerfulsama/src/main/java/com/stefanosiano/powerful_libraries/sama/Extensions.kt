@@ -4,16 +4,18 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.databinding.*
+import androidx.databinding.Observable
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
-import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
+import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.applicationContext
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.logger
 import kotlinx.coroutines.*
 import java.io.File
@@ -21,7 +23,23 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.lang.ref.WeakReference
-import java.util.LinkedHashMap
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.Collection
+import kotlin.collections.Iterable
+import kotlin.collections.List
+import kotlin.collections.Map
+import kotlin.collections.MutableCollection
+import kotlin.collections.MutableList
+import kotlin.collections.MutableMap
+import kotlin.collections.filter
+import kotlin.collections.filterValues
+import kotlin.collections.firstOrNull
+import kotlin.collections.forEach
+import kotlin.collections.getOrPut
+import kotlin.collections.indexOf
+import kotlin.collections.map
+import kotlin.collections.sortedBy
 import kotlin.coroutines.CoroutineContext
 
 
@@ -411,3 +429,37 @@ internal fun Any.logWarning(m: String) { logger?.logWarning(this::class.java, m)
 internal fun Any.logError(m: String) { logger?.logError(this::class.java, m) }
 internal fun Any.logException(t: Throwable) { logger?.logException(this::class.java, t) }
 internal fun Any.logExceptionWorkarounded(t: Throwable) { logger?.logExceptionWorkarounded(this::class.java, t) }
+
+/*
+internal fun Any.logVerbose(m: String) = prepareLog(m) { tag, line, msg -> Log.v(tag, "$line -> $msg") }
+internal fun Any.logDebug(m: String) = prepareLog(m) { tag, line, msg -> Log.d(tag, "$line -> $msg") }
+internal fun Any.logInfo(m: String) = prepareLog(m) { tag, line, msg -> Log.i(tag, "$line -> $msg") }
+internal fun Any.logWarning(m: String) = prepareLog(m) { tag, line, msg -> Log.w(tag, "$line -> $msg") }
+internal fun Any.logError(m: String) = prepareLog(m) { tag, line, msg -> Log.e(tag, "$line -> $msg") }
+internal fun Any.logException(t: Throwable) { logger?.logException(this::class.java, t) }
+internal fun Any.logExceptionWorkarounded(t: Throwable) { logger?.logExceptionWorkarounded(this::class.java, t) }
+
+private inline fun Any.findLastStack(stackTrace: Array<StackTraceElement>): StackTraceElement? {
+    var pkg = applicationContext.packageName
+    val pkg2 = this::class.java.`package`?.name ?: this::class.java.name.substringBeforeLast(".")
+    var i = 0
+    var found = false
+    while(i < stackTrace.size && (!found || stackTrace[i].className.startsWith(pkg) || stackTrace[i].className.startsWith(pkg2))) {
+        if(stackTrace[i].className.startsWith(pkg) || stackTrace[i].className.startsWith(pkg2))
+            found = true
+        i++
+    }
+    i--
+    return tryOrNull { stackTrace[i] }
+}
+private inline fun Any.prepareLog(m: String, log: (tag: String, line: Int, message: String) -> Unit) {
+    if(!PowerfulSama.isAppDebug) return
+    findLastStack(Throwable().stackTrace).let {
+        var tag = it?.className?.let { cname -> cname.substring(cname.lastIndexOf('.') + 1) } ?: "Unknown (using proguard?)"
+        // Tag length limit was removed in API 24.
+        if (tag.length > 23 && Build.VERSION.SDK_INT < Build.VERSION_CODES.N)
+            tag = tag.substring(0, 23)
+        log(tag, it?.lineNumber ?: 0, m)
+    }
+}
+*/
