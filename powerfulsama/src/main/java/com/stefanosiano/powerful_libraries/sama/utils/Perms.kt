@@ -36,98 +36,9 @@ object Perms {
     }
 
     /** Checks if all [perms] are granted. Return true only if all of them are granted */
-    fun hasPermissions(perms: List<String>): Boolean =
+    fun hasPermissions(vararg perms: String): Boolean =
         perms.all { ActivityCompat.checkSelfPermission(applicationContext, it) == PackageManager.PERMISSION_GRANTED }
 
-    /** Checks if [perm] is granted */
-    fun hasPermissions(perm: String): Boolean =
-        ActivityCompat.checkSelfPermission(applicationContext, perm) == PackageManager.PERMISSION_GRANTED
-
-
-    /** Ask for [perms] and [optionalPerms] (if they are not already granted). If they are asked and then granted, [f] will be called.
-     * In case one or more of [perms] or [optionalPerms] were previously denied the app should show a rationale, so [onShowRationale] will be called.
-     * If "Don't ask again" was checked when denying a permission, [onPermanentlyDenied] will be called, with all permanently denied permissions and
-     *  permissions needing the rationale to show passed as param. Permanently denied permissions will never include [optionalPerms]
-     * [optionalPerms] are asked together with [perms], but if they are always denied they are simply ignored and don't show any message
-     * permissions passed multiple times will be ignored. Optional permissions already included in needed permissions will be ignored.
-     *
-     * Returns true if a permission has to be asked, false otherwise
-     */
-    fun askPermissions(perms: List<String>,
-                       onShowRationale: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
-                       onPermanentlyDenied: (permanentlyDeniedPerms: Array<String>, showRationalePerms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
-                       optionalPerms: List<String> = ArrayList(),
-                       f: () -> Unit): Boolean {
-
-        if(PowerfulSama.isAppDebug && !requestedPermissions.contains(perms)) {
-            Msg.alertDialog().message("Warning: The requested permissions are not defined in the manifest. This is only a debug message. Release version will fail silently (function will not be called)").show()
-            logError("Warning: The requested permissions are not defined in the manifest. This is only a debug message. Release version will fail silently (function will not be called)")
-            return false
-        }
-
-        val reqCode = requestCodes.incrementAndGet()
-        val permHelper = PermHelper(reqCode, optionalPerms.minus(perms).distinct(), onShowRationale, onPermanentlyDenied, f)
-        permHelperMap.put(reqCode, permHelper)
-        val shouldAsk = permHelper.askPermissions(perms.distinct())
-        if(shouldAsk) return true
-        permHelperMap.remove(reqCode)
-        return false
-    }
-
-    /** Ask for [perms] and [optionalPerms] (if they are not already granted). If they are asked and then granted, [f] will be called.
-     * In case one or more of [perms] or [optionalPerms] were previously denied the app should show a rationale, so a message with [rationaleId] will be shown.
-     * If "Don't ask again" was checked when denying a permission, [onPermanentlyDenied] will be called, with all permanently denied permissions and
-     *  permissions needing the rationale to show passed as param. Permanently denied permissions will never include [optionalPerms]
-     * [optionalPerms] are asked together with [perms], but if they are always denied they are simply ignored and don't show any message
-     * permissions passed multiple times will be ignored. Optional permissions already included in needed permissions will be ignored.
-     *
-     * Returns true if a permission has to be asked, false otherwise
-     */
-    fun askPermissions(perms: List<String>, rationaleId: Int, onPermanentlyDenied: (permanentlyDeniedPerms: Array<String>, showRationalePerms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
-                       optionalPerms: List<String> = ArrayList(), f: () -> Unit) =
-        askPermissions(perms,
-            { permissions, activity, requestCode ->
-                Msg.alertDialog().message(rationaleId).negative(android.R.string.cancel)
-                    .onOk(android.R.string.ok) { ActivityCompat.requestPermissions(activity, permissions, requestCode) }.show(activity)
-            },
-            onPermanentlyDenied, optionalPerms, f
-        )
-
-
-
-    /** Ask for [perms] and [optionalPerms] (if they are not already granted). If they are asked and then granted, [f] will be called.
-     * In case one or more of [perms] or [optionalPerms] were previously denied the app should show a rationale, so [onShowRationale] will be called.
-     * If "Don't ask again" was checked when denying a permission, a message with [permanentlyDeniedId] will be shown, sending to app settings to manually grant permissions
-     * [optionalPerms] are asked together with [perms], but if they are always denied they are simply ignored and don't show any message
-     * permissions passed multiple times will be ignored. Optional permissions already included in needed permissions will be ignored.
-     *
-     * Returns true if a permission has to be asked, false otherwise
-     */
-    fun askPermissions(perms: List<String>, onShowRationale: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
-                       permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit) =
-        askPermissions(perms, onShowRationale,
-            { permanentlyDeniedPerms, showRationalePerms, activity, requestCode ->
-                Msg.alertDialog().message(permanentlyDeniedId).negative(android.R.string.cancel).onOk(android.R.string.ok) {
-                    val intent = Intent(ACTION_APPLICATION_DETAILS_SETTINGS).setData(fromParts("package", activity.packageName, null))
-                    activity.startActivityForResult(intent, requestCode)
-                }.show(activity)
-            },
-            optionalPerms, f)
-
-
-    /** Ask for [perms] and [optionalPerms] (if they are not already granted). If they are asked and then granted, [f] will be called.
-     * In case one or more of [perms] or [optionalPerms] were previously denied the app should show a rationale, so a message with [rationaleId] will be shown.
-     * If "Don't ask again" was checked when denying a permission, a message with [permanentlyDeniedId] will be shown, sending to app settings to manually grant permissions
-     * [optionalPerms] are asked together with [perms], but if they are always denied they are simply ignored and don't show any message
-     * permissions passed multiple times will be ignored. Optional permissions already included in needed permissions will be ignored.
-     *
-     * Returns true if a permission has to be asked, false otherwise
-     */
-    fun askPermissions(perms: List<String>, rationaleId: Int, permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit) =
-        askPermissions(perms,
-            { permissions, activity, requestCode -> Msg.alertDialog().message(rationaleId).negative(android.R.string.cancel)
-                .onOk(android.R.string.ok) { ActivityCompat.requestPermissions(activity, permissions, requestCode) }.show(activity) },
-            permanentlyDeniedId, optionalPerms, f)
 
 
 
@@ -142,8 +53,35 @@ object Perms {
              onPermanentlyDenied: (permanentlyDeniedPerms: Array<String>, showRationalePerms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
              optionalPerms: List<String> = ArrayList(),
              f: () -> Unit) {
-        if(!askPermissions(perms, onShowRationale, onPermanentlyDenied, optionalPerms, f)) f()
+
+        if(PowerfulSama.isAppDebug && (!requestedPermissions.contains(perms) || !requestedPermissions.contains(optionalPerms))) {
+            Msg.alertDialog().message("Warning: The requested permissions are not defined in the manifest. This is only a debug message. Release version will fail silently (function will not be called)").show()
+            logError("Warning: The requested permissions are not defined in the manifest. This is only a debug message. Release version will fail silently (function will not be called)")
+            return
+        }
+
+        val reqCode = requestCodes.incrementAndGet()
+        val permHelper = PermHelper(reqCode, optionalPerms.minus(perms).distinct(), onShowRationale, onPermanentlyDenied, f)
+        permHelperMap.put(reqCode, permHelper)
+        val shouldAsk = permHelper.askPermissions(perms.distinct())
+        if(shouldAsk) return
+        permHelperMap.remove(reqCode)
+        f()
     }
+
+
+    /** Ask for permission specified in [container] and its optional permsissions (if they are not already granted). If they are already granted or they are granted now [f] will be called.
+     * In case one or more permissions were previously denied the app shows a rationale.
+     * If "Don't ask again" was checked when denying a permission, [container]'s onPermanentlyDenied() will be called, with all permanently denied permissions and
+     *  permissions needing the rationale to show passed as param. Permanently denied permissions will never include optional permissions
+     * Optional permissions are asked together with required ones, but if they are always denied they are simply ignored and don't show any message
+     * permissions passed multiple times will be ignored. Optional permissions already included in needed permissions will be ignored. */
+    fun call(container: PermissionContainer, f: () -> Unit) { when {
+        container.rationaleId != null && container.permanentlyDeniedId != null -> call(container.perms, container.rationaleId, container.permanentlyDeniedId, container.optionalPerms, f)
+        container.rationaleId != null -> call(container.perms, container.rationaleId, { permanentlyDeniedPerms, showRationalePerms, activity, requestCode ->  container.onPermanentlyDenied(permanentlyDeniedPerms, showRationalePerms, activity, requestCode) }, container.optionalPerms, f)
+        container.permanentlyDeniedId != null -> call(container.perms, { perms, activity, requestCode ->  container.onShowRationale(perms, activity, requestCode) }, container.permanentlyDeniedId, container.optionalPerms, f)
+        else -> call(container.perms, { perms, activity, requestCode ->  container.onShowRationale(perms, activity, requestCode) }, { permanentlyDeniedPerms, showRationalePerms, activity, requestCode ->  container.onPermanentlyDenied(permanentlyDeniedPerms, showRationalePerms, activity, requestCode) }, container.optionalPerms, f)
+    } }
 
 
     /** Ask for [perms] and [optionalPerms] (if they are not already granted). If they are already granted or they are granted now [f] will be called.
@@ -154,7 +92,7 @@ object Perms {
      * permissions passed multiple times will be ignored. Optional permissions already included in needed permissions will be ignored. */
     fun call(perms: List<String>, rationaleId: Int, onPermanentlyDenied: (permanentlyDeniedPerms: Array<String>, showRationalePerms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
              optionalPerms: List<String> = ArrayList(), f: () -> Unit) {
-        if(!askPermissions(perms, rationaleId, onPermanentlyDenied, optionalPerms, f)) f()
+        call(perms, rationaleId, onPermanentlyDenied, optionalPerms, f)
     }
 
 
@@ -166,7 +104,7 @@ object Perms {
     fun call(perms: List<String>,
              onShowRationale: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
              permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit) {
-        if(!askPermissions(perms, onShowRationale, permanentlyDeniedId, optionalPerms, f)) f()
+        call(perms, onShowRationale, permanentlyDeniedId, optionalPerms, f)
     }
 
 
@@ -176,7 +114,7 @@ object Perms {
      * [optionalPerms] are asked together with [perms], but if they are always denied they are simply ignored and don't show any message
      * permissions passed multiple times will be ignored. Optional permissions already included in needed permissions will be ignored. */
     fun call(perms: List<String>, rationaleId: Int, permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit) {
-        if(!askPermissions(perms, rationaleId, permanentlyDeniedId, optionalPerms, f)) f()
+        call(perms, rationaleId, permanentlyDeniedId, optionalPerms, f)
     }
 
 
@@ -264,4 +202,23 @@ object Perms {
             return true
         }
     }
+}
+
+/** Abstract class that contains informations regarding permissions to run a specific function. Used through [Perms.call] */
+abstract class PermissionContainer(
+    /** Required permissions needed for the function that will be asked for (if not already granted) */
+    val perms: List<String>,
+    /** Optional permissions for the function that will be asked for (if not already granted). If denied, the function will be called anyway */
+    val optionalPerms: List<String> = ArrayList(),
+    /** String for the rationale to show after denying required permissions, to show the user why permissions are needed. If null [onShowRationale] will be called */
+    val rationaleId: Int? = null,
+    /** String for the message to show when the user chooses "Don't ask again" when denying required permissions. If null, [onPermanentlyDenied] will be called */
+    val permanentlyDeniedId: Int? = null
+) {
+    /** Called in case one or more of [perms] or [optionalPerms] were previously denied and the app should show a rationale */
+    fun onShowRationale(perms: Array<String>, activity: Activity, requestCode: Int) {}
+
+    /** Called if "Don't ask again" was checked when denying a permission, with all permanently denied permissions and permissions needing the rationale to show.
+     * Permanently denied permissions will never include [optionalPerms] */
+    fun onPermanentlyDenied(permanentlyDeniedPerms: Array<String>, showRationalePerms: Array<String>, activity: Activity, requestCode: Int) {}
 }
