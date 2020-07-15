@@ -39,6 +39,14 @@ object Perms {
     fun hasPermissions(vararg perms: String): Boolean =
         perms.all { ActivityCompat.checkSelfPermission(applicationContext, it) == PackageManager.PERMISSION_GRANTED }
 
+    /** Checks if all [perms] are granted. Return true only if all of them are granted */
+    fun hasPermissions(perms: Collection<String>): Boolean =
+        perms.all { ActivityCompat.checkSelfPermission(applicationContext, it) == PackageManager.PERMISSION_GRANTED }
+
+    /** Checks if all [perms] are granted. Return true only if all of them are granted */
+    fun hasPermissions(perms: List<String>): Boolean =
+        perms.all { ActivityCompat.checkSelfPermission(applicationContext, it) == PackageManager.PERMISSION_GRANTED }
+
 
 
 
@@ -92,7 +100,9 @@ object Perms {
      * permissions passed multiple times will be ignored. Optional permissions already included in needed permissions will be ignored. */
     fun call(perms: List<String>, rationaleId: Int, onPermanentlyDenied: (permanentlyDeniedPerms: Array<String>, showRationalePerms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
              optionalPerms: List<String> = ArrayList(), f: () -> Unit) {
-        call(perms, rationaleId, onPermanentlyDenied, optionalPerms, f)
+        call(perms,
+            { permissions, activity, requestCode -> Msg.ad(rationaleId).negative(android.R.string.cancel).onOk(android.R.string.ok) { ActivityCompat.requestPermissions(activity, permissions, requestCode) }.show(activity) },
+            onPermanentlyDenied, optionalPerms, f)
     }
 
 
@@ -104,7 +114,12 @@ object Perms {
     fun call(perms: List<String>,
              onShowRationale: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
              permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit) {
-        call(perms, onShowRationale, permanentlyDeniedId, optionalPerms, f)
+        call(perms, onShowRationale, { permanentlyDeniedPerms, showRationalePerms, activity, requestCode ->
+            Msg.alertDialog().message(permanentlyDeniedId).negative(android.R.string.cancel).onOk(android.R.string.ok) {
+                val intent = Intent(ACTION_APPLICATION_DETAILS_SETTINGS).setData(fromParts("package", activity.packageName, null))
+                activity.startActivityForResult(intent, requestCode)
+            }.show(activity)
+        }, optionalPerms, f)
     }
 
 
@@ -114,7 +129,14 @@ object Perms {
      * [optionalPerms] are asked together with [perms], but if they are always denied they are simply ignored and don't show any message
      * permissions passed multiple times will be ignored. Optional permissions already included in needed permissions will be ignored. */
     fun call(perms: List<String>, rationaleId: Int, permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit) {
-        call(perms, rationaleId, permanentlyDeniedId, optionalPerms, f)
+        call(perms,
+            { permissions, activity, requestCode -> Msg.ad(rationaleId).negative(android.R.string.cancel).onOk(android.R.string.ok) { ActivityCompat.requestPermissions(activity, permissions, requestCode) }.show(activity) },
+            { permanentlyDeniedPerms, showRationalePerms, activity, requestCode ->
+            Msg.ad(permanentlyDeniedId).negative(android.R.string.cancel).onOk(android.R.string.ok) {
+                val intent = Intent(ACTION_APPLICATION_DETAILS_SETTINGS).setData(fromParts("package", activity.packageName, null))
+                activity.startActivityForResult(intent, requestCode)
+            }.show(activity)
+        }, optionalPerms, f)
     }
 
 
