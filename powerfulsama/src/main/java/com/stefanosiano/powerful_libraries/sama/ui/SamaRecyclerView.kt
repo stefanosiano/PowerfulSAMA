@@ -24,7 +24,7 @@ open class SamaRecyclerView: RecyclerView {
     private var inconsistencyWorkaround = true
     private var disableAdapterAutoStop = false
     private var horizontal = false
-    private var autoDetach = true
+    private var autoDetach = false
     private var columns = 0
 
     private val spans = SparseIntArray()

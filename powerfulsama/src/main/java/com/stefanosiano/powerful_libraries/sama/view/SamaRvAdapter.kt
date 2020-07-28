@@ -162,15 +162,33 @@ open class SamaRvAdapter(
         return SimpleViewHolder(view)
     }
 
+    /** Function that binds the item to the view holder, calling appropriate methods in the right order */
     override fun onBindViewHolder(holder: SimpleViewHolder, position: Int) {
         val item = getItem(position) ?: return
         runBlocking { bindListJob?.join() }
-        val bindJob = item.launch {
-            holder.binding.get()?.root?.let { item.root = WeakReference(it) }
-            holder.binding.get()?.setVariable(itemBindingId, item)
+        holder.binding.get()?.root?.let { item.root = WeakReference(it) }
+        holder.binding.get()?.setVariable(itemBindingId, item)
+
+        item.adapterPosition = holder.adapterPosition
+        item.adapterSpannedPosition = if(recyclerViewColumnCount == 1 || holder.adapterPosition == 0) holder.adapterPosition else
+            (getItem(holder.adapterPosition-1)?.adapterSpannedPosition?.plus(spannedSizes.get(holder.adapterPosition-1, 1))) ?: holder.adapterPosition
+        item.adapterSize = itemCount
+        item.adapterColumnCount = recyclerViewColumnCount
+        item.adapter = WeakReference(this)
+        if(item is SamaMutableListItem<*>) {
+            val bound = mutableBoundItems.get(getItemStableId(item)) ?: item.newBoundItem().also { mutableBoundItems.put(getItemStableId(item), it) }
+
+            item.mEditBoundItem = { mutableBoundItems.put(getItemStableId(item), it) }
+            item.bind(bound, passedObjects)
         }
-        bindItemToViewHolder(bindJob, item, holder.adapterPosition)
+        else
+            item.onBind(passedObjects)
+
+        item.setPostActionListener { action, item2, data -> itemUpdatedListeners.forEach { it.invoke(action, item2, data) } }
+        item.onStart()
     }
+
+
 
     override fun onViewDetachedFromWindow(holder: SimpleViewHolder) {
         super.onViewDetachedFromWindow(holder)
@@ -184,29 +202,6 @@ open class SamaRvAdapter(
         val item = getItem(holder.adapterPosition) ?: return
         item.onStart()
         lazyInit(item)
-    }
-
-    /** Function that binds the item to the view holder, calling appropriate methods in the right order */
-    private fun bindItemToViewHolder(job: Job?, listItem: SamaListItem?, adapterPosition: Int){
-        listItem ?: return
-        runBlocking(listItem.coroutineContext) { job?.join() }
-        listItem.adapterPosition = adapterPosition
-        listItem.adapterSpannedPosition = if(recyclerViewColumnCount == 1 || adapterPosition == 0) adapterPosition else
-            (getItem(adapterPosition-1)?.adapterSpannedPosition?.plus(spannedSizes.get(adapterPosition-1, 1))) ?: adapterPosition
-        listItem.adapterSize = itemCount
-        listItem.adapterColumnCount = recyclerViewColumnCount
-        listItem.adapter = WeakReference(this)
-        if(listItem is SamaMutableListItem<*>) {
-            val bound = mutableBoundItems.get(getItemStableId(listItem)) ?: listItem.newBoundItem().also { mutableBoundItems.put(getItemStableId(listItem), it) }
-
-            listItem.mEditBoundItem = { mutableBoundItems.put(getItemStableId(listItem), it) }
-            listItem.bind(bound, passedObjects)
-        }
-        else
-            listItem.onBind(passedObjects)
-
-        listItem.setPostActionListener { action, item, data -> itemUpdatedListeners.forEach { it.invoke(action, item, data) } }
-        listItem.onStart()
     }
 
 
@@ -269,7 +264,6 @@ open class SamaRvAdapter(
             if (!isActive) return@launch
             onLoadStarted?.invoke()
             if (forceReload) {
-                if (!isActive) return@launch
                 lazyInitializedItemCacheMap.clear()
                 runOnUi {
                     items.forEach { it.onDestroy() }
@@ -282,7 +276,6 @@ open class SamaRvAdapter(
                 }
             } else {
                 val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
-                if (!isActive) return@launch
 
                 recyclerView?.get()?.also {
                     //I have to stop the scrolling if the new list has less items then current item list
@@ -292,7 +285,6 @@ open class SamaRvAdapter(
                             it.stopScroll()
                     }
                 }
-                if (!isActive) return@launch
                 runOnUi {
                     items.clear()
                     items = list.mapTo(ObservableArrayList(), {
@@ -318,7 +310,6 @@ open class SamaRvAdapter(
     @Synchronized private fun startLazyInits() {
         lazyInitsJob?.cancel()
         lazyInitsJob = launch {
-            if(!isActive) return@launch
             if(!preserveLazyInitializedItemCache)
                 lazyInitializedItemCacheMap.clear()
             items.filter { it.isLazyInitialized() }.forEach { lazyInitializedItemCacheMap.put(getItemStableId(it), it) }
@@ -404,7 +395,6 @@ open class SamaRvAdapter(
         this.items.removeOnListChangedCallback(onListChangedCallback)
         bindListJob?.cancel()
         bindListJob = launch {
-            if (!isActive) return@launch
             onLoadStarted?.invoke()
 
             recyclerView?.get()?.also {
