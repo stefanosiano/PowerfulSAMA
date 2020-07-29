@@ -61,6 +61,10 @@ abstract class SamaDialogFragment<T>(
 
     protected var dialogFragment: SimpleSamaDialogFragment? = SimpleSamaDialogFragment.new(getDialogLayout(), true).with(getDialogDataBindingId(), this)
 
+    internal fun clearDialogFragmentInternal() { dialogFragment = null }
+    internal fun getDialogFragmentInternal() = dialogFragment
+    internal fun getUidInternal() = uid
+
     /** Restore previous data from events like device rotating when a dialog is shown. The [dialogFragment] in [oldDialog] is null */
     abstract fun restore(oldDialog: T)
 
@@ -68,16 +72,20 @@ abstract class SamaDialogFragment<T>(
         val map = SparseArray<SamaDialogFragment<*>>()
     }
 
-    /** Call this in init{} method of subclass */
-    fun checkRestart() {
-        PowerfulSama.getCurrentActivity()?.let { act -> (map.get(uid, null) as? T)?.let { t ->
+    internal fun restore(activity: SamaActivity) {
+        (map.get(uid, null) as? T)?.let { t ->
             restore(t)
-            if(act is SamaActivity)
-                show(act)
+            if(autoRestore()) {
+                show(activity)
+                map.remove(uid)
+            }
             else
                 map.remove(uid)
-        } }
+        }
     }
+
+    /** Returns whether this dialog should reopen itself on activity resume after device was rotated. Defaults to true */
+    open fun autoRestore(): Boolean = true
 
     /** Return the layout used to create the dialog fragment. Defaults to [layoutId] of constructor */
     protected open fun getDialogLayout(): Int = layoutId
@@ -90,13 +98,14 @@ abstract class SamaDialogFragment<T>(
         dialogFragment?.show(activity.supportFragmentManager)
         map.put(uid, this)
         activity.registerSamaCallback( SamaActivityCallback(
-            onCreate = { act -> (map.get(uid, null) as? T)?.let { t -> t.restore(t); t.show(act) } },
             onSaveInstanceState = { act ->
                 if(dialogFragment?.isAdded == true && map.get(uid, null) != null) {
                     dismiss()
                     dialogFragment = null
                     if(act.isChangingConfigurations)
                         map.put(uid, this)
+                    else
+                        map.remove(uid)
                 }
                 else
                     dismiss()

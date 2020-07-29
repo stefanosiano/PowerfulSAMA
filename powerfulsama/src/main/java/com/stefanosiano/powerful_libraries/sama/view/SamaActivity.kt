@@ -114,6 +114,27 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     internal fun registerSamaCallback(cb: SamaActivityCallback) = synchronized(registeredCallbacks) { registeredCallbacks.add(cb) }
     internal fun unregisterSamaCallback(cb: SamaActivityCallback) = synchronized(registeredCallbacks) { registeredCallbacks.remove(cb) }
 
+    /** Manages a dialogFragment, making it restore and show again if it was dismissed due to device rotation */
+    fun <T> manageDialog(f: () -> T) where T: SamaDialogFragment<*> {
+        val dialog = f()
+        registerSamaCallback(
+            SamaActivityCallback(
+            onResume = { dialog.restore(this) },
+            onSaveInstanceState = {
+                if(dialog.getDialogFragmentInternal()?.isAdded == true && SamaDialogFragment.map.get(dialog.getUidInternal(), null) != null) {
+                    dialog.dismiss()
+                    dialog.clearDialogFragmentInternal()
+                    if(isChangingConfigurations)
+                        SamaDialogFragment.map.put(dialog.getUidInternal(), dialog)
+                    else
+                        SamaDialogFragment.map.remove(dialog.getUidInternal())
+                }
+                else
+                    dialog.dismiss()
+            }
+        ))
+    }
+
     /** Initializes the toolbar leaving the default title */
     protected fun initActivity() = initActivity("")
 
