@@ -50,13 +50,13 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         logVerbose("onCreate")
-        registeredCallbacks.forEach { it.onCreate(this) }
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onCreate(this) } }
     }
 
     override fun onResume() {
         super.onResume()
         logVerbose("onResume")
-        registeredCallbacks.forEach { it.onResume(this) }
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onResume(this) } }
     }
 
     override fun onStart() {
@@ -73,13 +73,13 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         synchronized(observables) { observables.filter { !it.registered }.forEach { it.registered = true; it.ob.addOnPropertyChangedCallback(it.callback); launch { it.f() } } }
         synchronized(listObservables) { listObservables.filter { !it.registered }.forEach { it.registered = true; it.ob.addOnListChangedCallback(it.callback); launch { it.f() } } }
         synchronized(registeredViewModels) { registeredViewModels.forEach { it.restartObserving() } }
-        registeredCallbacks.forEach { it.onStart(this) }
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onStart(this) } }
     }
 
     override fun onPause() {
         super.onPause()
         logVerbose("onPause")
-        registeredCallbacks.forEach { it.onPause(this) }
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onPause(this) } }
     }
 
     override fun onStop() {
@@ -90,7 +90,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         synchronized(observables) { observables.filter { it.registered }.forEach { it.registered = false; it.ob.removeOnPropertyChangedCallback(it.callback) } }
         synchronized(listObservables) { listObservables.filter { it.registered }.forEach { it.registered = false; it.ob.removeOnListChangedCallback(it.callback) } }
         synchronized(registeredViewModels) { registeredViewModels.forEach { it.stopObserving() } }
-        registeredCallbacks.forEach { it.onStop(this) }
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onStop(this) } }
     }
 
     override fun onDestroy() {
@@ -102,18 +102,17 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         listObservables.clear()
         registeredViewModels.clear()
         coroutineContext.cancel()
-        registeredCallbacks.forEach { it.onDestroy(this) }
-        registeredCallbacks.clear()
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onDestroy(this) }; registeredCallbacks.clear() }
     }
 
 
     override fun onSaveInstanceState(outState: Bundle) {
-        registeredCallbacks.forEach { it.onSaveInstanceState(this) }
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onSaveInstanceState(this) } }
         super.onSaveInstanceState(outState)
     }
 
-    internal fun registerSamaCallback(cb: SamaActivityCallback) = registeredCallbacks.add(cb)
-    internal fun unregisterSamaCallback(cb: SamaActivityCallback) = registeredCallbacks.remove(cb)
+    internal fun registerSamaCallback(cb: SamaActivityCallback) = synchronized(registeredCallbacks) { registeredCallbacks.add(cb) }
+    internal fun unregisterSamaCallback(cb: SamaActivityCallback) = synchronized(registeredCallbacks) { registeredCallbacks.remove(cb) }
 
     /** Initializes the toolbar leaving the default title */
     protected fun initActivity() = initActivity("")
