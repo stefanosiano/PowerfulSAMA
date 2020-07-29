@@ -78,9 +78,6 @@ open class SamaRvAdapter(
     /** Map that link string ids to unique long numbers, to use as stableId */
     private val maxId = AtomicLong(0)
 
-    /** Job used to bind the item list in the background */
-    private var bindListJob: Job? = null
-
     /** Function to be called when the liveData changes. It will reload the list */
     private val liveDataObserver = Observer<List<SamaListItem>> { if(it != null) bindItems(it, false) }
 
@@ -165,7 +162,6 @@ open class SamaRvAdapter(
     /** Function that binds the item to the view holder, calling appropriate methods in the right order */
     override fun onBindViewHolder(holder: SimpleViewHolder, position: Int) {
         val item = getItem(position) ?: return
-        runBlocking { bindListJob?.join() }
         holder.binding.get()?.root?.let { item.root = WeakReference(it) }
         holder.binding.get()?.setVariable(itemBindingId, item)
 
@@ -228,22 +224,19 @@ open class SamaRvAdapter(
         isPaged = false
         isObservableList = true
         lazyInitializedItemCacheMap.clear()
-        bindListJob?.cancel()
-        bindListJob = launch {
-            onLoadStarted?.invoke()
-            runOnUi {
-                items.removeOnListChangedCallback(onListChangedCallback)
-                items.clear()
-                items = list as ObservableList<SamaListItem>
-                items.addOnListChangedCallback(onListChangedCallback)
-                itemRangeInserted(0, list.size)
-                onLoadFinished?.invoke()
-                if(justRestarted) {
-                    launch { notifyDataSetChangedUi() }
-                    justRestarted = false
-                }
-                startLazyInits()
+        launch { onLoadStarted?.invoke() }
+        runOnUi {
+            items.removeOnListChangedCallback(onListChangedCallback)
+            items.clear()
+            items = list as ObservableList<SamaListItem>
+            items.addOnListChangedCallback(onListChangedCallback)
+            itemRangeInserted(0, list.size)
+            onLoadFinished?.invoke()
+            if(justRestarted) {
+                launch { notifyDataSetChangedUi() }
+                justRestarted = false
             }
+            startLazyInits()
         }
         return this
     }
@@ -259,47 +252,43 @@ open class SamaRvAdapter(
         isPaged = false
         isObservableList = false
         this.items.removeOnListChangedCallback(onListChangedCallback)
-        bindListJob?.cancel()
-        bindListJob = launch {
-            if (!isActive) return@launch
-            onLoadStarted?.invoke()
-            if (forceReload) {
-                lazyInitializedItemCacheMap.clear()
-                runOnUi {
-                    items.forEach { it.onDestroy() }
-                    items.clear()
-                    runBlocking { notifyDataSetChangedUi() }
-                    items.addAll(list)
-                    launch { notifyDataSetChangedUi() }
-                    onLoadFinished?.invoke()
-                    startLazyInits()
-                }
-            } else {
-                val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
+        launch { onLoadStarted?.invoke() }
+        if (forceReload) {
+            lazyInitializedItemCacheMap.clear()
+            runOnUi {
+                items.forEach { it.onDestroy() }
+                items.clear()
+                runBlocking { notifyDataSetChangedUi() }
+                items.addAll(list)
+                launch { notifyDataSetChangedUi() }
+                onLoadFinished?.invoke()
+                startLazyInits()
+            }
+        } else {
+            val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
 
-                recyclerView?.get()?.also {
-                    //I have to stop the scrolling if the new list has less items then current item list
-                    if(items.size > list.size) {
-                        val firstPos = (it.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition() ?: items.size
-                        if(firstPos > list.size)
-                            it.stopScroll()
-                    }
+            recyclerView?.get()?.also {
+                //I have to stop the scrolling if the new list has less items then current item list
+                if(items.size > list.size) {
+                    val firstPos = (it.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition() ?: items.size
+                    if(firstPos > list.size)
+                        it.stopScroll()
                 }
-                runOnUi {
-                    items.clear()
-                    items = list.mapTo(ObservableArrayList(), {
-                        val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
-                        if(itemCached?.contentEquals(it) == true) itemCached
-                        else { itemCached?.onDestroy(); it }
-                    })
-                    diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
-                    onLoadFinished?.invoke()
-                    if(justRestarted) {
-                        launch { notifyDataSetChangedUi() }
-                        justRestarted = false
-                    }
-                    startLazyInits()
+            }
+            runOnUi {
+                items.clear()
+                items = list.mapTo(ObservableArrayList(), {
+                    val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
+                    if(itemCached?.contentEquals(it) == true) itemCached
+                    else { itemCached?.onDestroy(); it }
+                })
+                diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
+                onLoadFinished?.invoke()
+                if(justRestarted) {
+                    launch { notifyDataSetChangedUi() }
+                    justRestarted = false
                 }
+                startLazyInits()
             }
         }
 
@@ -361,7 +350,6 @@ open class SamaRvAdapter(
         logDebug("Stop observing liveData in adapter")
         liveDataObserversStopped = true
         runOnUi {
-            bindListJob?.cancel()
             lazyInitsJob?.cancel()
             if(isObservableList) items.removeOnListChangedCallback(onListChangedCallback)
             liveDataPagedItems?.removeObserver(pagedLiveDataObserver)
@@ -393,32 +381,27 @@ open class SamaRvAdapter(
         isPaged = true
         isObservableList = false
         this.items.removeOnListChangedCallback(onListChangedCallback)
-        bindListJob?.cancel()
-        bindListJob = launch {
-            onLoadStarted?.invoke()
-
-            recyclerView?.get()?.also {
-                //I have to stop the scrolling if the new list has less items then current item list
-                if(itemCount > list.size) {
-                    val firstPos = (it.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition() ?: items.size
-                    if(firstPos > list.size)
-                        it.stopScroll()
-                }
+        launch { onLoadStarted?.invoke() }
+        recyclerView?.get()?.also {
+            //I have to stop the scrolling if the new list has less items then current item list
+            if(itemCount > list.size) {
+                val firstPos = (it.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition() ?: items.size
+                if(firstPos > list.size)
+                    it.stopScroll()
             }
+        }
 
-            if (!isActive) return@launch
-            items.clear()
-            lazyInitializedItemCacheMap.clear()
-            runOnUi {
-                mDiffer.submitList(list as PagedList<SamaListItem>) {
-                    items = list.filterNotNull<SamaListItem>().mapTo(ObservableArrayList()) { it }
-                    onLoadFinished?.invoke()
-                    if(justRestarted) {
-                        launch { notifyDataSetChangedUi() }
-                        justRestarted = false
-                    }
-                    startLazyInits()
+        items.clear()
+        lazyInitializedItemCacheMap.clear()
+        runOnUi {
+            mDiffer.submitList(list as PagedList<SamaListItem>) {
+                items = list.filterNotNull<SamaListItem>().mapTo(ObservableArrayList()) { it }
+                onLoadFinished?.invoke()
+                if(justRestarted) {
+                    launch { notifyDataSetChangedUi() }
+                    justRestarted = false
                 }
+                startLazyInits()
             }
         }
 

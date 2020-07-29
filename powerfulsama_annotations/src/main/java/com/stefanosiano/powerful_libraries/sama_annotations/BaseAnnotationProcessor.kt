@@ -1,5 +1,6 @@
 package com.stefanosiano.powerful_libraries.sama_annotations
 
+import asTypeElement
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.jetbrains.annotations.Nullable
@@ -12,6 +13,7 @@ import javax.lang.model.type.TypeMirror
 import javax.tools.Diagnostic
 import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
 import kotlin.reflect.jvm.internal.impl.name.FqName
+import kotlin.reflect.jvm.internal.impl.types.TypeUtils
 
 abstract class BaseAnnotationProcessor : AbstractProcessor() {
 
@@ -32,9 +34,9 @@ abstract class BaseAnnotationProcessor : AbstractProcessor() {
     protected fun getModuleDir() = getGenDir().substringBeforeLast("/build")
 
 
-    protected fun logw(message: String) { messager.printMessage(Diagnostic.Kind.WARNING, message) }
-    protected fun logn(message: String) { messager.printMessage(Diagnostic.Kind.NOTE, message) }
-    protected fun loge(message: String) { messager.printMessage(Diagnostic.Kind.ERROR, message) }
+    protected fun logw(message: String) { messager.printMessage(Diagnostic.Kind.WARNING, "$message\n") }
+    protected fun logn(message: String) { messager.printMessage(Diagnostic.Kind.NOTE, "$message\n") }
+    protected fun loge(message: String) { messager.printMessage(Diagnostic.Kind.ERROR, "$message\n") }
 
     /** Return the kotlin type of the this variable */
     protected fun VariableElement.toKotlinType(): TypeName {
@@ -74,7 +76,14 @@ abstract class BaseAnnotationProcessor : AbstractProcessor() {
      * If the annotation is not present, or the targetClass is Unit, it returns the typeMirror of this element class */
     fun TypeElement.getClassOrTargetClass(): TypeMirror = try { processingEnv.elementUtils.getTypeElement(qualifiedName).asType() } catch (e: MirroredTypeException) { e.typeMirror }
 
-    fun Element.isAssignable(tm: TypeMirror): Boolean = processingEnv.typeUtils.isAssignable(this.asType(), tm)
+    fun Element.isAssignable(qualifiedName: String, generics: Int = 0): Boolean =
+        isAssignable(processingEnv.elementUtils.getTypeElement(qualifiedName).asType(), generics)
+
+    fun Element.isAssignable(tm: TypeMirror, generics: Int = 0): Boolean {
+        val geners = (0 until generics).map { processingEnv.typeUtils.getWildcardType(null, null) }
+        val declaredType = processingEnv.typeUtils.getDeclaredType(tm.asTypeElement(), *geners.toTypedArray())
+        return processingEnv.typeUtils.isAssignable(this.asType(), declaredType)
+    }
 
 }
 

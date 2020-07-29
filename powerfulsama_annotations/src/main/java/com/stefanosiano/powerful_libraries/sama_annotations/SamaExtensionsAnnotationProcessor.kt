@@ -28,6 +28,7 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
 
         val functions = ArrayList<FunSpec>()
         functions.addAll(addDefaultContentEquals(roundEnv))
+        functions.addAll(addDefaultRestore(roundEnv))
 
         if(annotation.observePowerfulSharedPreference)
             functions.addAll(addPowerfulPreferenceLiveDataObserve(roundEnv))
@@ -73,6 +74,44 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
             function.addStatement("\telse -> true")
                 .addStatement("}")
                 .addStatement("return ret")
+
+            functions.add(function.build())
+        }
+        return functions
+    }
+
+
+    /** Add SamaListItems default contentEquals() implementations as extension functions */
+    private fun addDefaultRestore(roundEnv: RoundEnvironment): ArrayList<FunSpec> {
+        val functions = ArrayList<FunSpec>()
+
+        //todo add annotation to ignore class/field from defaultRestore and defaultEquals!
+        val dialogFragmentType = processingEnv.elementUtils.getTypeElement("com.stefanosiano.powerful_libraries.sama.view.SamaDialogFragment")
+        roundEnv.rootElements.filter { it.kind == ElementKind.CLASS && it.isAssignable(dialogFragmentType.asType(), 1) && !it.modifiers.contains(Modifier.ABSTRACT) }.forEach { cls ->
+            if (cls !is TypeElement) return@forEach
+
+            val function = FunSpec.builder("defaultRestore").receiver(getKotlinType(cls.qualifiedName.toString()))
+
+            function.addParameter(ParameterSpec.builder("oldDialog", cls.asType().toKotlinType()).build())
+                .addKdoc(" %S ", "Restore previous data from events like device rotating when a dialog is shown. The [dialogFragment] in [oldDialog] is null")
+
+            cls.enclosedElements.filter { it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && !it.modifiers.contains(Modifier.STATIC) }.map { it as VariableElement }.forEach { v ->
+                when {
+                    v.isAssignable("androidx.databinding.ObservableInt") ||
+                    v.isAssignable("androidx.databinding.ObservableShort") ||
+                    v.isAssignable("androidx.databinding.ObservableLong") ||
+                    v.isAssignable("androidx.databinding.ObservableFloat") ||
+                    v.isAssignable("androidx.databinding.ObservableDouble") ||
+                    v.isAssignable("androidx.databinding.ObservableBoolean") ||
+                    v.isAssignable("androidx.databinding.ObservableByte") ||
+                    v.isAssignable("androidx.databinding.ObservableField", 1) ->
+                        function.addStatement("\tthis.${v.simpleName}.set(oldDialog.${v.simpleName}.get())")
+
+                    v.modifiers.contains(Modifier.FINAL) ->
+                        function.addStatement("\t//this.${v.simpleName} = oldDialog.${v.simpleName} --> Commented due to val field")
+                    else -> function.addStatement("\tthis.${v.simpleName} = oldDialog.${v.simpleName}")
+                }
+            }
 
             functions.add(function.build())
         }
