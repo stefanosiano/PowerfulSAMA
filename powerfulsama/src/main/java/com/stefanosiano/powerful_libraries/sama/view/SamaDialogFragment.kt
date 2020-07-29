@@ -68,7 +68,8 @@ abstract class SamaDialogFragment<T>(
         val map = SparseArray<SamaDialogFragment<*>>()
     }
 
-    init {
+    /** Call this in init{} method of subclass */
+    fun checkRestart() {
         PowerfulSama.getCurrentActivity()?.let { act -> (map.get(uid, null) as? T)?.let { t ->
             restore(t)
             if(act is SamaActivity)
