@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.util.SparseArray
 import androidx.databinding.*
 import androidx.databinding.Observable
 import androidx.lifecycle.LifecycleOwner
@@ -335,6 +336,12 @@ inline fun <T> tryOrPrint(default: T, toTry: () -> T): T { return try { toTry() 
 
 /** Try to execute [toTry] in a try catch block, prints the exception and returns [null] if an exception is raised */
 inline fun <T> tryOrPrint(toTry: () -> T): T? { return try { toTry() } catch (e: Exception) { e.printStackTrace(); null } }
+
+/** Run a function for each element in this SparseArray */
+fun <T> SparseArray<T>.forEach(f: (T) -> Unit) {
+    for (i in 0 until size())
+        f(valueAt(i))
+}
 
 /** Gets an enum from a string through enumValueOf<T>(). Useful to use in [string?.toEnum<>() ?: default] */
 inline fun <reified T : Enum<T>> String.toEnum(default: T) : T = try{ enumValueOf(this) } catch (e: Exception) { default }

@@ -72,16 +72,27 @@ abstract class SamaDialogFragment<T>(
         val map = SparseArray<SamaDialogFragment<*>>()
     }
 
-    internal fun restore(activity: SamaActivity) {
+    internal fun onResumeRestore(activity: SamaActivity) {
         (map.get(uid, null) as? T)?.let { t ->
             restore(t)
-            if(autoRestore()) {
+            if(autoRestore())
                 show(activity)
-                map.remove(uid)
-            }
             else
                 map.remove(uid)
         }
+    }
+
+    internal fun onSaveInstanceState(activity: SamaActivity) {
+        if(dialogFragment?.isAdded == true && map.get(uid, null) != null) {
+            dismiss()
+            dialogFragment = null
+            if(activity.isChangingConfigurations)
+                map.put(uid, this)
+            else
+                map.remove(uid)
+        }
+        else
+            dismiss()
     }
 
     /** Returns whether this dialog should reopen itself on activity resume after device was rotated. Defaults to true */
@@ -97,20 +108,6 @@ abstract class SamaDialogFragment<T>(
     open fun show(activity: SamaActivity) {
         dialogFragment?.show(activity.supportFragmentManager)
         map.put(uid, this)
-        activity.registerSamaCallback( SamaActivityCallback(
-            onSaveInstanceState = { act ->
-                if(dialogFragment?.isAdded == true && map.get(uid, null) != null) {
-                    dismiss()
-                    dialogFragment = null
-                    if(act.isChangingConfigurations)
-                        map.put(uid, this)
-                    else
-                        map.remove(uid)
-                }
-                else
-                    dismiss()
-            }
-        ) )
     }
 
     /** Dismiss the dialog through [dismissAllowingStateLoss] */

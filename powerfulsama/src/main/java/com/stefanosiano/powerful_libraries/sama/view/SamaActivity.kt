@@ -4,6 +4,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
 import android.os.PersistableBundle
+import android.util.SparseArray
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.*
@@ -38,6 +39,8 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
     private val registeredCallbacks = ArrayList<SamaActivityCallback>()
 
+    private val managedDialogs = SparseArray<SamaDialogFragment<*>>()
+
     /** flag to know if the activity was stopped */
     private var isStopped = false
 
@@ -50,13 +53,14 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         logVerbose("onCreate")
-        synchronized(registeredCallbacks) { registeredCallbacks.iterate { it.onCreate(this) } }
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onCreate(this) } }
     }
 
     override fun onResume() {
         super.onResume()
         logVerbose("onResume")
-        synchronized(registeredCallbacks) { registeredCallbacks.iterate { it.onResume(this) } }
+        synchronized(managedDialogs) { managedDialogs.forEach { it.onResumeRestore(this) } }
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onResume(this) } }
     }
 
     override fun onStart() {
@@ -73,13 +77,13 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         synchronized(observables) { observables.filter { !it.registered }.forEach { it.registered = true; it.ob.addOnPropertyChangedCallback(it.callback); launch { it.f() } } }
         synchronized(listObservables) { listObservables.filter { !it.registered }.forEach { it.registered = true; it.ob.addOnListChangedCallback(it.callback); launch { it.f() } } }
         synchronized(registeredViewModels) { registeredViewModels.forEach { it.restartObserving() } }
-        synchronized(registeredCallbacks) { registeredCallbacks.iterate { it.onStart(this) } }
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onStart(this) } }
     }
 
     override fun onPause() {
         super.onPause()
         logVerbose("onPause")
-        synchronized(registeredCallbacks) { registeredCallbacks.iterate { it.onPause(this) } }
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onPause(this) } }
     }
 
     override fun onStop() {
@@ -90,7 +94,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         synchronized(observables) { observables.filter { it.registered }.forEach { it.registered = false; it.ob.removeOnPropertyChangedCallback(it.callback) } }
         synchronized(listObservables) { listObservables.filter { it.registered }.forEach { it.registered = false; it.ob.removeOnListChangedCallback(it.callback) } }
         synchronized(registeredViewModels) { registeredViewModels.forEach { it.stopObserving() } }
-        synchronized(registeredCallbacks) { registeredCallbacks.iterate { it.onStop(this) } }
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onStop(this) } }
     }
 
     override fun onDestroy() {
@@ -100,14 +104,16 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         observables.clear()
         synchronized(listObservables) { listObservables.forEach { it.registered = false; it.ob.removeOnListChangedCallback(it.callback) } }
         listObservables.clear()
-        synchronized(registeredCallbacks) { registeredCallbacks.iterate { it.onDestroy(this) }; registeredCallbacks.clear() }
+        managedDialogs.clear()
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onDestroy(this) }; registeredCallbacks.clear() }
         registeredViewModels.clear()
         coroutineContext.cancel()
     }
 
 
     override fun onSaveInstanceState(outState: Bundle) {
-        synchronized(registeredCallbacks) { registeredCallbacks.iterate { it.onSaveInstanceState(this) } }
+        synchronized(managedDialogs) { managedDialogs.forEach { it.onSaveInstanceState(this) } }
+        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onSaveInstanceState(this) } }
         super.onSaveInstanceState(outState)
     }
 
@@ -115,25 +121,8 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     internal fun unregisterSamaCallback(cb: SamaActivityCallback) = synchronized(registeredCallbacks) { registeredCallbacks.remove(cb) }
 
     /** Manages a dialogFragment, making it restore and show again if it was dismissed due to device rotation */
-    fun <T> manageDialog(f: () -> T) where T: SamaDialogFragment<*> {
-        val dialog = f()
-        registerSamaCallback(
-            SamaActivityCallback(
-            onResume = { dialog.restore(this) },
-            onSaveInstanceState = {
-                if(dialog.getDialogFragmentInternal()?.isAdded == true && SamaDialogFragment.map.get(dialog.getUidInternal(), null) != null) {
-                    dialog.dismiss()
-                    dialog.clearDialogFragmentInternal()
-                    if(isChangingConfigurations)
-                        SamaDialogFragment.map.put(dialog.getUidInternal(), dialog)
-                    else
-                        SamaDialogFragment.map.remove(dialog.getUidInternal())
-                }
-                else
-                    dialog.dismiss()
-            }
-        ))
-    }
+    fun <T> manageDialog(f: () -> T): T where T: SamaDialogFragment<*> =
+        f().also { dialog -> managedDialogs.put(dialog.getUidInternal(), dialog) }
 
     /** Initializes the toolbar leaving the default title */
     protected fun initActivity() = initActivity("")
