@@ -50,14 +50,14 @@ abstract class SamaDialogFragment2(
 
 /** Abstract DialogFragment for all DialogFragments to extend. It includes a dialogFragment usable by subclasses
  * [layoutId] and [dataBindingId] are used to create the underlying dialogFragment.
- * [uid] is used to restore and reopen the dialog if instantiated through [SamaActivity.manageDialog].
+ * [uid] is used to restore and reopen the dialog if instantiated through [SamaActivity.manageDialog] (value -1 is ignored).
  * It's automatically generated based on the class name. Customize it if you have more then 1 of these dialogs at the same time.
  * If you want more control over them override [getDialogLayout] and [getDialogDataBindingId] and/ot [bindingData] */
 abstract class SamaDialogFragment<T>(
     private val layoutId: Int,
     private val dataBindingId: Int,
-    private val uid: Int = uidMap.getOrPut(this::class.java.name) { lastUid.incrementAndGet() },
-    private val bindingData: Any = this
+    private val bindingData: Any = this,
+    private var uid: Int = -1
 ): CoroutineScope where T: SamaDialogFragment<T> {
 
     private val coroutineJob: Job = SupervisorJob()
@@ -66,6 +66,11 @@ abstract class SamaDialogFragment<T>(
     protected var dialogFragment: SimpleSamaDialogFragment? = SimpleSamaDialogFragment.new(getDialogLayout(), true).with(getDialogDataBindingId(), bindingData)
 
     internal fun getUidInternal() = uid
+
+    init {
+        if(uid == -1)
+            uid = uidMap.getOrPut(this::class.java.name) { lastUid.incrementAndGet() }
+    }
 
     /** Restore previous data from events like device rotating when a dialog is shown. The [dialogFragment] in [oldDialog] is null */
     abstract fun restore(oldDialog: T)
