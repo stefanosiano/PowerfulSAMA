@@ -1,7 +1,5 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.util.SparseArray
@@ -39,7 +37,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
     private val registeredCallbacks = ArrayList<SamaActivityCallback>()
 
-    private val managedDialogs = SparseArray<SamaDialogFragment<*>>()
+    private val managedDialog = SparseArray<SamaDialogFragment<*>>()
 
     /** flag to know if the activity was stopped */
     private var isStopped = false
@@ -59,7 +57,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     override fun onResume() {
         super.onResume()
         logVerbose("onResume")
-        synchronized(managedDialogs) { managedDialogs.forEach { it.onResumeRestore(this) } }
+        synchronized(managedDialog) { managedDialog.forEach { it.onResumeRestore(this) } }
         synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onResume(this) } }
     }
 
@@ -104,7 +102,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         observables.clear()
         synchronized(listObservables) { listObservables.forEach { it.registered = false; it.ob.removeOnListChangedCallback(it.callback) } }
         listObservables.clear()
-        managedDialogs.clear()
+        managedDialog.clear()
         synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onDestroy(this) }; registeredCallbacks.clear() }
         registeredViewModels.clear()
         coroutineContext.cancel()
@@ -112,7 +110,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
 
     override fun onSaveInstanceState(outState: Bundle) {
-        synchronized(managedDialogs) { managedDialogs.forEach { it.onSaveInstanceState(this) } }
+        synchronized(managedDialog) { managedDialog.forEach { it.onSaveInstanceState(this) } }
         synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onSaveInstanceState(this) } }
         super.onSaveInstanceState(outState)
     }
@@ -122,7 +120,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
     /** Manages a dialogFragment, making it restore and show again if it was dismissed due to device rotation */
     fun <T> manageDialog(f: () -> T): T where T: SamaDialogFragment<*> =
-        f().also { dialog -> managedDialogs.put(dialog.getUidInternal(), dialog) }
+        f().also { dialog -> managedDialog.put(dialog.getUidInternal(), dialog) }
 
     /** Initializes the toolbar leaving the default title */
     protected fun initActivity() = initActivity("")

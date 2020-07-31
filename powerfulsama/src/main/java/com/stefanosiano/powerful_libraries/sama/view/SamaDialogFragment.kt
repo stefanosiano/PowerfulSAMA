@@ -13,6 +13,7 @@ import com.stefanosiano.powerful_libraries.sama.view.SimpleSamaFragment.Companio
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import java.util.concurrent.atomic.AtomicInteger
 
 
 /** Abstract DialogFragment for all DialogFragments to extend. It includes a dialogFragment usable by subclasses
@@ -49,20 +50,21 @@ abstract class SamaDialogFragment2(
 
 /** Abstract DialogFragment for all DialogFragments to extend. It includes a dialogFragment usable by subclasses
  * [layoutId] and [dataBindingId] are used to create the underlying dialogFragment.
- * If you want more control over them override [getDialogLayout] and [getDialogDataBindingId] */
+ * [uid] is used to restore and reopen the dialog if instantiated through [SamaActivity.manageDialog].
+ * It's automatically generated based on the class name. Customize it if you have more then 1 of these dialogs at the same time.
+ * If you want more control over them override [getDialogLayout] and [getDialogDataBindingId] and/ot [bindingData] */
 abstract class SamaDialogFragment<T>(
     private val layoutId: Int,
     private val dataBindingId: Int,
-    private val uid: Int
+    private val uid: Int = uidMap.getOrPut(this::class.java.name) { lastUid.incrementAndGet() },
+    private val bindingData: Any = this
 ): CoroutineScope where T: SamaDialogFragment<T> {
 
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
-    protected var dialogFragment: SimpleSamaDialogFragment? = SimpleSamaDialogFragment.new(getDialogLayout(), true).with(getDialogDataBindingId(), this)
+    protected var dialogFragment: SimpleSamaDialogFragment? = SimpleSamaDialogFragment.new(getDialogLayout(), true).with(getDialogDataBindingId(), bindingData)
 
-    internal fun clearDialogFragmentInternal() { dialogFragment = null }
-    internal fun getDialogFragmentInternal() = dialogFragment
     internal fun getUidInternal() = uid
 
     /** Restore previous data from events like device rotating when a dialog is shown. The [dialogFragment] in [oldDialog] is null */
@@ -70,6 +72,8 @@ abstract class SamaDialogFragment<T>(
 
     companion object {
         val map = SparseArray<SamaDialogFragment<*>>()
+        val uidMap = HashMap<String, Int>()
+        val lastUid = AtomicInteger(0)
     }
 
     internal fun onResumeRestore(activity: SamaActivity) {
