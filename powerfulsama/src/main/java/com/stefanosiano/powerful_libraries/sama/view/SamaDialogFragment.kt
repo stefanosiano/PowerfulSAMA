@@ -56,14 +56,14 @@ abstract class SamaDialogFragment2(
 abstract class SamaDialogFragment<T>(
     private val layoutId: Int,
     private val dataBindingId: Int,
-    private val bindingData: Any = this,
+    private val bindingData: Any? = null,
     private var uid: Int = -1
 ): CoroutineScope where T: SamaDialogFragment<T> {
 
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
-    protected var dialogFragment: SimpleSamaDialogFragment? = SimpleSamaDialogFragment.new(getDialogLayout(), true).with(getDialogDataBindingId(), bindingData)
+    protected var dialogFragment: SimpleSamaDialogFragment? = SimpleSamaDialogFragment.new(getDialogLayout(), true).with(getDialogDataBindingId(), bindingData ?: this)
 
     internal fun getUidInternal() = uid
 
@@ -102,6 +102,11 @@ abstract class SamaDialogFragment<T>(
         }
         else
             dismiss()
+    }
+
+    internal fun onDestroy(activity: SamaActivity) {
+        if(activity.isFinishing)
+            map.remove(uid)
     }
 
     /** Returns whether this dialog should reopen itself on activity resume after device was rotated. Defaults to true */

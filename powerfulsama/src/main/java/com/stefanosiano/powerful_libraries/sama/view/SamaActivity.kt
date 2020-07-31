@@ -102,6 +102,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         observables.clear()
         synchronized(listObservables) { listObservables.forEach { it.registered = false; it.ob.removeOnListChangedCallback(it.callback) } }
         listObservables.clear()
+        synchronized(managedDialog) { managedDialog.forEach { it.onDestroy(this) } }
         managedDialog.clear()
         synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onDestroy(this) }; registeredCallbacks.clear() }
         registeredViewModels.clear()
