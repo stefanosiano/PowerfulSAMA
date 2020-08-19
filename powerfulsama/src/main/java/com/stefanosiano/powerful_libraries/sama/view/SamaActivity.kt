@@ -46,6 +46,12 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
      * Used to avoid calling the same method multiple times due to observing multiple variables */
     protected var multiObservableDelay: Long = 100L
 
+
+    companion object {
+        /** Request codes used to pass to activity's onRequestPermissionsResult method */
+        internal val samaRequestCodes = AtomicInteger(42000)
+    }
+
 //    private val debugReceiver = SamaDebugReceiver()
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -337,8 +337,7 @@ class Msg private constructor(
     /** Sets the runnable to run right after the message is dismissed */
     fun onDismiss(onDismiss: (Msg) -> Unit): Msg { this.onDismiss = onDismiss; return this }
 
-    @RequiresApi(18)
-    /** Sets whether to lock the orientation while showing the message until it's dismissed.
+    /** Sets whether to lock the orientation while showing the message until it's dismissed. Does nothing if api level < MR2
      * Be sure to check correctness by calling [Activity.setRequestedOrientation] with [ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED].
      * If the activity changed while showing the message, it's possible that the orientation will not be restored after dismissing the message */
     fun lockOrientation(lockOrientation: Boolean): Msg { this.lockOrientation = lockOrientation; return this }

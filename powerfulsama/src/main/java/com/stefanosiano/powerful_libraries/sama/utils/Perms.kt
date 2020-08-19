@@ -24,11 +24,8 @@ object Perms {
     /** Array of helpers for asking permissions */
     private val permHelperMap = SparseArray<PermHelper>()
 
-    /** Request codes used to pass to activity's onRequestPermissionsResult method */
-    private val requestCodes = AtomicInteger(42000)
-
     /** Manages the permissions request results. Activities extending [SamaActivity] already call it */
-    fun onRequestPermissionsResult(activity: Activity, requestCode: Int, permissions: Array<out String>, grantResults: IntArray): Boolean {
+    internal fun onRequestPermissionsResult(activity: Activity, requestCode: Int, permissions: Array<out String>, grantResults: IntArray): Boolean {
         val permHelper = permHelperMap[requestCode] ?: return false
         if(!permHelper.isCallingResult) return false
         permHelperMap.remove(requestCode)
@@ -68,7 +65,7 @@ object Perms {
             return
         }
 
-        val reqCode = requestCodes.incrementAndGet()
+        val reqCode = SamaActivity.samaRequestCodes.incrementAndGet()
         val permHelper = PermHelper(reqCode, optionalPerms.minus(perms).distinct(), onShowRationale, onPermanentlyDenied, f)
         permHelperMap.put(reqCode, permHelper)
         val shouldAsk = permHelper.askPermissions(perms.distinct())
