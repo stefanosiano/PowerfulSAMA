@@ -1,5 +1,6 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.PersistableBundle
 import android.util.SparseArray
@@ -9,9 +10,7 @@ import androidx.databinding.*
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import com.stefanosiano.powerful_libraries.sama.*
-import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
-import com.stefanosiano.powerful_libraries.sama.utils.Perms
-import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
+import com.stefanosiano.powerful_libraries.sama.utils.*
 import com.stefanosiano.powerful_libraries.sama.utils.SamaActivityCallback
 import com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel
 import com.stefanosiano.powerful_libraries.sama.viewModel.VmResponse
@@ -168,6 +167,11 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        Saf.onRequestSafResult(this, requestCode, resultCode, data)
+        super.onActivityResult(requestCode, resultCode, data)
+    }
 
 
 
