@@ -23,6 +23,6 @@ abstract class SamaMutableListItem<T> : SamaListItem() where T: Any {
 
     /** Called to bind the item to the view */
     @Suppress("UNCHECKED_CAST")
-    internal fun bind(bound: Any, initObjects: Map<String, Any>) { this.passedObjects = initObjects; launch { onBind(bound as T) } }
+    internal fun bind(bound: Any, initObjects: Map<String, Any>) { this.passedObjects = initObjects; launchableFunctions.clear(); launch { onBind(bound as T) } }
 
 }

@@ -1,5 +1,6 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
+import android.util.SparseArray
 import android.view.View
 import androidx.databinding.*
 import androidx.recyclerview.widget.RecyclerView
@@ -65,12 +66,17 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore var adapterColumnCount = 1
         internal set
 
-    /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind] */
+    /** Map of objects passed from recyclerView's adapter. Surely set in [onBind] */
     @Ignore internal var passedObjects: Map<String, Any>? = null
-//        internal set
 
-    /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind] */
+    /** Whether the item is started or paused */
     @Ignore private var isStarted = AtomicBoolean(false)
+
+    /** Functions to call after a delay (to avoid doing too many things when users scroll too fast) */
+    @Ignore protected val launchableFunctions = SparseArray<LaunchableFunction>()
+
+    /** Ids used by [launchableFunctions] */
+    @Ignore private val launchableFunctionsUid = AtomicInteger(0)
 
     /** Get the adapter this item is in (may be null) */
     fun getAdapter() = adapter?.get()
@@ -103,11 +109,24 @@ abstract class SamaListItem : CoroutineScope {
     open fun getItemSpanSize(columns: Int) = 1
 
     /** Called when it's bound to the view */
-    internal fun onBind(passedObjects: Map<String, Any>) { this.passedObjects = passedObjects; launch { onBind() } }
+    internal fun onBind(passedObjects: Map<String, Any>) { this.passedObjects = passedObjects; launchableFunctions.clear(); launch { onBind() } }
 
     @Suppress("UNCHECKED_CAST")
     /** Get an item passed from the adapter from its key. Safe to call in [onBind] */
     protected fun <T> getPassed(key: String): T? = passedObjects?.get(key) as? T
+
+    /** Calls a function through [launch] after [millis]. Useful to avoid calculations when user scrolls too fast.
+     * It gets automatically called in [onStart] if not already executed and if [onBind] is not called */
+    fun launchAfter(millis: Long, f: suspend () -> Unit) {
+        launch {
+            val lf = LaunchableFunction(millis, f, launchableFunctionsUid.incrementAndGet())
+            launchableFunctions.put(lf.id, lf)
+            delay(millis)
+            if(!isStarted.get()) return@launch
+            f()
+            synchronized(launchableFunctions) { launchableFunctions.remove(lf.id) }
+        }
+    }
 
     /** Called when it's bound to the view, in background after [onBind] */
     protected open suspend fun onBind() {}
@@ -120,6 +139,12 @@ abstract class SamaListItem : CoroutineScope {
         if(isStarted.getAndSet(true)) return
         synchronized(observables) { observables.asSequence().forEach { tryOrPrint { it.first.addOnPropertyChangedCallback(it.second) } } }
         synchronized(listObservables) { listObservables.forEach { tryOrPrint { it.first.addOnListChangedCallback(it.second) } } }
+        launchableFunctions.forEach { lf -> launch {
+            delay(lf.millis)
+            if(!isStarted.get()) return@launch
+            lf.f()
+            synchronized(launchableFunctions) { launchableFunctions.remove(lf.id) }
+        } }
     }
 
     /** Called when the view is detached from the recyclerview or the adapter is detached. Use it if you need to stop some heavy computation. By default it stops all [observe] methods */
@@ -153,6 +178,9 @@ abstract class SamaListItem : CoroutineScope {
 
     /** Interface that indicates the action of the ListItem sent */
     interface SamaListItemAction
+
+
+
 
 
 
@@ -363,4 +391,12 @@ abstract class SamaListItem : CoroutineScope {
         }
     }
 
+
+
+
+    inner class LaunchableFunction(
+        val millis: Long,
+        val f: suspend () -> Unit,
+        val id: Int
+    )
 }
