@@ -14,6 +14,7 @@ open class SimpleSamaDialogFragment: DialogFragment() {
 
     private var layoutId: Int = 0
     private var fullScreen: Boolean = false
+    private var fullHeight: Boolean = false
     private val bindingPairs: MutableList<Pair<Int, Any>> = ArrayList()
     private var onViewCreated: ((view: View) -> Unit)? = null
     private var onActivityCreated: (() -> Unit)? = null
@@ -24,24 +25,21 @@ open class SimpleSamaDialogFragment: DialogFragment() {
 
         private const val ExtraLayoutId = "ExtraLayoutId"
         private const val ExtraFullScreen = "ExtraFullScreen"
+        private const val ExtraFullHeight = "ExtraFullHeight"
 
         /**
          * Creates a new SimpleSamaDialogFragment
          * @param layoutId The id of the layout to use. (0 means no layout is shown)
+         * @param fullScreen Forces the dialog to be in full width mode
+         * @param fullHeight Forces the dialog to be in full height mode
          */
-        fun new(layoutId: Int): SimpleSamaDialogFragment = new(layoutId, false)
-
-        /**
-         * Creates a new SimpleSamaDialogFragment
-         * @param layoutId The id of the layout to use. (0 means no layout is shown)
-         * @param fullScreen Forces the dialog to be in full screen mode
-         */
-        fun new(layoutId: Int, fullScreen: Boolean): SimpleSamaDialogFragment {
+        fun new(layoutId: Int, fullScreen: Boolean = false, fullHeight: Boolean = false): SimpleSamaDialogFragment {
 
             val fragment = SimpleSamaDialogFragment()
             val bundle = Bundle()
             bundle.putInt(ExtraLayoutId, layoutId)
             bundle.putBoolean(ExtraFullScreen, fullScreen)
+            bundle.putBoolean(ExtraFullHeight, fullHeight)
             fragment.arguments = bundle
             return fragment
         }
@@ -102,6 +100,7 @@ open class SimpleSamaDialogFragment: DialogFragment() {
         logVerbose("onCreate")
         this.layoutId = arguments?.getInt(ExtraLayoutId) ?: 0
         this.fullScreen = arguments?.getBoolean(ExtraFullScreen) ?: false
+        this.fullHeight = arguments?.getBoolean(ExtraFullHeight) ?: false
     }
 
     override fun onResume() {
@@ -112,8 +111,9 @@ open class SimpleSamaDialogFragment: DialogFragment() {
     override fun onStart() {
         super.onStart()
         logVerbose("onStart")
-        if(fullScreen) {
-            dialog?.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+        if(fullScreen || fullHeight) {
+            dialog?.window?.setLayout(if(fullScreen) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT,
+                if(fullHeight) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT)
         }
     }
 

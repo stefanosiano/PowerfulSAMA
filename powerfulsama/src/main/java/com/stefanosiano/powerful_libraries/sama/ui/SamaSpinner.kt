@@ -10,6 +10,7 @@ import androidx.databinding.Observable
 import androidx.databinding.ObservableField
 import com.stefanosiano.powerful_libraries.sama.*
 import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
+import java.lang.ref.WeakReference
 
 
 /**
@@ -26,10 +27,10 @@ open class SamaSpinner : AppCompatSpinner {
     private val currentItem = ObservableField<SimpleSpinnerItem>()
 
     /** Set of observable strings to update when an item is selected. It will contain the key */
-    private val obserablesKeySet: MutableSet<WeakPair<ObservableField<String>, Observable.OnPropertyChangedCallback>> = HashSet()
+    private val obserablesKeySet: MutableList<WeakReference<ObservableField<String>>> = ArrayList()
 
     /** Set of observable strings to update when an item is selected. It will contain the value */
-    private val obserablesValueSet: MutableSet<WeakPair<ObservableField<String>, Observable.OnPropertyChangedCallback>> = HashSet()
+    private val obserablesValueSet: MutableList<WeakReference<ObservableField<String>>> = ArrayList()
 
     constructor(context: Context) : super(context) {}
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {}
@@ -51,8 +52,8 @@ open class SamaSpinner : AppCompatSpinner {
         currentItem.addOnChangedAndNow { item ->
             if(item == null) return@addOnChangedAndNow
             logDebug("Selected item: ${item.key} -> ${item.value}")
-            item.key?.let { k -> obserablesKeySet.forEach { it.first()?.set(k) } }
-            item.value?.let { v -> obserablesValueSet.forEach { it.first()?.set(v) } }
+            item.key?.let { k -> obserablesKeySet.forEach { it.get()?.set(k) } }
+            item.value?.let { v -> obserablesValueSet.forEach { it.get()?.set(v) } }
         }
 
 
@@ -103,7 +104,7 @@ open class SamaSpinner : AppCompatSpinner {
     fun setItems(items: Collection<SamaSpinnerItem>?, showValue: Boolean = true) {
         if(items == null) return
         itemMap.clear()
-        items.map { itemMap.put(it.key(), it.value()) }
+        items.forEach { itemMap.put(it.key(), it.value()) }
         val old = selectedItem as? String? ?: currentItem.get()?.let { (if(showValue) it.value ?: itemMap[it.key] else it.key ?: itemMap.getKey(it.value)) } ?: ""
         arrayAdapter?.clear()
         arrayAdapter?.addAll( items.map { if(showValue) it.value() else it.key() } )
@@ -139,16 +140,14 @@ open class SamaSpinner : AppCompatSpinner {
     fun bindKey(obs: ObservableField<String>?) {
         if (obs == null) return
         val spinner = this.toWeakReference()
-        val weakObs = obs.toWeakReference()
-        val callback = obs.addOnChangedAndNow {
-            weakObs.get()?.also { obs ->
-                if (obserablesKeySet.firstOrNull { set -> set.first() == obs } != null && obs.get() != currentItem.get()?.key)
-                    obs.get()?.let { spinner.get()?.setSelectedKey(it); currentItem.set(SimpleSpinnerItem(it, itemMap[it])) }
+        obserablesKeySet.add(WeakReference(obs))
+        obs.addOnChangedAndNow {
+            it ?: return@addOnChangedAndNow
+            if (obserablesKeySet.firstOrNull { set -> set.get()?.get() == it } != null && it != currentItem.get()?.key) {
+                spinner.get()?.setSelectedKey(it)
+                currentItem.set(SimpleSpinnerItem(it, itemMap[it]))
             }
         }
-
-        obserablesKeySet.add(WeakPair(obs, callback))
-        currentItem.set(SimpleSpinnerItem(obs.get(), itemMap[obs.get()]))
     }
 
     /**
@@ -159,16 +158,14 @@ open class SamaSpinner : AppCompatSpinner {
     fun bindValue(obs: ObservableField<String>?) {
         if (obs == null) return
         val spinner = this.toWeakReference()
-        val weakObs = obs.toWeakReference()
-        val callback = obs.addOnChangedAndNow {
-            weakObs.get()?.also { obs ->
-                if (obserablesValueSet.firstOrNull { set -> set.first() == obs } != null && obs.get() != currentItem.get()?.value)
-                    obs.get()?.let { spinner.get()?.setSelectedValue(it); currentItem.set(SimpleSpinnerItem(itemMap.getKey(it), it)) }
+        obserablesValueSet.add(WeakReference(obs))
+        obs.addOnChangedAndNow {
+            it ?: return@addOnChangedAndNow
+            if (obserablesValueSet.firstOrNull { set -> set.get()?.get() == it } != null && it != currentItem.get()?.value) {
+                spinner.get()?.setSelectedValue(it)
+                currentItem.set(SimpleSpinnerItem(itemMap.getKey(it), it))
             }
         }
-
-        obserablesKeySet.add(WeakPair(obs, callback))
-        currentItem.set(SimpleSpinnerItem(itemMap.getKey(obs.get()), obs.get()))
     }
 
 

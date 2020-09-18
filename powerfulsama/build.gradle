@@ -15,7 +15,7 @@ def gitUrl = 'https://github.com/stefanosiano/PowerfulSAMA.git'                 
 def libDescription = 'Simplified Android Mvvm Architecture'                         // Library description
 
 //data to change on updates
-def libVersion = "0.3.77" // This is the library version used when deploying the artifact
+def libVersion = "0.3.78" // This is the library version used when deploying the artifact
 def gitTag = "$libVersion"
 
 group = libGroupId //bintray org/group name
@@ -63,15 +63,15 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
 
     //google libraries
-    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.recyclerview:recyclerview:1.1.0'
-    implementation 'com.google.android.material:material:1.0.0'
+    implementation 'com.google.android.material:material:1.2.1'
 
     // Architecture Components
-    implementation 'androidx.lifecycle:lifecycle-extensions:2.1.0'                                  //ViewModel and LiveData
-    implementation "androidx.paging:paging-runtime-ktx:2.1.0"                                       //Paging
-    kapt "androidx.room:room-compiler:2.2.2"                                                        //Room annotations
-    implementation "androidx.room:room-ktx:2.2.2"                                                   //Kotlin Extensions and Coroutines support for Room
+    implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'                                  //ViewModel and LiveData
+    implementation "androidx.paging:paging-runtime-ktx:2.1.2"                                       //Paging
+    kapt "androidx.room:room-compiler:2.2.5"                                                        //Room annotations
+    implementation "androidx.room:room-ktx:2.2.5"                                                   //Kotlin Extensions and Coroutines support for Room
 
 
 }
