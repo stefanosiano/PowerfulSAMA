@@ -32,8 +32,8 @@ abstract class SamaDialogFragment<T>(
 
     protected var dialogFragment: SimpleSamaDialogFragment? = SimpleSamaDialogFragment.new(getDialogLayout(), isFullWidth(), isFullHeight()).with(getDialogDataBindingId(), bindingData ?: this)
 
-    protected fun isFullWidth() = true
-    protected fun isFullHeight() = false
+    protected open fun isFullWidth() = true
+    protected open fun isFullHeight() = false
 
     internal fun getUidInternal() = uid
 
