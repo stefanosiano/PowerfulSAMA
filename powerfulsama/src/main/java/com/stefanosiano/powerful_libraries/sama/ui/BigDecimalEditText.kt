@@ -29,9 +29,9 @@ class BigDecimalEditText : AppCompatEditText {
 
     private var currentDecimal = BigDecimal.ZERO
 
-    constructor(context: Context?) : super(context) { init(null, 0) }
-    constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) { init(attrs, 0) }
-    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)  { init(attrs, defStyleAttr) }
+    constructor(context: Context) : super(context) { init(null, 0) }
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) { init(attrs, 0) }
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)  { init(attrs, defStyleAttr) }
 
     fun init(attrs: AttributeSet?, defStyleAttr: Int) {
         inputType = (inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
@@ -63,9 +63,9 @@ class BigDecimalTextInputEditText : TextInputEditText {
 
     private var currentDecimal = BigDecimal.ZERO
 
-    constructor(context: Context?) : super(context) { init(null, 0) }
-    constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) { init(attrs, 0) }
-    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)  { init(attrs, defStyleAttr) }
+    constructor(context: Context) : super(context) { init(null, 0) }
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) { init(attrs, 0) }
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)  { init(attrs, defStyleAttr) }
 
     fun init(attrs: AttributeSet?, defStyleAttr: Int) {
         inputType = (inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
@@ -97,9 +97,9 @@ class BigDecimalTextView : AppCompatTextView {
 
     private var currentDecimal = BigDecimal.ZERO
 
-    constructor(context: Context?) : super(context) { init(null, 0) }
-    constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) { init(attrs, 0) }
-    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)  { init(attrs, defStyleAttr) }
+    constructor(context: Context) : super(context) { init(null, 0) }
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) { init(attrs, 0) }
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)  { init(attrs, defStyleAttr) }
 
     fun init(attrs: AttributeSet?, defStyleAttr: Int) {
         inputType = (inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
