@@ -512,6 +512,12 @@ open class SamaRvAdapter(
         return boundItems.filterNotNull()
     }
 
+    /** Clears all bound items from the adapter. If [reloadList] is set, [notifyDataSetChanged] is called */
+    fun clearBoundItems(reloadList: Boolean) {
+        mutableBoundItems.clear()
+        if(reloadList) runOnUi { notifyDataSetChanged() }
+    }
+
     /** Returns the stableId of the item at position [position], if available and if adapter hasStableId. */
     override fun getItemId(position: Int): Long = if(hasStableId && getItem(position) != null) getItemStableId(getItem(position)!!) else RecyclerView.NO_ID
 
