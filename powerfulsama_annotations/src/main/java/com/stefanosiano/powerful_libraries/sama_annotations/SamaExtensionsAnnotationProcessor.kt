@@ -67,7 +67,7 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
                 .addStatement("val ret = when {")
                 .addStatement("\tother !is ${cls.qualifiedName} -> false")
 
-            cls.enclosedElements.filter { it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && !it.modifiers.contains(Modifier.STATIC) }.map { it as VariableElement }.forEach { v ->
+            cls.enclosedElements.filter { it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && it.getAnnotation(IgnoreField::class.java) == null  && !it.modifiers.contains(Modifier.STATIC) }.map { it as VariableElement }.forEach { v ->
                 function.addStatement("\tthis.${v.simpleName} != other.${v.simpleName} -> false")
             }
 
@@ -85,7 +85,6 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
     private fun addDefaultRestore(roundEnv: RoundEnvironment): ArrayList<FunSpec> {
         val functions = ArrayList<FunSpec>()
 
-        //todo add annotation to ignore class/field from defaultRestore and defaultEquals!
         val dialogFragmentType = processingEnv.elementUtils.getTypeElement("com.stefanosiano.powerful_libraries.sama.view.SamaDialogFragment")
         roundEnv.rootElements.filter { it.kind == ElementKind.CLASS && it.isAssignable(dialogFragmentType.asType(), 1) && !it.modifiers.contains(Modifier.ABSTRACT) }.forEach { cls ->
             if (cls !is TypeElement) return@forEach
@@ -95,7 +94,7 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
             function.addParameter(ParameterSpec.builder("oldDialog", cls.asType().toKotlinType()).build())
                 .addKdoc(" %S ", "Restore previous data from events like device rotating when a dialog is shown. The [dialogFragment] in [oldDialog] is null")
 
-            cls.enclosedElements.filter { it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && !it.modifiers.contains(Modifier.STATIC) }.map { it as VariableElement }.forEach { v ->
+            cls.enclosedElements.filter { it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && it.getAnnotation(IgnoreField::class.java) == null && !it.modifiers.contains(Modifier.STATIC) }.map { it as VariableElement }.forEach { v ->
                 when {
                     v.isAssignable("androidx.databinding.ObservableInt") ||
                     v.isAssignable("androidx.databinding.ObservableShort") ||

@@ -7,3 +7,9 @@ package com.stefanosiano.powerful_libraries.sama_annotations
 annotation class SamaExtensions (
     val observePowerfulSharedPreference: Boolean = true
 )
+
+
+@Retention(AnnotationRetention.RUNTIME)
+@Target(allowedTargets = [AnnotationTarget.FIELD])
+/** Ignores a field when generating default methods. By default it already ignores room's Ignore annotation */
+annotation class IgnoreField
