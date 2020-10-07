@@ -8,8 +8,7 @@ import android.os.Bundle
 import androidx.databinding.ObservableInt
 import com.stefanosiano.powerful_libraries.sama.generatedextensions.defaultRestore
 import com.stefanosiano.powerful_libraries.sama.toFileFromProviders
-import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
-import com.stefanosiano.powerful_libraries.sama.utils.Perms
+import com.stefanosiano.powerful_libraries.sama.utils.*
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaDialogFragment
 import com.stefanosiano.powerful_libraries.sama_annotations.ActivityIntent

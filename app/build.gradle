@@ -26,7 +26,7 @@ dependencies {
 
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
-    implementation "com.stefanosiano.powerful_libraries:sharedpreferences:1.0.6"                    //PowerfulSharedPreferences
+    implementation "com.stefanosiano.powerful_libraries:sharedpreferences:1.0.8"                    //PowerfulSharedPreferences
     implementation "com.stefanosiano.powerful_libraries:sharedpreferences_livedata:1.0.2"           //PowerfulSharedPreferences
 
     implementation project(':powerfulsama')
@@ -34,7 +34,7 @@ dependencies {
     kapt project(':powerfulsama_annotations')
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation"org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation "androidx.room:room-runtime:$room"                                               //Room
     kapt "androidx.room:room-compiler:$room"                                                        //Room annotations
     implementation "androidx.room:room-ktx:$room"                                                   //Kotlin Extensions and Coroutines support for Room
