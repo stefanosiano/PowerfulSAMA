@@ -11,13 +11,15 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
 
-
-internal class SamaObserver(val scope: CoroutineScope) {
+/** Class that allows a component to observe variables and call methods when they change.
+ * The mean methods to call are [destroyObserver], [stopObserver] and [restartObserver].
+ * You can change the default [observerDelay] of 50 milliseconds to enable longer/shorter delays when variables change (useful when observing multiple variables at the same time) */
+class SamaObserver(val scope: CoroutineScope) {
 
     private val observableMap: HashMap<Int, SamaObservableHelper> = HashMap()
     private val observablesId: AtomicInteger = AtomicInteger()
 
-    var observerDelay: Long = 100L
+    var observerDelay: Long = 50L
     private var isPaused: Boolean = true
 
     /** List of observable callbacks that will be observed until the viewModel is destroyed */

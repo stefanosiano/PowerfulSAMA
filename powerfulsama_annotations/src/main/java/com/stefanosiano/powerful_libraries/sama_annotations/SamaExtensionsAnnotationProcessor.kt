@@ -30,16 +30,6 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
         functions.addAll(addDefaultContentEquals(roundEnv))
         functions.addAll(addDefaultRestore(roundEnv))
 
-        if(annotation.observePowerfulSharedPreference)
-            functions.addAll(addPowerfulPreferenceLiveDataObserve(roundEnv))
-
-
-//        roundEnv.rootElements.filter { it.kind == ElementKind.CLASS }.forEach {
-//            messager.printMessage(Diagnostic.Kind.WARNING, "AAA1" + it.simpleName)
-//        }
-
-
-
         val file = FileSpec.builder(generatedPackage, generatedSimpleName)
         imports.forEach { i -> file.addImport(i.first, i.second) }
         functions.forEach { f -> file.addFunction(f) }
@@ -114,48 +104,6 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
 
             functions.add(function.build())
         }
-        return functions
-    }
-
-
-    /** Add SamaViewModel observe(PowerfulPreference<T>) method */
-    private fun addPowerfulPreferenceLiveDataObserve(roundEnv: RoundEnvironment): ArrayList<FunSpec> {
-        val functions = ArrayList<FunSpec>()
-
-        imports.add(Pair("kotlinx.coroutines", "launch"))
-        imports.add(Pair("com.stefanosiano.powerful_libraries.sharedpreferences_livedata", "asLiveData"))
-        imports.add(Pair("androidx.databinding", "ObservableField"))
-
-        val tType = TypeVariableName("T")
-
-        val function = FunSpec.builder("observe").addTypeVariable(tType).receiver(getClassName("com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel").parameterizedBy(TypeVariableName("*")))
-            .addParameter(
-                ParameterSpec.builder("preference", getClassName("com.stefanosiano.powerful_libraries.sharedpreferences.PowerfulPreference").parameterizedBy(tType)).build()
-            )
-            .addParameter(
-                ParameterSpec.builder("obFun",
-                    LambdaTypeName.get(null, listOf(ParameterSpec.builder("data", tType).build()), Unit::class.asTypeName()).copy (suspending = true)
-//                    getClassName("suspend (data: T) -> Unit").parameterizedBy(tType)
-                ).build()
-            )
-            .addKdoc(" %S ", "Observes a sharedPreference until the ViewModel is destroyed, using a custom live data. It also calls [obFun]. Does nothing if the value of the preference is null")
-            .addStatement("observe(preference.asLiveData()) {")
-            .addStatement("\tlaunch { obFun.invoke(it ?: return@launch) } }")
-            .addStatement("launch { obFun.invoke(preference.get() ?: return@launch) }")
-        functions.add(function.build())
-
-        val functionAsOf = FunSpec.builder("observeAsOf").addTypeVariable(tType).receiver(getClassName("com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel").parameterizedBy(TypeVariableName("*")))
-            .returns(getClassName("androidx.databinding.ObservableField").parameterizedBy(tType))
-            .addParameter(
-                ParameterSpec.builder("preference", getClassName("com.stefanosiano.powerful_libraries.sharedpreferences.PowerfulPreference").parameterizedBy(tType)).build()
-            )
-            .addKdoc(" %S ", "Observes a sharedPreference until the ViewModel is destroyed, using a custom live data, and transforms it into an observable field. Does not update the observable if the value of the preference is null")
-            .addStatement("val observable = ObservableField<T>()")
-            .addStatement("observe(preference.asLiveData()) { observable.set(it ?: return@observe) }")
-            .addStatement("observable.set(preference.get() ?: return observable)")
-            .addStatement("return observable")
-        functions.add(functionAsOf.build())
-
         return functions
     }
 
