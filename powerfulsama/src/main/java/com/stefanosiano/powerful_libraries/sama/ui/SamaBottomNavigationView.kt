@@ -75,23 +75,23 @@ open class SamaBottomNavigationView: BottomNavigationView {
             selectedItemId = cacheSelectedId.get(containerId)
             cacheSelectedId.delete(containerId)
 
-            val pair: Pair<Int, Fragment> = pairs.firstOrNull { it.first == selectedItemId } ?: return@runOnUi
+            val selectedPair: Pair<Int, Fragment> = pairs.firstOrNull { it.first == selectedItemId } ?: return@runOnUi
 
             val fragmentTransaction = activity.supportFragmentManager.beginTransaction()
 
-            active = WeakReference(pair.second)
+            active = WeakReference(selectedPair.second)
 
-            if(!pair.second.isAdded) fragmentTransaction.replace(containerId, pair.second)
+            val isSelectedPairAdded = selectedPair.second.isAdded
+            if(!isSelectedPairAdded) fragmentTransaction.replace(containerId, selectedPair.second)
 
-            this.pairs?.filter { it.second() != pair.second && it.second()?.isAdded == false }?.forEach { p -> p.second()?.also {
+            this.pairs?.filter { it.second() != selectedPair.second && it.second()?.isAdded == false }?.forEach { p -> p.second()?.also {
                 fragmentTransaction.add(containerId, it).hide(it)
             } }
 
-            fragmentTransaction
-                .show(pair.second)
-                .commitAllowingStateLoss()
+            if(!isSelectedPairAdded) fragmentTransaction.show(selectedPair.second)
+            fragmentTransaction.commitAllowingStateLoss()
 
-            selectedItemId = pair.first
+            selectedItemId = selectedPair.first
         }
     }
 
