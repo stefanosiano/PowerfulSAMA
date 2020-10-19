@@ -118,4 +118,9 @@ open class SamaBottomNavigationView: BottomNavigationView {
         cacheSelectedId.put(containerId, selectedItemId)
         return super.onSaveInstanceState()
     }
+
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        super.onRestoreInstanceState(state)
+        cacheSelectedId.delete(containerId)
+    }
 }
