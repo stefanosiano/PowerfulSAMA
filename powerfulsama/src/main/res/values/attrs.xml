@@ -3,6 +3,14 @@
 
     <!-- Attributes of the SamaRecyclerView.
         For more informations visit https://github.com/stefanosiano/PowerfulSama -->
+    <declare-styleable name="SamaSearchView">
+
+        <!-- Sets whether to clear focus when submitting the query, to close the keyboard automatically -->
+        <attr name="ssvClearFocusOnSubmit" format="boolean" />
+    </declare-styleable>
+
+    <!-- Attributes of the SamaRecyclerView.
+        For more informations visit https://github.com/stefanosiano/PowerfulSama -->
     <declare-styleable name="SamaRecyclerView">
 
         <!-- Sets the number of columns of the recyclerView: if 1 -> LinearLayoutManager is used. If higher, GridLayoutManager is used -->

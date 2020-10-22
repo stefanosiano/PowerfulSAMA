@@ -26,7 +26,6 @@ abstract class SamaListItem : CoroutineScope {
     @Ignore private val samaObserver = SamaObserver(this)
 
     @Ignore internal var onPostAction : (suspend (SamaListItemAction?, SamaListItem, Any?) -> Unit)? = null
-    @Ignore internal var isLazyInit = false
 
     /** Delay in milliseconds after which a function in "observe(ob, ob, ob...)" can be called again.
      * Used to avoid calling the same method multiple times due to observing multiple variables */
@@ -153,16 +152,7 @@ abstract class SamaListItem : CoroutineScope {
         onStop()
         samaObserver.destroyObserver()
         coroutineContext.cancelChildren()
-//        if(canBeReused) coroutineContext.cancelChildren()
-//        else coroutineContext.cancel()
     }
-
-    /** Return if it was lazy initialized. Use it with [onLazyInit] */
-    internal fun isLazyInitialized(): Boolean { return isLazyInit }
-
-    /** Called in background only once when it should be initialized (it's about to be shown or the initialization background thread reaches it).
-     * When using pagedLists this method will be called every time a list update occurs. You may want to avoid it when using pagedLists that may change often */
-    open suspend fun onLazyInit() { isLazyInit = true }
 
 
     /** Interface that indicates the action of the ListItem sent */

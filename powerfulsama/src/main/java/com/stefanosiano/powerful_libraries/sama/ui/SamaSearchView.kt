@@ -30,22 +30,34 @@ open class SamaSearchView : SearchView {
     /** Set of observable strings to update when the query changes */
     private val obserablesSet: MutableSet<WeakPair<ObservableField<String>, Observable.OnPropertyChangedCallback>> = HashSet()
 
+    /** Query text listener */
+    private var onQueryTextListener: OnQueryTextListener? = null
+
+    /** Flag to decide whether to clear focus and close keyboard when submitting a query */
+    private var clearFocusOnSubmit = true
+
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, R.attr.searchViewStyle)
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+        val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.SamaSearchView, defStyleAttr, 0)
+        clearFocusOnSubmit = attrSet.getBoolean(R.styleable.SamaSearchView_ssvClearFocusOnSubmit, clearFocusOnSubmit)
+        attrSet.recycle()
+    }
 
     init {
-
-        setOnQueryTextListener ( object : OnQueryTextListener {
+        super.setOnQueryTextListener ( object : OnQueryTextListener {
 
             override fun onQueryTextSubmit(query: String?): Boolean {
                 currentQuery = query ?: ""
                 onQueryUpdated()
+                if(clearFocusOnSubmit) clearFocus()
+                onQueryTextListener?.onQueryTextSubmit(query)
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
 
+                onQueryTextListener?.onQueryTextChange(newText)
                 if(newText == null || (currentQuery == newText))
                     return true
 
@@ -61,6 +73,10 @@ open class SamaSearchView : SearchView {
                 return true
             }
         })
+    }
+
+    override fun setOnQueryTextListener(listener: OnQueryTextListener?) {
+        onQueryTextListener = listener
     }
 
     /** Update the observable strings and call the optional function */

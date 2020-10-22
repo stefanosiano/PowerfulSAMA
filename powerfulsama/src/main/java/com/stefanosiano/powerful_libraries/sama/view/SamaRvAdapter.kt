@@ -27,14 +27,11 @@ import java.util.concurrent.atomic.AtomicLong
  * @param itemLayoutId Id of the layout of each row
  * @param itemBindingId Id of the dataBinding variable in the row layout
  * @param hasStableId Whether the adapter has stableIds (The items of the adapter must implement getStableId() or getStableIdString(), or it won't have any effect)
- * @param preserveLazyInitializedItemCache Whether the adapter preserves its internal item cache for lazy initialized items. It's used only if [hasStableId] is true.
- *      Setting true will increase memory usage, but improve performance when filtering, since it won't call [lazyInit] on items removed from the adapter and then added to it again
  */
 open class SamaRvAdapter(
     private var itemLayoutId: Int,
     private val itemBindingId: Int,
-    private val hasStableId: Boolean,
-    private val preserveLazyInitializedItemCache: Boolean
+    private val hasStableId: Boolean
 
 ): RecyclerView.Adapter<SamaRvAdapter.SimpleViewHolder>(), CoroutineScope {
 
@@ -69,9 +66,6 @@ open class SamaRvAdapter(
     /** Whether liveData observers have been stopped by [stopLiveDataObservers] */
     private var liveDataObserversStopped = false
 
-    /** map that saves initialized variables to avoid to reinitialize them when reloaded */
-    private val lazyInitializedItemCacheMap = LongSparseArray<SamaListItem>()
-
     /** Map that link string ids to unique long numbers, to use as stableId */
     private val idsMap: ConcurrentHashMap<String, Long> = ConcurrentHashMap()
 
@@ -89,12 +83,6 @@ open class SamaRvAdapter(
         private set
 
     internal var recyclerViewColumnCount = 1
-
-    /** Set used to understand if the item is being initialized, to be sure to lazy init only once */
-    private val lazyInitSet = ConcurrentSkipListSet<Long>()
-
-    /** Job used to cancel and start lazy initialization */
-    private var lazyInitsJob : Job? = null
 
     /** Listener passed to items to provide a callback to the adapter's caller */
     private var itemUpdatedListeners : MutableList<suspend (SamaListItem.SamaListItemAction?, SamaListItem, Any?) -> Unit> = ArrayList()
@@ -120,21 +108,16 @@ open class SamaRvAdapter(
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
      * [hasStableId] defaults to true
-     * [preserveLazyInitializedItemCache] defaults to true
      *
      * @param itemLayoutId Id of the layout of each row
      * @param itemBindingId Id of the dataBinding variable in the row layout
      */
-    constructor(itemLayoutId: Int, itemBindingId: Int): this(itemLayoutId, itemBindingId, true, true)
+    constructor(itemLayoutId: Int, itemBindingId: Int): this(itemLayoutId, itemBindingId, true)
 
     init {
         setHasStableIds(hasStableId)
         itemLayoutIds.put(-1, itemLayoutId)
     }
-
-    /** Clear the cache of the lazy initialized items (Used only if [hasStableId] is true).
-     * Use it when setting [preserveLazyInitializedItemCache] as true to be sure to clear the cache */
-    fun clearLazyInitializedCache() = lazyInitializedItemCacheMap.clear()
 
 
     /** Set a different [layoutId] for different [viewType] (viewTypes should be used in [SamaListItem.getViewType] of the items) */
@@ -197,7 +180,6 @@ open class SamaRvAdapter(
         super.onViewAttachedToWindow(holder)
         val item = getItem(holder.adapterPosition) ?: return
         item.onStart()
-        lazyInit(item)
     }
 
 
@@ -223,7 +205,6 @@ open class SamaRvAdapter(
     @Synchronized fun bindItems(list: ObservableList<out SamaListItem>) : SamaRvAdapter {
         isPaged = false
         isObservableList = true
-        lazyInitializedItemCacheMap.clear()
         launch { onLoadStarted?.invoke() }
         runOnUi {
             items.removeOnListChangedCallback(onListChangedCallback)
@@ -236,7 +217,6 @@ open class SamaRvAdapter(
                 launch { notifyDataSetChangedUi() }
                 justRestarted = false
             }
-            startLazyInits()
         }
         return this
     }
@@ -254,7 +234,6 @@ open class SamaRvAdapter(
         this.items.removeOnListChangedCallback(onListChangedCallback)
         launch { onLoadStarted?.invoke() }
         if (forceReload) {
-            lazyInitializedItemCacheMap.clear()
             runOnUi {
                 items.forEach { it.onDestroy() }
                 items.clear()
@@ -262,7 +241,6 @@ open class SamaRvAdapter(
                 items.addAll(list)
                 launch { notifyDataSetChangedUi() }
                 onLoadFinished?.invoke()
-                startLazyInits()
             }
         } else {
             val diffResult = DiffUtil.calculateDiff(LIDiffCallback(items, list))
@@ -277,54 +255,19 @@ open class SamaRvAdapter(
             }
             runOnUi {
                 items.clear()
-                items = list.mapTo(ObservableArrayList(), {
-                    val itemCached = lazyInitializedItemCacheMap.get(getItemStableId(it))
-                    if(itemCached?.contentEquals(it) == true) itemCached
-                    else { itemCached?.onDestroy(); it }
-                })
+                items = list.mapTo(ObservableArrayList(), { it })
                 diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
                 onLoadFinished?.invoke()
                 if(justRestarted) {
                     launch { notifyDataSetChangedUi() }
                     justRestarted = false
                 }
-                startLazyInits()
             }
         }
 
         return this
     }
 
-
-    @Synchronized private fun startLazyInits() {
-        lazyInitsJob?.cancel()
-        lazyInitsJob = launch {
-            if(!preserveLazyInitializedItemCache)
-                lazyInitializedItemCacheMap.clear()
-            items.filter { it.isLazyInitialized() }.forEach { lazyInitializedItemCacheMap.put(getItemStableId(it), it) }
-            delay(150)
-            val lazyItems = items.filter { !it.isLazyInitialized() }
-            lazyItems.iterateIndexed { item, index ->
-                if(!isActive) return@launch
-                if(lazyInit(item))
-                    delay(15+5*index.toLong().coerceAtMost(100))
-            }
-        }
-    }
-
-
-    private fun lazyInit(item: SamaListItem): Boolean {
-        if(hasStableId && !item.isLazyInitialized() && !lazyInitSet.contains(getItemStableId(item))) {
-            item.launch {
-                if (!lazyInitSet.add(getItemStableId(item))) return@launch
-                item.onLazyInit()
-                lazyInitializedItemCacheMap.put(getItemStableId(item), item)
-                lazyInitSet.remove(getItemStableId(item))
-            }
-            return true
-        }
-        return false
-    }
 
 
     /**
@@ -335,7 +278,6 @@ open class SamaRvAdapter(
     @Synchronized fun bindItems(list: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
         isPaged = false
         isObservableList = false
-        lazyInitializedItemCacheMap.clear()
         //remove the observer from the optional current liveData
         runOnUi {
             liveDataPagedItems?.removeObserver(pagedLiveDataObserver)
@@ -350,7 +292,6 @@ open class SamaRvAdapter(
         logDebug("Stop observing liveData in adapter")
         liveDataObserversStopped = true
         runOnUi {
-            lazyInitsJob?.cancel()
             if(isObservableList) items.removeOnListChangedCallback(onListChangedCallback)
             liveDataPagedItems?.removeObserver(pagedLiveDataObserver)
             liveDataItems?.removeObserver(liveDataObserver)
@@ -392,7 +333,6 @@ open class SamaRvAdapter(
         }
 
         items.clear()
-        lazyInitializedItemCacheMap.clear()
         runOnUi {
             mDiffer.submitList(list as PagedList<SamaListItem>) {
                 items = list.filterNotNull<SamaListItem>().mapTo(ObservableArrayList()) { it }
@@ -401,7 +341,6 @@ open class SamaRvAdapter(
                     launch { notifyDataSetChangedUi() }
                     justRestarted = false
                 }
-                startLazyInits()
             }
         }
 
@@ -421,7 +360,6 @@ open class SamaRvAdapter(
     @Synchronized fun bindPagedItems(list: LiveData<out PagedList<out SamaListItem>>?) : SamaRvAdapter {
         isPaged = true
         isObservableList = false
-        lazyInitializedItemCacheMap.clear()
         //remove the observer from the optional current liveData
         runOnUi {
             liveDataItems?.removeObserver(liveDataObserver)
@@ -466,7 +404,6 @@ open class SamaRvAdapter(
         runOnUi { liveDataPagedItems?.removeObserver(pagedLiveDataObserver) }
         //putting try blocks???: if object is destroyed and variables (lists) are destroyed before finishing this function, there could be some crash
         items.forEach { it.onStop() }
-        lazyInitializedItemCacheMap.clear()
 //        coroutineContext.cancelChildren()
     }
 
@@ -490,7 +427,6 @@ open class SamaRvAdapter(
         coroutineContext.cancel()
         itemUpdatedListeners.clear()
         items.forEach { it.onDestroy() }
-        lazyInitializedItemCacheMap.clear()
     }
 
     override fun onViewRecycled(holder: SimpleViewHolder) {
@@ -603,9 +539,6 @@ open class SamaRvAdapter(
 
     /** Function to be called when some items are removed */
     private fun itemRangeRemoved(positionStart: Int, itemCount: Int) = launch { notifyItemRangeRemovedUi(positionStart, itemCount) }
-
-    /** Function to be called when the whole list changes. Calls [notifyDataSetChanged] on ui and clears the lazy init cache */
-    suspend fun dataSetChanged() { lazyInitializedItemCacheMap.clear(); notifyDataSetChangedUi() }
 
 
 
