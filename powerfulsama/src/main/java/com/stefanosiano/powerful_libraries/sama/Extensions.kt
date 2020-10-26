@@ -52,6 +52,7 @@ class LiveDataExtensions
 
 
 /** Returns a liveData that will be updated with the values of the liveData returned by [f] (executed through [launch] and delayed by [millis] (just the first time)) */
+@Deprecated("Probably unsafe to use")
 inline fun <T> CoroutineScope.liveData(millis: Long = 0, crossinline f: suspend () -> LiveData<T>): LiveData<T> =
     MediatorLiveData<T>().also { mld -> this.launch { delay(millis); f().let { ld -> mld.addSourceLd(ld) { mld.postValue(it) } } } }
 
@@ -71,6 +72,7 @@ suspend inline fun delayUntil(millis: Long = 100, timeout: Long = 6000, crossinl
 
 /** Returns a liveData that will be updated with the values of the liveData returned by [f].
  * If [ob] has a null value, the liveData will be empty until it's set with a non-null value */
+@Deprecated("Probably unsafe to use")
 suspend fun <T> CoroutineScope.waitFor(ob: ObservableField<out Any>, f: suspend () -> LiveData<T>): LiveData<T> {
     if(ob.get() != null) return f()
 

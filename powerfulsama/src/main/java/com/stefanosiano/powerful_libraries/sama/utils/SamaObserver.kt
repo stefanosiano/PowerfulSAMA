@@ -164,8 +164,8 @@ class SamaObserver(val scope: CoroutineScope) {
 
     fun restartObserver() {
         isPaused = false
-        observableMap.values.filterNotNull().launch(scope) { it.onStart?.invoke() }
-        listObservables.filterNotNull().launch(scope) { x -> x.callback.onChanged(x.ob) }
+        synchronized(observableMap) { observableMap.values.filterNotNull().launch(scope) { it.onStart?.invoke() } }
+        synchronized(listObservables) { listObservables.filterNotNull().launch(scope) { x -> x.callback.onChanged(x.ob) } }
     }
 
     fun stopObserver() {
