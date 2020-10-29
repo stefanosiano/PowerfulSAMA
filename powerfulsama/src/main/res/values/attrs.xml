@@ -28,6 +28,9 @@
         <!-- Sets whether to remove the adapter from the RecyclerView when it is detached from the layout -->
         <attr name="srvAutoDetach" format="boolean" />
 
+        <!-- Sets whether to disable the predictive animation. Useful when items are changed and take some time to reload the adapter. Used only with srvInconsistencyWorkaround. Reduces (or removes) inconsistency exceptions -->
+        <attr name="srvDisablePredictiveAnimation" format="boolean" />
+
 
     </declare-styleable>
 

@@ -23,6 +23,7 @@ open class SamaRecyclerView: RecyclerView {
 
     private var inconsistencyWorkaround = true
     private var disableAdapterAutoStop = false
+    private var disablePredictiveAnimation = false
     private var horizontal = false
     private var autoDetach = false
     private var columns = 0
@@ -43,6 +44,7 @@ open class SamaRecyclerView: RecyclerView {
         autoDetach = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvAutoDetach, autoDetach)
         inconsistencyWorkaround = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvInconsistencyWorkaround, inconsistencyWorkaround)
         disableAdapterAutoStop = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvDisableAdapterAutoStop, disableAdapterAutoStop)
+        disablePredictiveAnimation = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvDisablePredictiveAnimation, disableAdapterAutoStop)
         attrSet.recycle()
         resetLayoutManager()
     }
@@ -113,6 +115,13 @@ open class SamaRecyclerView: RecyclerView {
             scrollToPosition(position)
     }
 
+    /** Sets whether to disable the predictive animation. Useful when items are changed and take some time to reload the adapter.
+     * Used only with srvInconsistencyWorkaround. Reduces (or removes) inconsistency exceptions */
+    fun setSrvDisablePredictiveAnimation(srvDisablePredictiveAnimation: Boolean) {
+        this.disablePredictiveAnimation = srvDisablePredictiveAnimation
+        updateDisablePredictiveAnimationInManager()
+    }
+
     private fun resetLayoutManager() {
         val position = (layoutManager as? LinearLayoutManager?)?.findFirstVisibleItemPosition()
         recycledViewPool.clear()
@@ -127,6 +136,11 @@ open class SamaRecyclerView: RecyclerView {
             }
         }
         (layoutManager as? LinearLayoutManager?)?.scrollToPosition(position ?: 0)
+    }
+
+    private fun updateDisablePredictiveAnimationInManager() {
+        (layoutManager as? SamaLinearLayoutManager)?.disablePredictiveAnimation = disablePredictiveAnimation
+        (layoutManager as? SamaGridLayoutManager)?.disablePredictiveAnimation = disablePredictiveAnimation
     }
 
 }

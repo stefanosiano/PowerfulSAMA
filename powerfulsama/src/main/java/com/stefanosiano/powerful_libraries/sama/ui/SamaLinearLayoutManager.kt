@@ -16,6 +16,8 @@ import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
  */
 open class SamaLinearLayoutManager : LinearLayoutManager {
 
+    internal var disablePredictiveAnimation = false
+
     constructor(context: Context) : super(context)
     constructor(context: Context?, orientation: Int, reverseLayout: Boolean) : super(context, orientation, reverseLayout)
     constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) : super(context, attrs, defStyleAttr, defStyleRes)
@@ -23,5 +25,10 @@ open class SamaLinearLayoutManager : LinearLayoutManager {
     override fun onLayoutChildren(recycler: RecyclerView.Recycler?, state: RecyclerView.State) {
         try { super.onLayoutChildren(recycler, state) }
         catch (e: IndexOutOfBoundsException) { logExceptionWorkarounded(e) }
+    }
+
+    override fun supportsPredictiveItemAnimations(): Boolean {
+        return if(disablePredictiveAnimation) false
+        else super.supportsPredictiveItemAnimations()
     }
 }
