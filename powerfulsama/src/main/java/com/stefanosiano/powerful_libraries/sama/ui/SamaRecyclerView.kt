@@ -44,7 +44,7 @@ open class SamaRecyclerView: RecyclerView {
         autoDetach = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvAutoDetach, autoDetach)
         inconsistencyWorkaround = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvInconsistencyWorkaround, inconsistencyWorkaround)
         disableAdapterAutoStop = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvDisableAdapterAutoStop, disableAdapterAutoStop)
-        disablePredictiveAnimation = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvDisablePredictiveAnimation, disableAdapterAutoStop)
+        disablePredictiveAnimation = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvDisablePredictiveAnimation, disablePredictiveAnimation)
         attrSet.recycle()
         resetLayoutManager()
     }
@@ -76,7 +76,7 @@ open class SamaRecyclerView: RecyclerView {
                     }
                     spans.put(position, res)
                     (adapter as? SamaRvAdapter)?.setSpannedSize(position, res)
-                    return res
+                    return res.coerceAtLeast(1)
                 }
             }
         } }
