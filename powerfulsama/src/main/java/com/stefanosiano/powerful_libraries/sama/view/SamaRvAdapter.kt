@@ -372,7 +372,6 @@ open class SamaRvAdapter(
 
     /** Pass the [ob] to all the items in the list, using [key] */
     fun passToItems(key: String, ob: Any) : SamaRvAdapter {
-        passedObjects.remove(key)
         passedObjects[key] = ob
         return this
     }
