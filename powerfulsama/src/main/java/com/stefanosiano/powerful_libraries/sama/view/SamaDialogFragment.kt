@@ -90,6 +90,7 @@ abstract class SamaDialogFragment<T>(
 
     /** Shows the dialog over the [activity]. Also, when the activity is destroyed (e.g. rotating device), it automatically dismisses the dialog */
     open fun show(activity: SamaActivity) {
+        if(dialogFragment?.isAdded == true) return
         dialogFragment?.show(activity.supportFragmentManager)
         map.put(uid, this)
     }

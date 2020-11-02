@@ -66,6 +66,7 @@ object Notifs {
      *  before notification is shown through [f]. If it's not found, a new notification builder is passed to [f] */
     fun update(channelId: String, notifId: Int, f: (NotificationCompat.Builder) -> NotificationCompat.Builder) {
         var notif = notificationBuilders.get(notifId) ?: NotificationCompat.Builder(applicationContext, channelId)
+        notificationBuilders.put(notifId, notif)
         notif = f(notif)
         channels.get(channelId)?.let { createChannel(it) } ?: logError("Notification Channel $channelId not found!")
         with(NotificationManagerCompat.from(applicationContext)) { notify(notifId, notif.build()) }

@@ -30,7 +30,7 @@ abstract class SamaRepository : CoroutineScope {
         obs.forEach {
             it.onChange(this) {
                 lastJob.cancel()
-                lastJob = launch { if(isActive) onChanged() }
+                lastJob = launch { delay(50); if(!isActive) return@launch; onChanged() }
             }
         }
 
@@ -48,7 +48,7 @@ abstract class SamaRepository : CoroutineScope {
         obs.forEach {
             it.onChange(this) {
                 lastJob.cancel()
-                lastJob = launch { if(isActive) onChanged() }
+                lastJob = launch { delay(50); if(!isActive) return@launch; onChanged() }
             }
         }
 
