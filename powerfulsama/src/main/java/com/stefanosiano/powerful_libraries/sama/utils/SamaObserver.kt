@@ -85,7 +85,7 @@ class SamaObserver(val scope: CoroutineScope) {
     private fun <T> observePrivate(o: Observable, obFun: suspend (data: T) -> Unit, vararg obs: Observable) {
         val obsId = observablesId.incrementAndGet()
         val helper = SamaObservableHelper(obsId, null, null)
-        observableMap[obsId] = helper
+        synchronized(observableMap) { observableMap[obsId] = helper }
 
         val f: suspend () -> Unit = {
             helper.job?.cancel()
@@ -98,10 +98,11 @@ class SamaObserver(val scope: CoroutineScope) {
             }
         }
 
-        observables.addAll( obs.map { SamaInnerObservable(it, it.onChange(scope) { helper.onStart = f; f() }) } )
-
-        //sets the function to call when using an observable and runs it now
-        observables.add( SamaInnerObservable(o, o.addOnChangedAndNowBase (scope) { helper.onStart = f; f() }) )
+        synchronized(observables) {
+            observables.addAll( obs.map { SamaInnerObservable(it, it.onChange(scope) { helper.onStart = f; f() }) } )
+            //sets the function to call when using an observable and runs it now
+            observables.add( SamaInnerObservable(o, o.addOnChangedAndNowBase (scope) { helper.onStart = f; f() }) )
+        }
     }
 
 
@@ -110,7 +111,7 @@ class SamaObserver(val scope: CoroutineScope) {
     fun <T> observe(o: ObservableList<T>, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any {
         val obsId = observablesId.incrementAndGet()
         val helper = SamaObservableHelper(obsId, null, null)
-        observableMap[obsId] = helper
+        synchronized(observableMap) { observableMap[obsId] = helper }
 
         val f: suspend () -> Unit = {
             helper.job?.cancel()
@@ -123,10 +124,12 @@ class SamaObserver(val scope: CoroutineScope) {
             }
         }
 
-        observables.addAll( obs.map { SamaInnerObservable(it, it.onChange(scope) { helper.onStart = f; f() }) } )
+        synchronized(observables) {
+            observables.addAll( obs.map { SamaInnerObservable(it, it.onChange(scope) { helper.onStart = f; f() }) } )
 
-        val c = o.onAnyChange { scope.launch { f() } }
-        listObservables.add(SamaInnerListObservable(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
+            val c = o.onAnyChange { scope.launch { f() } }
+            listObservables.add(SamaInnerListObservable(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
+        }
         if(!skipFirst)
             scope.launch { obFun(o) }
     }
@@ -146,7 +149,7 @@ class SamaObserver(val scope: CoroutineScope) {
 
     /** Observes a liveData until this object is destroyed, using a custom observer. Useful when liveData is not used in a lifecycleOwner */
     fun <T> observe(liveData: LiveData<T>): LiveData<T> {
-        observedLiveData.add(liveData)
+        synchronized(observedLiveData) { observedLiveData.add(liveData) }
         runOnUi { liveData.observeForever(persistentObserver) }
         return liveData
     }
@@ -155,7 +158,7 @@ class SamaObserver(val scope: CoroutineScope) {
     @Suppress("unchecked_cast")
     fun <T> observe(liveData: LiveData<T>, observerFunction: suspend (data: T) -> Unit): LiveData<T> {
         val observer: Observer<Any?> = Observer { launchOrNow(scope) { observerFunction(it as? T ?: return@launchOrNow) } }
-        customObservedLiveData.add(Pair(liveData as LiveData<Any?>, observer))
+        synchronized(customObservedLiveData) { customObservedLiveData.add(Pair(liveData as LiveData<Any?>, observer)) }
         runOnUi { liveData.value?.let { observer.onChanged(it) }; liveData.observeForever(observer) }
         return liveData
     }
@@ -173,14 +176,22 @@ class SamaObserver(val scope: CoroutineScope) {
     }
 
     fun destroyObserver() {
-        synchronized(observables) { observables.forEach { it.ob.removeOnPropertyChangedCallback(it.callback) } }
-        observables.clear()
-        synchronized(listObservables) { listObservables.forEach { it.ob.removeOnListChangedCallback(it.callback) } }
-        listObservables.clear()
-        runOnUi { observedLiveData.filterNotNull().forEach { it.removeObserver(persistentObserver) } }
-        observedLiveData.clear()
-        runOnUi { customObservedLiveData.filterNotNull().forEach { it.first.removeObserver(it.second) } }
-        customObservedLiveData.clear()
+        synchronized(observables) {
+            observables.forEach { it.ob.removeOnPropertyChangedCallback(it.callback) }
+            observables.clear()
+        }
+        synchronized(listObservables) {
+            listObservables.forEach { it.ob.removeOnListChangedCallback(it.callback) }
+            listObservables.clear()
+        }
+        synchronized(observedLiveData) { runOnUi {
+            observedLiveData.filterNotNull().forEach { it.removeObserver(persistentObserver) }
+            observedLiveData.clear()
+        } }
+        synchronized(customObservedLiveData) { runOnUi {
+            customObservedLiveData.filterNotNull().forEach { it.first.removeObserver(it.second) }
+            customObservedLiveData.clear()
+        } }
     }
 
     private inner class SamaObservableHelper (val id: Int, var onStart: (suspend () -> Unit)?, var job: Job?)

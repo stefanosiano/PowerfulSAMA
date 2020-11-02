@@ -102,7 +102,11 @@ abstract class SamaListItem : CoroutineScope {
     open fun getItemSpanSize(columns: Int) = 1
 
     /** Called when it's bound to the view */
-    internal fun onBind(passedObjects: Map<String, Any>) { this.passedObjects = passedObjects; launchableFunctions.clear(); launch { onBind() } }
+    internal fun onBind(passedObjects: Map<String, Any>) {
+        this.passedObjects = passedObjects
+        synchronized(launchableFunctions) { launchableFunctions.clear() }
+        launch { onBind() }
+    }
 
     @Suppress("UNCHECKED_CAST")
     /** Get an item passed from the adapter from its key. Safe to call in [onBind] */
@@ -111,13 +115,13 @@ abstract class SamaListItem : CoroutineScope {
     /** Calls a function through [launch] after [millis]. Useful to avoid calculations when user scrolls too fast.
      * It gets automatically called in [onStart] if not already executed and if [onBind] is not called */
     fun launchAfter(millis: Long, f: suspend () -> Unit) {
+        val lf = LaunchableFunction(millis, f, launchableFunctionsUid.incrementAndGet())
+        synchronized(launchableFunctions) { launchableFunctions.put(lf.id, lf) }
         launch {
-            val lf = LaunchableFunction(millis, f, launchableFunctionsUid.incrementAndGet())
-            launchableFunctions.put(lf.id, lf)
             delay(millis)
             if(!isStarted.get()) return@launch
             f()
-            synchronized(launchableFunctions) { launchableFunctions.remove(lf.id) }
+            synchronized(launchableFunctions) { synchronized(launchableFunctions) { launchableFunctions.remove(lf.id) } }
         }
     }
 
@@ -131,12 +135,12 @@ abstract class SamaListItem : CoroutineScope {
     open fun onStart() {
         if(isStarted.getAndSet(true)) return
         samaObserver.restartObserver()
-        launchableFunctions.forEach { lf -> launch {
+        synchronized(launchableFunctions) { launchableFunctions.forEach { lf -> launch {
             delay(lf.millis)
             if(!isStarted.get()) return@launch
             lf.f()
             synchronized(launchableFunctions) { launchableFunctions.remove(lf.id) }
-        } }
+        } } }
     }
 
     /** Called when the view is detached from the recyclerview or the adapter is detached. Use it if you need to stop some heavy computation. By default it stops all [observe] methods */
@@ -151,6 +155,7 @@ abstract class SamaListItem : CoroutineScope {
     open fun onDestroy() {
         onStop()
         samaObserver.destroyObserver()
+        synchronized(launchableFunctions) { launchableFunctions.clear() }
         coroutineContext.cancelChildren()
     }
 

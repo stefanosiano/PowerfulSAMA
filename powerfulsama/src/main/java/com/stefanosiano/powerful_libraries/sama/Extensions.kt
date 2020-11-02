@@ -340,9 +340,9 @@ inline fun <T> tryOrPrint(default: T, toTry: () -> T): T { return try { toTry() 
 inline fun <T> tryOrPrint(toTry: () -> T): T? { return try { toTry() } catch (e: Exception) { e.printStackTrace(); null } }
 
 /** Run a function for each element in this SparseArray */
-fun <T> SparseArray<T>.forEach(f: (T) -> Unit) {
+fun <T> SparseArray<T>.forEach(f: ((T) -> Unit)?) {
     for (i in 0 until size())
-        f(valueAt(i))
+        f?.invoke(valueAt(i))
 }
 
 /** Gets an enum from a string through enumValueOf<T>(). Useful to use in [string?.toEnum<>() ?: default] */
