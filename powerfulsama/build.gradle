@@ -15,7 +15,7 @@ def gitUrl = 'https://github.com/stefanosiano/PowerfulSAMA.git'                 
 def libDescription = 'Simplified Android Mvvm Architecture'                         // Library description
 
 //data to change on updates
-def libVersion = "0.3.93" // This is the library version used when deploying the artifact
+def libVersion = "0.3.94" // This is the library version used when deploying the artifact
 def gitTag = "$libVersion"
 
 group = libGroupId //bintray org/group name
