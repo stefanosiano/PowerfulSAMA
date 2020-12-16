@@ -1,15 +1,8 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
-import android.app.Activity
-import android.app.Application
-import android.os.Bundle
 import android.util.SparseArray
 import android.view.View
-import androidx.fragment.app.FragmentActivity
 import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
-import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
-import com.stefanosiano.powerful_libraries.sama.utils.SamaActivityCallback
-import com.stefanosiano.powerful_libraries.sama.view.SimpleSamaFragment.Companion.new
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob

@@ -7,15 +7,11 @@ import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.text.TextUtils
-import android.util.Log
 import android.view.View
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.snackbar.Snackbar
 import com.stefanosiano.powerful_libraries.sama.*
-import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
-import com.stefanosiano.powerful_libraries.sama.logError
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicLong

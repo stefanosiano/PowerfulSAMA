@@ -8,12 +8,10 @@ import com.stefanosiano.powerful_libraries.sama.onChange
 import com.stefanosiano.powerful_libraries.sama.removeSourceLd
 import kotlinx.coroutines.*
 
-abstract class SamaRepository : CoroutineScope {
-
-    override val coroutineContext = SupervisorJob() + CoroutineExceptionHandler { _, t -> t.printStackTrace() }
+abstract class SamaRepository {
 
     /** Run [f] to get a [LiveData] every time any of [obs] changes. It return a [LiveData] of the same type as [f] */
-    fun <T> observe(vararg obs: BaseObservable, f: suspend () -> LiveData<T>?): LiveData<T> {
+    suspend fun <T> observe(vararg obs: BaseObservable, f: suspend () -> LiveData<T>?): LiveData<T> {
         val mediatorLiveData = MediatorLiveData<T>()
         var lastLiveData: LiveData<T>? = null
 
@@ -26,11 +24,11 @@ abstract class SamaRepository : CoroutineScope {
         }
 
         //the first time this function is called nothing is changed, so i force the reload manually
-        var lastJob = launch { onChanged() }
+        var lastJob = runBlocking { launch { onChanged() } }
         obs.forEach {
-            it.onChange(this) {
+            it.onChange {
                 lastJob.cancel()
-                lastJob = launch { delay(50); if(!isActive) return@launch; onChanged() }
+                lastJob = runBlocking { launch { delay(50); if(!isActive) return@launch; onChanged() } }
             }
         }
 
@@ -38,17 +36,17 @@ abstract class SamaRepository : CoroutineScope {
     }
 
     /** Run [f] to get a value every time any of [obs] changes. It return a [LiveData] of the same type as [f] */
-    fun <T> observeF(vararg obs: BaseObservable, f: suspend () -> T): LiveData<T> {
+    suspend fun <T> observeF(vararg obs: BaseObservable, f: suspend () -> T): LiveData<T> {
         val mediatorLiveData = MediatorLiveData<T>()
 
         val onChanged = suspend { mediatorLiveData.postValue(f()) }
 
         //the first time this function is called nothing is changed, so i force the reload manually
-        var lastJob = launch { onChanged() }
+        var lastJob = runBlocking { launch { onChanged() } }
         obs.forEach {
-            it.onChange(this) {
+            it.onChange {
                 lastJob.cancel()
-                lastJob = launch { delay(50); if(!isActive) return@launch; onChanged() }
+                lastJob = runBlocking { launch { delay(50); if(!isActive) return@launch; onChanged() } }
             }
         }
 

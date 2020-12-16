@@ -6,10 +6,9 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.AppCompatSpinner
-import androidx.databinding.Observable
 import androidx.databinding.ObservableField
 import com.stefanosiano.powerful_libraries.sama.*
-import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
+import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner.SamaSpinnerItem
 import java.lang.ref.WeakReference
 
 

@@ -1,17 +1,12 @@
 package com.stefanosiano.powerful_libraries.sama.viewModel
 
-import android.util.Log
 import androidx.databinding.*
 import androidx.lifecycle.*
-import androidx.room.Ignore
 import com.stefanosiano.powerful_libraries.sama.*
 import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserver
 import kotlinx.coroutines.*
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 
 
 /**
@@ -162,7 +157,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     protected fun <T> observe(liveData: LiveData<T>, observerFunction: suspend (data: T) -> Unit): LiveData<T> = samaObserver.observe(liveData, observerFunction)
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed */
-    protected fun <T> observe(o: ObservableList<T>, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any = samaObserver.observe(o, skipFirst, *obs) { obFun(it) }
+    protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any = samaObserver.observe(o, *obs) { obFun(it) }
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableF] with initial value of [defValue] */
     protected fun <R> observe(o: ObservableInt, defValue: R, vararg obs: Observable, obFun: suspend (data: Int) -> R): ObservableF<R> = samaObserver.observe(o, defValue, *obs) { obFun(it) }

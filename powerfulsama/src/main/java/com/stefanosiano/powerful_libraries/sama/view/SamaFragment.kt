@@ -5,9 +5,10 @@ import androidx.fragment.app.Fragment
 import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
 import com.stefanosiano.powerful_libraries.sama.logVerbose
 import com.stefanosiano.powerful_libraries.sama.tryOrNull
-import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
-import kotlinx.coroutines.*
-import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 
 
 /** Abstract Fragment for all Fragments to extend */

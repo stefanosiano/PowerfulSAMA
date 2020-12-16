@@ -3,13 +3,9 @@ package com.stefanosiano.powerful_libraries.sama.utils
 import androidx.databinding.*
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModel
 import com.stefanosiano.powerful_libraries.sama.*
-import com.stefanosiano.powerful_libraries.sama.logVerbose
 import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
-import kotlin.coroutines.CoroutineContext
 
 /** Class that allows a component to observe variables and call methods when they change.
  * The mean methods to call are [destroyObserver], [stopObserver] and [restartObserver].
@@ -19,7 +15,7 @@ class SamaObserver(val scope: CoroutineScope) {
     private val observableMap: HashMap<Int, SamaObservableHelper> = HashMap()
     private val observablesId: AtomicInteger = AtomicInteger()
 
-    var observerDelay: Long = 50L
+    var observerDelay: Long = -1L
     private var isPaused: Boolean = true
 
     /** List of observable callbacks that will be observed until the viewModel is destroyed */
@@ -80,7 +76,7 @@ class SamaObserver(val scope: CoroutineScope) {
 
 
 
-    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background) if [skipFirst] is not set.
+    /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background).
      * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing if the value of [o] is null or already changed */
     private fun <T> observePrivate(o: Observable, obFun: suspend (data: T) -> Unit, vararg obs: Observable) {
         val obsId = observablesId.incrementAndGet()
@@ -90,7 +86,12 @@ class SamaObserver(val scope: CoroutineScope) {
         val f: suspend () -> Unit = {
             helper.job?.cancel()
             helper.job = scope.launch {
-                delay(observerDelay)
+                val delayToUse = when {
+                    observerDelay == -1L && obs.isEmpty() -> 0L
+                    observerDelay == -1L -> 50L
+                    else -> observerDelay
+                }
+                delay(delayToUse)
                 if(isPaused) return@launch
                 if(!isActive) return@launch
                 (o.get() as? T?)?.let { logVerbose(it.toString()); obFun(it) }
@@ -108,7 +109,7 @@ class SamaObserver(val scope: CoroutineScope) {
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed */
     @Suppress("UNCHECKED_CAST")
-    fun <T> observe(o: ObservableList<T>, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any {
+    fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any {
         val obsId = observablesId.incrementAndGet()
         val helper = SamaObservableHelper(obsId, null, null)
         synchronized(observableMap) { observableMap[obsId] = helper }
@@ -116,7 +117,12 @@ class SamaObserver(val scope: CoroutineScope) {
         val f: suspend () -> Unit = {
             helper.job?.cancel()
             helper.job = scope.launch {
-                delay(observerDelay)
+                val delayToUse = when {
+                    observerDelay == -1L && obs.isEmpty() -> 0L
+                    observerDelay == -1L -> 50L
+                    else -> observerDelay
+                }
+                delay(delayToUse)
                 if(isPaused) return@launch
                 if(!isActive) return@launch
                 o.let { logVerbose(it.toString()); obFun(it) }
@@ -130,8 +136,7 @@ class SamaObserver(val scope: CoroutineScope) {
             val c = o.onAnyChange { scope.launch { f() } }
             listObservables.add(SamaInnerListObservable(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
         }
-        if(!skipFirst)
-            scope.launch { obFun(o) }
+        scope.launch { obFun(o) }
     }
 
 

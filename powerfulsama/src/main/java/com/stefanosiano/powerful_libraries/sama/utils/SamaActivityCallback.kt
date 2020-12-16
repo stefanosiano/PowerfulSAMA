@@ -1,7 +1,6 @@
 package com.stefanosiano.powerful_libraries.sama.utils
 
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
-import java.util.*
 import java.util.concurrent.atomic.AtomicLong
 
 internal class SamaActivityCallback(

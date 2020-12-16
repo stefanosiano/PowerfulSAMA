@@ -8,14 +8,12 @@ import android.os.Build
 import android.util.SparseArray
 import androidx.documentfile.provider.DocumentFile
 import com.stefanosiano.powerful_libraries.sama.tryOrPrint
-import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import kotlinx.coroutines.*
 import java.io.Closeable
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
-import java.util.concurrent.atomic.AtomicInteger
 
 object Saf : CoroutineScope {
     private val coroutineJob: Job = SupervisorJob()

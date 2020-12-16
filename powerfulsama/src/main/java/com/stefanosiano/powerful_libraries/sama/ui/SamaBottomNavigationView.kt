@@ -11,7 +11,6 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.stefanosiano.powerful_libraries.sama.runOnUi
 import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
-import com.stefanosiano.powerful_libraries.sama.view.SamaFragment
 import java.lang.ref.WeakReference
 
 

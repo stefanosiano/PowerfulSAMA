@@ -1,15 +1,13 @@
 package com.stefanosiano.powerful_libraries.sama.utils
 
 import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri.fromParts
+import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
 import android.util.SparseArray
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import java.lang.ref.WeakReference
-import java.util.concurrent.atomic.AtomicInteger
-import android.net.Uri.fromParts
-import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
-import android.content.Intent
 import com.stefanosiano.powerful_libraries.sama.contains
 import com.stefanosiano.powerful_libraries.sama.logError
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.applicationContext

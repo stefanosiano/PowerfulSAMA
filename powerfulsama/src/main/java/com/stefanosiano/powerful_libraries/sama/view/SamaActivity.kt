@@ -2,22 +2,17 @@ package com.stefanosiano.powerful_libraries.sama.view
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.util.SparseArray
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.*
 import androidx.lifecycle.LiveData
-import androidx.lifecycle.Observer
 import com.stefanosiano.powerful_libraries.sama.*
 import com.stefanosiano.powerful_libraries.sama.utils.*
-import com.stefanosiano.powerful_libraries.sama.utils.SamaActivityCallback
 import com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel
 import com.stefanosiano.powerful_libraries.sama.viewModel.VmResponse
 import kotlinx.coroutines.*
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicLong
 
 /** Abstract Activity for all Activities to extend */
 abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
@@ -97,7 +92,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     internal fun unregisterSamaCallback(cb: SamaActivityCallback) = synchronized(registeredCallbacks) { registeredCallbacks.remove(cb) }
 
     /** Manages a dialogFragment, making it restore and show again if it was dismissed due to device rotation */
-    fun <T> manageDialog(f: () -> T): T where T: SamaDialogFragment<*> =
+    protected fun <T> manageDialog(f: () -> T): T where T: SamaDialogFragment<*> =
         f().also { dialog -> managedDialog.put(dialog.getUidInternal(), dialog) }
 
     /** Initializes the toolbar leaving the default title */
@@ -184,7 +179,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     protected fun <T> observe(liveData: LiveData<T>, observerFunction: suspend (data: T) -> Unit): LiveData<T> = samaObserver.observe(liveData, observerFunction)
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed */
-    protected fun <T> observe(o: ObservableList<T>, skipFirst: Boolean = false, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any = samaObserver.observe(o, skipFirst, *obs) { obFun(it) }
+    protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any = samaObserver.observe(o, *obs) { obFun(it) }
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableF] with initial value of [defValue] */
     protected fun <R> observe(o: ObservableInt, defValue: R, vararg obs: Observable, obFun: suspend (data: Int) -> R): ObservableF<R> = samaObserver.observe(o, defValue, *obs) { obFun(it) }

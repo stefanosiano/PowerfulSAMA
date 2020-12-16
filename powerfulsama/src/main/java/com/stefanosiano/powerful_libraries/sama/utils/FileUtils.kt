@@ -1,20 +1,5 @@
 package com.stefanosiano.powerful_libraries.sama.utils
 
-import android.annotation.TargetApi
-import android.content.ContentUris
-import android.content.Context
-import android.database.Cursor
-import android.net.Uri
-import android.os.Build
-import android.os.Environment
-import android.provider.DocumentsContract
-import android.provider.MediaStore
-import com.stefanosiano.powerful_libraries.sama.into
-import com.stefanosiano.powerful_libraries.sama.logDebug
-import com.stefanosiano.powerful_libraries.sama.logError
-import java.io.File
-import java.io.FileOutputStream
-
 /*
 /** Return the file from the uri using Android providers (if needed) or using uri's path as path. If scheme is not recognized, null is returned */
 fun Uri.toFileFromProviders(context: Context, fileName: String): File? {

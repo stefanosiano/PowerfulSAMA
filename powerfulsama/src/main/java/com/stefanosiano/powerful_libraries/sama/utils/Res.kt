@@ -1,6 +1,5 @@
 package com.stefanosiano.powerful_libraries.sama.utils
 
-import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.graphics.drawable.Drawable
@@ -11,7 +10,6 @@ import com.stefanosiano.powerful_libraries.sama.tryOrNull
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
-import java.lang.ref.WeakReference
 
 
 /** Class that retrieves resources using current activity context or application context if no activity is available */

@@ -2,11 +2,9 @@ package com.stefanosiano.powerful_libraries.sama.ui
 
 import android.content.Context
 import android.util.AttributeSet
-import android.util.Log
-import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.logExceptionWorkarounded
-import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 
 /**
  * Simple [LinearLayoutManager] that catches the [IndexOutOfBoundsException] occurring with inconsistency detected.

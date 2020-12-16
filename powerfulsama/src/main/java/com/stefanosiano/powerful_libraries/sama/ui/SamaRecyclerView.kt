@@ -1,22 +1,16 @@
 package com.stefanosiano.powerful_libraries.sama.ui
 
-import android.app.Activity
-import android.app.Application
 import android.content.Context
-import android.os.Bundle
 import android.util.AttributeSet
 import android.util.SparseIntArray
-import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.R
 import com.stefanosiano.powerful_libraries.sama.findActivity
-import com.stefanosiano.powerful_libraries.sama.toWeakReference
 import com.stefanosiano.powerful_libraries.sama.utils.SamaActivityCallback
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaRvAdapter
-import java.lang.ref.WeakReference
 
 /** Simple RecyclerView implementation. It just have a fix to avoid memory leaks when using a long living adapter */
 open class SamaRecyclerView: RecyclerView {

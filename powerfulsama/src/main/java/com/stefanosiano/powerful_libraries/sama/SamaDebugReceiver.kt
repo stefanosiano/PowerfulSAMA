@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import java.io.File
-import java.lang.Exception
 
 const val ExtraDbName = "extra_db_name"
 

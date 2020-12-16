@@ -3,7 +3,6 @@ package sample
 import androidx.room.Ignore
 import com.stefanosiano.powerful_libraries.sama.generatedextensions.defaultContentEquals
 import com.stefanosiano.powerful_libraries.sama.view.SamaListItem
-import kotlinx.android.parcel.IgnoredOnParcel
 import java.math.BigDecimal
 
 class SampleLI(
