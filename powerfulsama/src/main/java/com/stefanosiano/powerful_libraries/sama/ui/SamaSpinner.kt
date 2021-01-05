@@ -201,32 +201,6 @@ open class SamaSpinner : AppCompatSpinner {
 
 
 
-
-    @BindingAdapter("spnValueAttrChanged")
-    fun setSpnValueListener(spinner: SamaSpinner, listener: InverseBindingListener) {
-        spinner.addListener { _, _ -> listener.onChange() }
-    }
-    @BindingAdapter("spnValue")
-    fun setSpnValue(spinner: SamaSpinner, value: String?) { if (value != spinner.getSpnValue()) spinner.setSpnValue(value) }
-    @InverseBindingAdapter(attribute = "spnValue")
-    fun getSpnValue(spinner: SamaSpinner): String? = spinner.getSpnValue()
-
-    @BindingAdapter("spnKeyAttrChanged")
-    fun setSpnKeyListener(spinner: SamaSpinner, listener: InverseBindingListener) {
-        spinner.addListener { _, _ -> listener.onChange() }
-    }
-    @BindingAdapter("spnKey")
-    fun setSpnKey(spinner: SamaSpinner, key: String?) { if (key != spinner.getSpnKey()) spinner.setSpnKey(key) }
-    @InverseBindingAdapter(attribute = "spnKey")
-    fun getSpnKey(spinner: SamaSpinner): String? = spinner.getSpnKey()
-
-
-
-
-
-
-
-
     /** Simple class with 2 simple fields that implements [SamaSpinnerItem] */
     data class SimpleSpinnerItem(val key: String?, val value: String?) : SamaSpinnerItem{
         override fun value() = value ?: ""

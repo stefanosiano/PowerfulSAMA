@@ -147,3 +147,26 @@ fun setTietText(view: BigDecimalTextInputEditText, newValue: BigDecimal) { view.
 
 @InverseBindingAdapter(attribute = "text")
 fun getTietText(view: BigDecimalTextInputEditText) : BigDecimal { return view.getTextBd() }
+
+
+
+
+
+@BindingAdapter("spnValueAttrChanged")
+fun setSpnValueListener(spinner: SamaSpinner, listener: InverseBindingListener) {
+    spinner.addListener { _, _ -> listener.onChange() }
+}
+@BindingAdapter("spnValue")
+fun setSpnValue(spinner: SamaSpinner, value: String?) { if (value != spinner.getSpnValue()) spinner.setSpnValue(value) }
+@InverseBindingAdapter(attribute = "spnValue")
+fun getSpnValue(spinner: SamaSpinner): String? = spinner.getSpnValue()
+
+@BindingAdapter("spnKeyAttrChanged")
+fun setSpnKeyListener(spinner: SamaSpinner, listener: InverseBindingListener) {
+    spinner.addListener { _, _ -> listener.onChange() }
+}
+@BindingAdapter("spnKey")
+fun setSpnKey(spinner: SamaSpinner, key: String?) { if (key != spinner.getSpnKey()) spinner.setSpnKey(key) }
+@InverseBindingAdapter(attribute = "spnKey")
+fun getSpnKey(spinner: SamaSpinner): String? = spinner.getSpnKey()
+
