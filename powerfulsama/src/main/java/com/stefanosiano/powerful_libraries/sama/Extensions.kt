@@ -35,7 +35,6 @@ class LiveDataExtensions
 
 
 /** Returns a liveData that will be updated with the values of the liveData returned by [f] (executed through [launch] and delayed by [millis] (just the first time)) */
-@Deprecated("Probably unsafe to use")
 inline fun <T> CoroutineScope.liveData(millis: Long = 0, crossinline f: suspend () -> LiveData<T>): LiveData<T> =
     MediatorLiveData<T>().also { mld -> this.launch { delay(millis); f().let { ld -> mld.addSourceLd(ld) { mld.postValue(it) } } } }
 
@@ -52,21 +51,6 @@ suspend inline fun delayUntil(millis: Long = 100, timeout: Long = 6000, crossinl
     while(!f() && (timeout < 0 || passed < timeout)) { delay(millis); passed += millis }
 }
 
-
-/** Returns a liveData that will be updated with the values of the liveData returned by [f].
- * If [ob] has a null value, the liveData will be empty until it's set with a non-null value */
-@Deprecated("Probably unsafe to use")
-suspend fun <T> CoroutineScope.waitFor(ob: ObservableField<out Any>, f: suspend () -> LiveData<T>): LiveData<T> {
-    if(ob.get() != null) return f()
-
-    val mediatorLiveData = MediatorLiveData<T>()
-    val cb = ob.addOnChangedAndNow(this) {
-        if(ob.get() == null) return@addOnChangedAndNow
-        f().let { ld -> mediatorLiveData.addSourceLd(ld) { mediatorLiveData.postValue(it) } }
-    }
-    mediatorLiveData.addSourceLd(mediatorLiveData) { ob.removeOnPropertyChangedCallback(cb); mediatorLiveData.removeSourceLd(mediatorLiveData) }
-    return mediatorLiveData
-}
 
 
 /** Calls addSource on main thread. useful when using background threads/coroutines: Calling it in the background throws an exception! */

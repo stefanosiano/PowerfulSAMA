@@ -12,7 +12,7 @@ def gitUrl = 'https://github.com/stefanosiano/PowerfulSAMA.git'                 
 def libDescription = 'Simplified Android Mvvm Architecture'                         // Library description
 
 //data to change on updates
-def libVersion = "0.3.95" // This is the library version used when deploying the artifact
+def libVersion = "0.3.96" // This is the library version used when deploying the artifact
 def gitTag = "$libVersion"
 
 group = libGroupId //bintray org/group name
@@ -20,6 +20,7 @@ version = libVersion //version
 
 //
 sourceCompatibility = 1.8
+targetCompatibility = 1.8
 compileKotlin { kotlinOptions.jvmTarget = "1.8" }
 compileTestKotlin { kotlinOptions.jvmTarget = "1.8" }
 
@@ -30,8 +31,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
-    compileOnly "androidx.room:room-compiler:2.2.5"                                                        //Room annotations
-
+    compileOnly "androidx.room:room-compiler:2.2.6"
 }
 
 

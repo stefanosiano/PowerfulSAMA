@@ -92,7 +92,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     internal fun unregisterSamaCallback(cb: SamaActivityCallback) = synchronized(registeredCallbacks) { registeredCallbacks.remove(cb) }
 
     /** Manages a dialogFragment, making it restore and show again if it was dismissed due to device rotation */
-    protected fun <T> manageDialog(f: () -> T): T where T: SamaDialogFragment<*> =
+    fun <T> manageDialog(f: () -> T): T where T: SamaDialogFragment<*> =
         f().also { dialog -> managedDialog.put(dialog.getUidInternal(), dialog) }
 
     /** Initializes the toolbar leaving the default title */

@@ -365,6 +365,7 @@ class Msg private constructor(
         delayUntil { !waitForDismiss }
     }
 
+    @Deprecated("Use 'kotlin.run { show() }' instead: it's more readable")
     /** Shows the message and returns a [Unit]. Useful for "return Msg.showOff()". If [showMessage] is true, then the message will be shown, otherwise [onOk] will be called */
     fun showOff(context: Context? = null, showMessage: Boolean = true): Unit { if(showMessage) showMessage(context) else { onOk?.invoke(null) } }
 

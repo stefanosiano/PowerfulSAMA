@@ -115,33 +115,9 @@ fun setTextInputLayoutError(textInputLayoutError: TextInputLayout, error: String
     textInputLayoutError.isErrorEnabled = !TextUtils.isEmpty(error)
 }
 
-/** Binds a key string to the spinner */
-@BindingAdapter("key")
-fun bindSpinnerKey(spinner: SamaSpinner, key: String) { spinner.setSelectedKey(key) }
-
-/** Binds a value string to the spinner */
-@BindingAdapter("value")
-fun bindSpinnerValue(spinner: SamaSpinner, value: String) { spinner.setSelectedValue(value) }
-
-/** Binds a key string to the spinner */
-@BindingAdapter("items")
-fun bindSpinnerItemsString(spinner: SamaSpinner, value: Collection<String>?) { spinner.setItems(value) }
-
-/** Binds a key string to the spinner */
-@BindingAdapter("items")
-fun bindSpinnerItemsArrayString(spinner: SamaSpinner, value: Array<out String>?) { spinner.setItems(value) }
-
-/** Binds a key string to the spinner */
-@BindingAdapter("items")
-fun bindSpinnerItems(spinner: SamaSpinner, value: Collection<SamaSpinner.SamaSpinnerItem>?) { spinner.setItems(value) }
-
-/** Binds a key string to the spinner */
-@BindingAdapter("items")
-fun bindSpinnerItemsArray(spinner: SamaSpinner, value: Array<out SamaSpinner.SamaSpinnerItem>?) { spinner.setItems(value) }
 
 
-
-@BindingAdapter("app:textAttrChanged")
+@BindingAdapter("textAttrChanged")
 fun setListeners(view: BigDecimalEditText, attrChange: InverseBindingListener) {
     view.addTextChangedListener( object : TextWatcher {
         override fun afterTextChanged(s: Editable?) { attrChange.onChange() }
@@ -157,7 +133,7 @@ fun setBdetText(view: BigDecimalEditText, newValue: BigDecimal) { view.setTextBd
 fun getBdetText(view: BigDecimalEditText) : BigDecimal { return view.getTextBd() }
 
 
-@BindingAdapter("app:textAttrChanged")
+@BindingAdapter("textAttrChanged")
 fun setListeners(view: BigDecimalTextInputEditText, attrChange: InverseBindingListener) {
     view.addTextChangedListener( object : TextWatcher {
         override fun afterTextChanged(s: Editable?) { attrChange.onChange() }
