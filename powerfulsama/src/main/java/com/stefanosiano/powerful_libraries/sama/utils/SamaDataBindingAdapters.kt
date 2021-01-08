@@ -96,12 +96,6 @@ fun setShapeBackgroundColor(textView: TextView, strikethrough: Boolean) {
         else textView.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
 }
 
-/** Sets the [query] string and [millis] after which perform the search */
-@BindingAdapter(requireAll = false, value = ["query", "searchMillis"])
-fun setQuery(searchView: SamaSearchView, query: String, millis: Long?) {
-    searchView.millis = millis ?: 0L
-    searchView.setQuery(query, false)
-}
 /** Sets the error id to the TextInputLayout  */
 @BindingAdapter("tilError")
 fun setTextInputLayoutError(textInputLayoutError: TextInputLayout, error: Int) {
