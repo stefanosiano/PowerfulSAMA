@@ -7,6 +7,8 @@
 
         <!-- Sets whether to clear focus when submitting the query, to close the keyboard automatically -->
         <attr name="ssvClearFocusOnSubmit" format="boolean" />
+        <attr name="ssvMillis" format="integer" />
+        <attr name="ssvQuery" format="string" />
     </declare-styleable>
 
     <!-- Attributes of the SamaRecyclerView.

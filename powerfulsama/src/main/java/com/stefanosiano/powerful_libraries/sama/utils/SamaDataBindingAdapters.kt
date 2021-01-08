@@ -11,6 +11,7 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.widget.SearchView
 import androidx.core.widget.ImageViewCompat
 import androidx.databinding.BindingAdapter
 import androidx.databinding.InverseBindingAdapter
@@ -169,4 +170,16 @@ fun setSpnKeyListener(spinner: SamaSpinner, listener: InverseBindingListener) {
 fun setSpnKey(spinner: SamaSpinner, key: String?) { if (key != spinner.getSpnKey()) spinner.setSpnKey(key) }
 @InverseBindingAdapter(attribute = "spnKey")
 fun getSpnKey(spinner: SamaSpinner): String? = spinner.getSpnKey()
+
+@BindingAdapter("ssvQueryAttrChanged")
+fun setSpnKeyListener(searchView: SamaSearchView, listener: InverseBindingListener) {
+    searchView.addOnQueryTextListener(object : SearchView.OnQueryTextListener {
+        override fun onQueryTextSubmit(query: String?): Boolean { listener.onChange(); return true }
+        override fun onQueryTextChange(newText: String?): Boolean { listener.onChange(); return true }
+    })
+}
+@BindingAdapter("ssvQuery")
+fun setSsvQuery(searchView: SamaSearchView, query: String?) { if (query != searchView.getSsvQuery()) searchView.setSsvQuery(query) }
+@InverseBindingAdapter(attribute = "ssvQuery")
+fun getSsvQuery(searchView: SamaSearchView): String = searchView.getSsvQuery()
 

@@ -1,74 +1,66 @@
 package com.stefanosiano.powerful_libraries.sama.ui
 
 import android.content.Context
-import android.os.Handler
 import android.util.AttributeSet
-import android.view.View
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.SearchView
-import androidx.databinding.Observable
-import androidx.databinding.ObservableField
 import androidx.databinding.ObservableList
 import com.stefanosiano.powerful_libraries.sama.*
-import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
+import kotlinx.coroutines.*
 
 /** Class that provides easy to use SearchView with data binding */
-open class SamaSearchView : SearchView {
+open class SamaSearchView : SearchView, CoroutineScope {
+    private val coroutineJob: Job = SupervisorJob()
+    override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
     /** Adapter used to show suggestions while searching */
     private lateinit var mSuggestionsAdapter: ArrayAdapter<String>
 
     /** Delay in milliseconds to execute the listener or update the observable */
-    var millis = 0L
+    private var millis = 0L
 
-    /** Handler used to handle the delay */
-    private val requeryHandler = Handler()
-
-    /** Current query */
-    private var currentQuery = ""
-
-    /** Set of observable strings to update when the query changes */
-    private val obserablesSet: MutableSet<WeakPair<ObservableField<String>, Observable.OnPropertyChangedCallback>> = HashSet()
-
-    /** Query text listener */
-    private var onQueryTextListener: OnQueryTextListener? = null
+    /** Job used to handle the delay */
+    private var requeryJob: Job? = null
 
     /** Flag to decide whether to clear focus and close keyboard when submitting a query */
     private var clearFocusOnSubmit = true
+
+    /** Key to use after setting items (if Key was selected before items were available) */
+    private val listeners = ArrayList<OnQueryTextListener>()
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, R.attr.searchViewStyle)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
         val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.SamaSearchView, defStyleAttr, 0)
         clearFocusOnSubmit = attrSet.getBoolean(R.styleable.SamaSearchView_ssvClearFocusOnSubmit, clearFocusOnSubmit)
+        millis = attrSet.getInt(R.styleable.SamaSearchView_ssvMillis, 0).toLong()
+        val query = attrSet.getString(R.styleable.SamaSearchView_ssvQuery) ?: ""
         attrSet.recycle()
+        setQuery(query, true)
     }
 
     init {
         super.setOnQueryTextListener ( object : OnQueryTextListener {
 
             override fun onQueryTextSubmit(query: String?): Boolean {
-                currentQuery = query ?: ""
-                onQueryUpdated()
+                listeners.forEach { it.onQueryTextSubmit(query) }
                 if(clearFocusOnSubmit) clearFocus()
-                onQueryTextListener?.onQueryTextSubmit(query)
                 return true
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
+                newText ?: return true
 
-                onQueryTextListener?.onQueryTextChange(newText)
-                if(newText == null || (currentQuery == newText))
-                    return true
-
-                currentQuery = newText
-
+                requeryJob?.cancel()
                 if(millis > 0) {
-                    requeryHandler.removeCallbacksAndMessages(null)
-                    requeryHandler.postDelayed( { onQueryUpdated() }, millis)
+                    requeryJob = launch {
+                        delay(millis)
+                        if(isActive)
+                            listeners.forEach { it.onQueryTextChange(newText) }
+                    }
                 }
                 else
-                    onQueryUpdated()
+                    listeners.forEach { it.onQueryTextChange(newText) }
 
                 return true
             }
@@ -76,43 +68,19 @@ open class SamaSearchView : SearchView {
     }
 
     override fun setOnQueryTextListener(listener: OnQueryTextListener?) {
-        onQueryTextListener = listener
+        listener ?: return
+        listeners.add(listener)
     }
 
-    /** Update the observable strings and call the optional function */
-    private fun onQueryUpdated() = obserablesSet.forEach { it.first()?.set(currentQuery) }
-
-    /**
-     * Adds the observable strings to the internal list.
-     * When the query changes, all registered observables are updated.
-     * When one observable changes, the query is updated
-     */
-    fun bindQuery(queryObs : ObservableField<String>?) {
-
-        val searchView = this.toWeakReference()
-        val weakObs = queryObs?.toWeakReference() ?: return
-        val callback = queryObs.addOnChangedAndNow {
-            weakObs.get()?.also { obs ->
-                if (obserablesSet.firstOrNull { set -> set.first() == obs } != null && obs.get() != currentQuery)
-                    searchView.get()?.setQuery(obs.get(), false)
-            }
-        }
-        if(currentQuery.isEmpty())
-            currentQuery = queryObs.get() ?: ""
-        queryObs.set(currentQuery)
-
-        obserablesSet.add(WeakPair(weakObs.get() ?: return, callback))
+    fun addOnQueryTextListener(listener: OnQueryTextListener) {
+        listeners.add(listener)
     }
 
-    override fun onViewRemoved(child: View?) {
-        super.onViewRemoved(child)
-        obserablesSet.forEach { it.first()?.removeOnPropertyChangedCallback(it.second() ?: return@forEach) }
-        obserablesSet.clear()
-    }
+    fun setSsvMillis(millis: Int?) { this.millis = (millis?:0).toLong() }
+    fun getSsvMillis() = millis.toInt()
 
-    /** Removes the observable from the registered observables */
-    fun unbindQuery(queryObs : ObservableField<String>?) = obserablesSet.filter { queryObs != null && it.first() == queryObs }.forEach { it.first()?.removeOnPropertyChangedCallback(it.second() ?: return@forEach) }
-
+    fun setSsvQuery(query: String?) { setQuery(query, true) }
+    fun getSsvQuery() = query.toString()
 
 
     /** Sets the [suggestions] to show when writing, using [layoutId]. When the user clicks on a suggestion, [f] will be called */

@@ -36,9 +36,9 @@ open class SamaSpinner : AppCompatSpinner {
     /** Key to use after setting items (if Key was selected before items were available) */
     private val listeners = ArrayList<(key: String, value: String) -> Unit>()
 
-    constructor(context: Context) : super(context) {}
-    constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {}
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {}
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
 
     /** Common initialization of the spinner */
