@@ -31,6 +31,7 @@ abstract class SamaDialogFragment(
     private val samaObserver = SamaObserver(this)
 
     protected var dialogFragment: SimpleSamaDialogFragment? = SimpleSamaDialogFragment.new(getDialogLayout(), isFullWidth(), isFullHeight()).with(getDialogDataBindingId(), bindingData ?: this)
+    protected var enableAutoManagement = true
 
     protected open fun isFullWidth() = true
     protected open fun isFullHeight() = false
@@ -91,7 +92,7 @@ abstract class SamaDialogFragment(
 
     /** Shows the dialog over the [activity]. If [enableAutoManagement] is set, or if the dialog was created through [SamaActivity.manageDialog],
      * when the activity is destroyed (e.g. rotating device) it automatically dismisses the dialog */
-    open fun show(activity: SamaActivity, enableAutoManagement: Boolean = true) {
+    open fun show(activity: SamaActivity) {
         if(enableAutoManagement) activity.manageDialogInternal(this)
         if(dialogFragment?.isAdded == true) return
         dialogFragment?.show(activity.supportFragmentManager)
