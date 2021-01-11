@@ -95,6 +95,9 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     fun <T> manageDialog(f: () -> T): T where T: SamaDialogFragment =
         f().also { dialog -> managedDialog.put(dialog.getUidInternal(), dialog) }
 
+    /** Manages a dialogFragment, making it restore and show again if it was dismissed due to device rotation */
+    internal fun manageDialogInternal(dialog: SamaDialogFragment) = managedDialog.put(dialog.getUidInternal(), dialog)
+
     /** Initializes the toolbar leaving the default title */
     protected fun initActivity() = initActivity("")
 

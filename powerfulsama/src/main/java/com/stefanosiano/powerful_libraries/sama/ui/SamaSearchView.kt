@@ -14,7 +14,9 @@ open class SamaSearchView : SearchView, CoroutineScope {
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
     /** Adapter used to show suggestions while searching */
-    private lateinit var mSuggestionsAdapter: ArrayAdapter<String>
+    private var mSuggestionsAdapter: ArrayAdapter<String>? = null
+
+    private var mSuggestionLayout: Int = android.R.layout.simple_spinner_dropdown_item
 
     /** Delay in milliseconds to execute the listener or update the observable */
     private var millis = 0L
@@ -34,6 +36,7 @@ open class SamaSearchView : SearchView, CoroutineScope {
         val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.SamaSearchView, defStyleAttr, 0)
         clearFocusOnSubmit = attrSet.getBoolean(R.styleable.SamaSearchView_ssvClearFocusOnSubmit, clearFocusOnSubmit)
         millis = attrSet.getInt(R.styleable.SamaSearchView_ssvMillis, 0).toLong()
+        mSuggestionLayout = attrSet.getInt(R.styleable.SamaSearchView_ssvSuggestionLayout, -1)
         val query = attrSet.getString(R.styleable.SamaSearchView_ssvQuery) ?: ""
         attrSet.recycle()
         setQuery(query, true)
@@ -79,34 +82,31 @@ open class SamaSearchView : SearchView, CoroutineScope {
     fun setSsvMillis(millis: Int?) { this.millis = (millis?:0).toLong() }
     fun getSsvMillis() = millis.toInt()
 
+    fun setSsvSuggestionLayout(suggestionLayoutId: Int?) { this.mSuggestionLayout = suggestionLayoutId ?: android.R.layout.simple_spinner_dropdown_item; updateSuggestionsAdapter() }
+    fun getSsvSuggestionLayout() = mSuggestionLayout
+
     fun setSsvQuery(query: String?) { setQuery(query, true) }
     fun getSsvQuery() = query.toString()
 
 
-    /** Sets the [suggestions] to show when writing, using [layoutId]. When the user clicks on a suggestion, [f] will be called */
-    fun bindSuggestions(layoutId: Int, suggestions: ObservableList<String>, f: (String) -> Unit) {
-        mSuggestionsAdapter = ArrayAdapter(context, layoutId)
-        bindSuggestions(suggestions, f)
-        suggestions.onAnyChange {
-            mSuggestionsAdapter.clear()
-            mSuggestionsAdapter.addAll(suggestions)
-            runOnUi { mSuggestionsAdapter.notifyDataSetChanged() }
-        }
-    }
-
-    /** Sets the [suggestions] to show when writing, using [layoutId]. When the user clicks on a suggestion, [f] will be called */
-    fun bindSuggestions(layoutId: Int, suggestions: List<String>, f: (String) -> Unit) {
-        mSuggestionsAdapter = ArrayAdapter(context, layoutId)
-        bindSuggestions(suggestions, f)
+    private fun updateSuggestionsAdapter() {
+        if(mSuggestionsAdapter == null) return
+        val oldItems = (0 until (mSuggestionsAdapter?.count ?: 0)).map { mSuggestionsAdapter?.getItem(it) }
+        mSuggestionsAdapter = ArrayAdapter(context, mSuggestionLayout)
+        mSuggestionsAdapter?.addAll(oldItems)
+        val searchAutoComplete = findViewById<SearchAutoComplete>(R.id.search_src_text)
+        runOnUi { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
     }
 
     /** Sets the [suggestions] to show when writing. When the user clicks on a suggestion, [f] will be called */
-    private fun bindSuggestions(suggestions: List<String>, f: (String) -> Unit){
-        mSuggestionsAdapter.addAll(suggestions)
+    private fun setSuggestions(suggestions: List<String>, f: (String) -> Unit){
+        mSuggestionsAdapter = mSuggestionsAdapter ?: ArrayAdapter(context, mSuggestionLayout)
+        mSuggestionsAdapter?.clear()
+        mSuggestionsAdapter?.addAll(suggestions)
         val searchAutoComplete = findViewById<SearchAutoComplete>(R.id.search_src_text)
 
         searchAutoComplete.setOnItemClickListener { _, _, position, _ ->
-            mSuggestionsAdapter.getItem(position)?.let { logVerbose("Clicked on $it"); f(it) }
+            mSuggestionsAdapter?.getItem(position)?.let { logVerbose("Clicked on $it"); f(it) }
         }
         runOnUi { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
     }

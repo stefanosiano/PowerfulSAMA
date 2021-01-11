@@ -89,8 +89,10 @@ abstract class SamaDialogFragment(
     /** Return the data binding id used to create the dialog fragment. Defaults to [dataBindingId] of constructor */
     protected open fun getDialogDataBindingId(): Int = dataBindingId
 
-    /** Shows the dialog over the [activity]. Also, when the activity is destroyed (e.g. rotating device), it automatically dismisses the dialog */
-    open fun show(activity: SamaActivity) {
+    /** Shows the dialog over the [activity]. If [enableAutoManagement] is set, or if the dialog was created through [SamaActivity.manageDialog],
+     * when the activity is destroyed (e.g. rotating device) it automatically dismisses the dialog */
+    open fun show(activity: SamaActivity, enableAutoManagement: Boolean = true) {
+        if(enableAutoManagement) activity.manageDialogInternal(this)
         if(dialogFragment?.isAdded == true) return
         dialogFragment?.show(activity.supportFragmentManager)
         map.put(uid, this)

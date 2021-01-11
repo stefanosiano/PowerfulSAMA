@@ -9,6 +9,7 @@
         <attr name="ssvClearFocusOnSubmit" format="boolean" />
         <attr name="ssvMillis" format="integer" />
         <attr name="ssvQuery" format="string" />
+        <attr name="ssvSuggestionLayout" format="reference" />
     </declare-styleable>
 
     <!-- Attributes of the SamaRecyclerView.
