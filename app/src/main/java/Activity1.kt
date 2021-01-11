@@ -75,12 +75,12 @@ class SampleDF(
     private val layoutId: Int,
     private val dataBindingId: Int,
     private val uid: Int
-): SamaDialogFragment<SampleDF>(layoutId, dataBindingId, uid){
+): SamaDialogFragment(layoutId, dataBindingId, uid){
 
     val id = 0
     var asd = false
     var sss = ObservableF(0)
 
-    override fun restore(oldDialog: SampleDF) = defaultRestore(oldDialog)
+    override fun restore(oldDialog: SamaDialogFragment) = defaultRestore(oldDialog)
 
 }

@@ -76,13 +76,14 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
         val functions = ArrayList<FunSpec>()
 
         val dialogFragmentType = processingEnv.elementUtils.getTypeElement("com.stefanosiano.powerful_libraries.sama.view.SamaDialogFragment")
-        roundEnv.rootElements.filter { it.kind == ElementKind.CLASS && it.isAssignable(dialogFragmentType.asType(), 1) && !it.modifiers.contains(Modifier.ABSTRACT) }.forEach { cls ->
+        roundEnv.rootElements.filter { it.kind == ElementKind.CLASS && it.isAssignable(dialogFragmentType.asType()) && !it.modifiers.contains(Modifier.ABSTRACT) }.forEach { cls ->
             if (cls !is TypeElement) return@forEach
 
             val function = FunSpec.builder("defaultRestore").receiver(getKotlinType(cls.qualifiedName.toString()))
 
-            function.addParameter(ParameterSpec.builder("oldDialog", cls.asType().toKotlinType()).build())
+            function.addParameter(ParameterSpec.builder("oldDialog", dialogFragmentType.asType().toKotlinType()).build())
                 .addKdoc(" %S ", "Restore previous data from events like device rotating when a dialog is shown. The [dialogFragment] in [oldDialog] is null")
+            function.addStatement("\tif(oldDialog !is ${cls.simpleName}) return")
 
             cls.enclosedElements.filter { it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && it.getAnnotation(IgnoreField::class.java) == null && !it.modifiers.contains(Modifier.STATIC) }.map { it as VariableElement }.forEach { v ->
                 when {
