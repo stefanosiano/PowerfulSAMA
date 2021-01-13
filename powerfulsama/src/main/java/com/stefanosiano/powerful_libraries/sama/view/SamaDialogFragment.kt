@@ -141,14 +141,14 @@ abstract class SamaDialogFragment(
     open fun show(activity: SamaActivity) {
         if(enableAutoManagement) activity.manageDialogInternal(this)
         if(isAdded) return
-        show(activity.supportFragmentManager, tag)
+        super.show(activity.supportFragmentManager, tag)
         map.put(uid, this)
         samaObserver.restartObserver()
     }
 
     /** Dismiss the dialog through [dismissAllowingStateLoss] */
     override fun dismiss() {
-        if(isAdded) dismiss()
+        if(isAdded) super.dismiss()
     }
 
     override fun onDismiss(dialog: DialogInterface) {
@@ -158,7 +158,7 @@ abstract class SamaDialogFragment(
     }
 
     /** Dismiss the dialog through [dismissAllowingStateLoss] */
-    fun dismissDialog(v: View) { if(isAdded) dismissAllowingStateLoss() }
+    fun dismissDialog(v: View) { if(isAdded) super.dismissAllowingStateLoss() }
 
 
 
