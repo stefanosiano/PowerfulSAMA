@@ -75,9 +75,9 @@ class SampleDF(
     private val layoutId: Int,
     private val dataBindingId: Int,
     private val uid: Int
-): SamaDialogFragment(layoutId, dataBindingId, uid){
+): SamaDialogFragment(layoutId, dataBindingId, true, false, -1, uid){
 
-    val id = 0
+    val idd = 0
     var asd = false
     var sss = ObservableF(0)
 

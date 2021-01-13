@@ -74,7 +74,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         super.onDestroy()
         logVerbose("onDestroy")
         samaObserver.destroyObserver()
-        synchronized(managedDialog) { managedDialog.forEach { it.onDestroy(this) } }
+//        synchronized(managedDialog) { managedDialog.forEach { it.destroy(this) } }
         managedDialog.clear()
         synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onDestroy(this) }; registeredCallbacks.clear() }
         registeredViewModels.clear()

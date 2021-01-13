@@ -21,6 +21,10 @@ open class SimpleSamaFragment: SamaFragment() {
     private var title = ""
     private var defaultTitle = ""
     private var onOptionMenuCreated: ((menu: Menu?) -> Unit)? = null
+    private var onDetach: ((fragment: SimpleSamaFragment) -> Unit)? = null
+    private var searchMenuId: Int = 0
+    private var searchString: ObservableField<String>? = null
+    private var searchView: WeakReference<SamaSearchView>? = null
 
     companion object {
 
@@ -82,6 +86,17 @@ open class SimpleSamaFragment: SamaFragment() {
         return this
     }
 
+    /** Binds an observableString to a SamaSearchView
+     *
+     * @param searchMenuId id of the searchView
+     * @param searchString observableString to binds the searchView to
+     */
+    fun search(searchMenuId: Int, searchString: ObservableField<String>): SimpleSamaFragment {
+        this.searchMenuId = searchMenuId
+        this.searchString = searchString
+        return this
+    }
+
     /**
      * Executes [function] when [menuId] is clicked
      *
@@ -99,6 +114,12 @@ open class SimpleSamaFragment: SamaFragment() {
         return this
     }
 
+    /** Sets the function to call when this fragment is detached from the activity */
+    fun onDetach(onDetach: (fragment: SimpleSamaFragment) -> Unit): SimpleSamaFragment {
+        this.onDetach = onDetach
+        return this
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         logVerbose("$logTag: Selected item: ${item.title}")
         menuFunctions.firstOrNull { it.first == item.itemId }?.second?.invoke() ?: return super.onOptionsItemSelected(item)
@@ -109,8 +130,17 @@ open class SimpleSamaFragment: SamaFragment() {
         if(menuId != 0)
             inflater.inflate(menuId, menu)
         onOptionMenuCreated?.invoke(menu)
+
+        searchView = if(searchMenuId != 0) (menu.findItem(searchMenuId)?.actionView as? SamaSearchView)?.toWeakReference() else null
+        searchString?.let { searchView?.get()?.bindQuery(it) }
         super.onCreateOptionsMenu(menu, inflater)
     }
+
+    override fun onDestroyOptionsMenu() {
+        super.onDestroyOptionsMenu()
+        searchView?.get()?.clearBoundQueries()
+    }
+
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -121,6 +151,12 @@ open class SimpleSamaFragment: SamaFragment() {
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (defaultTitle.isEmpty()) this.defaultTitle = activity?.title?.toString() ?: ""
+    }
+
+    override fun onDetach() {
+        onDetach?.invoke(this)
+        searchView?.get()?.clearBoundQueries()
+        super.onDetach()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -149,5 +185,9 @@ open class SimpleSamaFragment: SamaFragment() {
         bindingPairs.clear()
         menuFunctions.clear()
         onOptionMenuCreated = null
+        searchView?.get()?.clearBoundQueries()
+        searchView?.clear()
+        searchView = null
+        searchString = null
     }
 }

@@ -87,6 +87,7 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
 
             cls.enclosedElements.filter { it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && it.getAnnotation(IgnoreField::class.java) == null && !it.modifiers.contains(Modifier.STATIC) }.map { it as VariableElement }.forEach { v ->
                 when {
+                    v.simpleName.toString().contains("$") -> {}
                     v.isAssignable("androidx.databinding.ObservableInt") ||
                     v.isAssignable("androidx.databinding.ObservableShort") ||
                     v.isAssignable("androidx.databinding.ObservableLong") ||

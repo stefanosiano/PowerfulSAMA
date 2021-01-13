@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.AttributeSet
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.SearchView
+import androidx.databinding.Observable
+import androidx.databinding.ObservableField
 import androidx.databinding.ObservableList
 import com.stefanosiano.powerful_libraries.sama.*
 import kotlinx.coroutines.*
@@ -30,6 +32,9 @@ open class SamaSearchView : SearchView, CoroutineScope {
     /** Key to use after setting items (if Key was selected before items were available) */
     private val listeners = ArrayList<OnQueryTextListener>()
 
+    /** Key to use after setting items (if Key was selected before items were available) */
+    private val registeredObservers = ArrayList<Pair<ObservableField<String>, Observable.OnPropertyChangedCallback>>()
+
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, R.attr.searchViewStyle)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
@@ -46,7 +51,8 @@ open class SamaSearchView : SearchView, CoroutineScope {
         super.setOnQueryTextListener ( object : OnQueryTextListener {
 
             override fun onQueryTextSubmit(query: String?): Boolean {
-                listeners.forEach { it.onQueryTextSubmit(query) }
+                synchronized(listeners) { listeners.forEach { it.onQueryTextSubmit(query) } }
+                synchronized(registeredObservers) { registeredObservers.forEach { it.first.set(query ?: "") } }
                 if(clearFocusOnSubmit) clearFocus()
                 return true
             }
@@ -58,12 +64,16 @@ open class SamaSearchView : SearchView, CoroutineScope {
                 if(millis > 0) {
                     requeryJob = launch {
                         delay(millis)
-                        if(isActive)
-                            listeners.forEach { it.onQueryTextChange(newText) }
+                        if(isActive) {
+                            synchronized(listeners) { listeners.forEach { it.onQueryTextChange(newText) } }
+                            synchronized(registeredObservers) { registeredObservers.forEach { it.first.set(newText ?: "") } }
+                        }
                     }
                 }
-                else
-                    listeners.forEach { it.onQueryTextChange(newText) }
+                else {
+                    synchronized(listeners) { listeners.forEach { it.onQueryTextChange(newText) } }
+                    synchronized(registeredObservers) { registeredObservers.forEach { it.first.set(newText ?: "") } }
+                }
 
                 return true
             }
@@ -72,11 +82,11 @@ open class SamaSearchView : SearchView, CoroutineScope {
 
     override fun setOnQueryTextListener(listener: OnQueryTextListener?) {
         listener ?: return
-        listeners.add(listener)
+        synchronized(listeners) { listeners.add(listener) }
     }
 
     fun addOnQueryTextListener(listener: OnQueryTextListener) {
-        listeners.add(listener)
+        synchronized(listeners) { listeners.add(listener) }
     }
 
     fun setSsvMillis(millis: Int?) { this.millis = (millis?:0).toLong() }
@@ -109,5 +119,13 @@ open class SamaSearchView : SearchView, CoroutineScope {
             mSuggestionsAdapter?.getItem(position)?.let { logVerbose("Clicked on $it"); f(it) }
         }
         runOnUi { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
+    }
+
+    fun bindQuery(query: ObservableField<String>) {
+        synchronized(registeredObservers) { registeredObservers.add(Pair(query, query.addOnChangedAndNow { setSsvQuery(it) })) }
+    }
+
+    fun clearBoundQueries() {
+        synchronized(registeredObservers) { registeredObservers.forEach { it.first.removeOnPropertyChangedCallback(it.second) } }
     }
 }

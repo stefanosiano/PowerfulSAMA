@@ -1,55 +1,59 @@
 package com.stefanosiano.powerful_libraries.sama.view
 
+import android.content.DialogInterface
+import android.os.Bundle
 import android.util.SparseArray
-import android.view.View
+import android.view.*
 import androidx.databinding.*
+import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.LiveData
 import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
+import com.stefanosiano.powerful_libraries.sama.logVerbose
 import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import java.util.ArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
 /** Abstract DialogFragment for all DialogFragments to extend. It includes a dialogFragment usable by subclasses
- * [layoutId] and [dataBindingId] are used to create the underlying dialogFragment.
- * [uid] is used to restore and reopen the dialog if instantiated through [SamaActivity.manageDialog] (value -1 is ignored).
+ * [layoutId] and [dataBindingId] are used to create the underlying dialogFragment. [dialogBindingId] is used to bind the [SimpleSamaDialogFragment] directly, if it's not -1.
+ * [uid] is used to restore and reopen the dialog if instantiated through [SamaActivity.manageDialog] (value -1 is ignored). Values over 10000 are used internally, so use lower values.
  * It's automatically generated based on the class name. Customize it if you have more then 1 of these dialogs at the same time.
  * If you want more control over them override [getDialogLayout] and [getDialogDataBindingId] and/ot [bindingData] */
 abstract class SamaDialogFragment(
     private val layoutId: Int,
-    private val dataBindingId: Int,
-    private val bindingData: Any? = null,
+    private val dataBindingId: Int = -1,
+    private val fullWidth: Boolean = false,
+    private val fullHeight: Boolean = false,
+    private val dialogBindingId: Int = -1,
     private var uid: Int = -1
-): CoroutineScope {
-
-    private val coroutineJob: Job = SupervisorJob()
-    override val coroutineContext = coroutineSamaHandler(coroutineJob)
-
-    /** Object that takes care of observing liveData and observableFields */
-    private val samaObserver = SamaObserver(this)
-
-    protected var dialogFragment: SimpleSamaDialogFragment? = SimpleSamaDialogFragment.new(getDialogLayout(), isFullWidth(), isFullHeight()).with(getDialogDataBindingId(), bindingData ?: this)
-    protected var enableAutoManagement = true
-
-    protected open fun isFullWidth() = true
-    protected open fun isFullHeight() = false
-
-    internal fun getUidInternal() = uid
-
-    init {
-        if(uid == -1)
-            uid = uidMap.getOrPut(this::class.java.name) { lastUid.incrementAndGet() }
-    }
-
-    /** Restore previous data from events like device rotating when a dialog is shown. The [dialogFragment] in [oldDialog] is null */
-    abstract fun restore(oldDialog: SamaDialogFragment)
+): DialogFragment(), CoroutineScope {
 
     companion object {
         val map = SparseArray<SamaDialogFragment>()
         val uidMap = HashMap<String, Int>()
-        val lastUid = AtomicInteger(0)
+        val lastUid = AtomicInteger(10000)
+    }
+
+    private val coroutineJob: Job = SupervisorJob()
+    override val coroutineContext = coroutineSamaHandler(coroutineJob)
+
+    private val bindingPairs: MutableList<Pair<Int, Any>> = ArrayList()
+
+    /** Object that takes care of observing liveData and observableFields */
+    private val samaObserver = SamaObserver(this)
+
+    protected var enableAutoManagement = true
+
+    internal fun getUidInternal() = uid
+
+    init {
+        if(dialogBindingId != -1 && !this.bindingPairs.asSequence().map { it.first }.contains(dialogBindingId))
+            this.bindingPairs.add(Pair(dialogBindingId, this))
+        if(uid == -1)
+            uid = uidMap.getOrPut(this::class.java.name) { lastUid.incrementAndGet() }
     }
 
     internal fun onResumeRestore(activity: SamaActivity) {
@@ -63,9 +67,8 @@ abstract class SamaDialogFragment(
     }
 
     internal fun onSaveInstanceState(activity: SamaActivity) {
-        if(dialogFragment?.isAdded == true && map.get(uid, null) != null) {
+        if(isAdded && map.get(uid, null) != null) {
             dismiss()
-            dialogFragment = null
             if(activity.isChangingConfigurations)
                 map.put(uid, this)
             else
@@ -75,42 +78,94 @@ abstract class SamaDialogFragment(
             dismiss()
     }
 
-    internal fun onDestroy(activity: SamaActivity) {
+    /** Restore previous data from events like device rotating when a dialog is shown. The [dialogFragment] in [oldDialog] is null */
+    abstract fun restore(oldDialog: SamaDialogFragment)
+
+    /**
+     * Sets the data to work with data binding
+     * Calling this method multiple times will associate the id to the last data passed.
+     * Multiple dataBindingIds are allowed
+     *
+     * @param dataBindingId the id of the variable in the layout
+     * @param bindingData the data to bind to the id
+     */
+    fun with(dataBindingId: Int, bindingData: Any): SamaDialogFragment {
+        if(!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId))
+            this.bindingPairs.add(Pair(dataBindingId, bindingData))
+        return this
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) { super.onCreate(savedInstanceState); logVerbose("onCreate") }
+    override fun onResume() { super.onResume(); logVerbose("onResume") }
+    override fun onStart() {
+        super.onStart(); logVerbose("onStart")
+        if(fullWidth || fullHeight) {
+            dialog?.window?.setLayout(if(fullWidth) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT,
+                if(fullHeight) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT)
+        }
+    }
+    override fun onPause() { super.onPause(); logVerbose("onPause") }
+    override fun onStop() { super.onStop(); logVerbose("onStop") }
+    override fun onDestroy() {
+        super.onDestroy(); logVerbose("onDestroy")
         samaObserver.destroyObserver()
-        if(activity.isFinishing)
+        if(activity?.isFinishing == true)
             map.remove(uid)
     }
 
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        dialog?.window?.requestFeature(Window.FEATURE_NO_TITLE)
+        dialog?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        dialog?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
+
+        with(dataBindingId, this)
+        if(bindingPairs.isNotEmpty()) {
+            val binding: ViewDataBinding = DataBindingUtil.inflate(inflater, layoutId, container, false)
+            for (pair in bindingPairs)
+                binding.setVariable(pair.first, pair.second)
+            return binding.root
+        }
+
+        return inflater.inflate(layoutId, container, false)
+    }
+
+    /** Function used to call [dismiss] from dataBinding */
+    @Suppress("UNUSED_PARAMETER")
+    fun dismiss(view: View) = dismiss()
+
     /** Returns whether this dialog should reopen itself on activity resume after device was rotated. Defaults to true */
     open fun autoRestore(): Boolean = true
-
-    /** Return the layout used to create the dialog fragment. Defaults to [layoutId] of constructor */
-    protected open fun getDialogLayout(): Int = layoutId
-
-    /** Return the data binding id used to create the dialog fragment. Defaults to [dataBindingId] of constructor */
-    protected open fun getDialogDataBindingId(): Int = dataBindingId
 
     /** Shows the dialog over the [activity]. If [enableAutoManagement] is set, or if the dialog was created through [SamaActivity.manageDialog],
      * when the activity is destroyed (e.g. rotating device) it automatically dismisses the dialog */
     open fun show(activity: SamaActivity) {
         if(enableAutoManagement) activity.manageDialogInternal(this)
-        if(dialogFragment?.isAdded == true) return
-        dialogFragment?.show(activity.supportFragmentManager)
+        if(isAdded) return
+        show(activity.supportFragmentManager, tag)
         map.put(uid, this)
         samaObserver.restartObserver()
     }
 
     /** Dismiss the dialog through [dismissAllowingStateLoss] */
-    fun dismiss() {
+    override fun dismiss() {
+        if(isAdded) dismiss()
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
         samaObserver.stopObserver()
-        if(dialogFragment?.isAdded == true) dialogFragment?.dismissAllowingStateLoss()
         map.remove(uid)
+        super.onDismiss(dialog)
     }
 
     /** Dismiss the dialog through [dismissAllowingStateLoss] */
-    fun dismissDialog(v: View) { dismiss() }
+    fun dismissDialog(v: View) { if(isAdded) dismissAllowingStateLoss() }
 
-    fun getSamaActivity() = dialogFragment?.activity as? SamaActivity?
+
+
+
+
+
+
 
 
 

@@ -19,8 +19,6 @@ open class SimpleSamaDialogFragment: DialogFragment() {
     private var onViewCreated: ((view: View) -> Unit)? = null
     private var onActivityCreated: (() -> Unit)? = null
 
-    private lateinit var binding: ViewDataBinding
-
     companion object {
 
         private const val ExtraLayoutId = "ExtraLayoutId"
@@ -138,7 +136,7 @@ open class SimpleSamaDialogFragment: DialogFragment() {
         dialog?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN)
 
         if(bindingPairs.isNotEmpty()) {
-            binding = DataBindingUtil.inflate(inflater, layoutId, container, false)
+            val binding: ViewDataBinding = DataBindingUtil.inflate(inflater, layoutId, container, false)
             for (pair in bindingPairs)
                 binding.setVariable(pair.first, pair.second)
             return binding.root
