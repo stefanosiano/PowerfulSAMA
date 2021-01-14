@@ -73,11 +73,14 @@ class Activity2 : Activity() {
 
 class SampleDF(
     private val layoutId: Int,
-    private val dataBindingId: Int,
-    private val uid: Int
-): SamaDialogFragment(layoutId, dataBindingId, true, false, -1, uid){
+    private val dataBindingId: Int = -1,
+    private val bindingData: Any? = null,
+    private val fullWidth: Boolean = true,
+    private val fullHeight: Boolean = false,
+    private var uid: Int = -1
+): SamaDialogFragment(layoutId, dataBindingId, bindingData, fullWidth, fullHeight, uid){
 
-    val idd = 0
+    val id = 0
     var asd = false
     var sss = ObservableF(0)
 
