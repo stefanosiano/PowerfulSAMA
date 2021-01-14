@@ -95,7 +95,7 @@ open class SamaSearchView : SearchView, CoroutineScope {
     fun setSsvSuggestionLayout(suggestionLayoutId: Int?) { this.mSuggestionLayout = suggestionLayoutId ?: android.R.layout.simple_spinner_dropdown_item; updateSuggestionsAdapter() }
     fun getSsvSuggestionLayout() = mSuggestionLayout
 
-    fun setSsvQuery(query: String?) { setQuery(query, true) }
+    fun setSsvQuery(query: String?) { if(query != getSsvQuery()) setQuery(query, true) }
     fun getSsvQuery() = query.toString()
 
 
@@ -122,7 +122,7 @@ open class SamaSearchView : SearchView, CoroutineScope {
     }
 
     fun bindQuery(query: ObservableField<String>) {
-        synchronized(registeredObservers) { registeredObservers.add(Pair(query, query.addOnChangedAndNow { setSsvQuery(it) })) }
+        synchronized(registeredObservers) { registeredObservers.add(Pair(query, query.addOnChangedAndNow { if(it != getSsvQuery()) setSsvQuery(it) })) }
     }
 
     fun clearBoundQueries() {

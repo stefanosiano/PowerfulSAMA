@@ -105,6 +105,9 @@ abstract class SamaDialogFragment(
     }
 
     /** Dismiss the dialog through [dismissAllowingStateLoss] */
+    fun dismiss(v: View) = dismiss()
+
+    /** Dismiss the dialog through [dismissAllowingStateLoss] */
     fun dismiss() {
         samaObserver.stopObserver()
         map.remove(uid)
