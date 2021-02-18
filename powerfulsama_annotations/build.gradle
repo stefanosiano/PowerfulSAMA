@@ -1,26 +1,19 @@
-apply plugin: 'com.github.dcendents.android-maven'
-apply plugin: 'com.jfrog.bintray'
-apply plugin: 'kotlin'
+plugins {
+    id 'kotlin'
+}
 
-//fixed data
-def pkgName = 'sama_annotations'
-def libGroupId = "com.stefanosiano.powerful_libraries"                              // Maven Group ID for the artifact
-def libArtifactId = "sama_annotations"                                              // Maven Artifact ID for the artifact
-def libName = "Powerful Sama (Simplified Android Mvvm Architecture)"                // Library name
-def siteUrl = 'https://github.com/stefanosiano/PowerfulSAMA'                        // Homepage URL of the library
-def gitUrl = 'https://github.com/stefanosiano/PowerfulSAMA.git'                     // Git repository URL
-def libDescription = 'Simplified Android Mvvm Architecture'                         // Library description
+ext {
+    LIB_VERSION = "0.4.07" // This is the library version used when deploying the artifact
+    ENABLE_DEPLOY = true //Flag whether the ci/cd workflow should deploy to sonatype or not
 
-//data to change on updates
-def libVersion = "0.4.06" // This is the library version used when deploying the artifact
-def gitTag = "$libVersion"
+    LIB_GROUP_ID = "io.github.stefanosiano.powerful_libraries"                        // Maven Group ID for the artifact
+    LIB_ARTIFACT_ID = "sama_annotations"                                              // Maven Artifact ID for the artifact
+    LIB_NAME = "Powerful Sama (Simplified Android Mvvm Architecture)"                // Library name
+    SITE_URL = 'https://github.com/stefanosiano/PowerfulSAMA'                        // Homepage URL of the library
+    GIT_URL = 'https://github.com/stefanosiano/PowerfulSAMA.git'                     // Git repository URL
+    LIB_DESCRIPTION = 'Simplified Android Mvvm Architecture'                         // Library description
+}
 
-group = libGroupId //bintray org/group name
-version = libVersion //version
-
-//
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
 compileKotlin { kotlinOptions.jvmTarget = "1.8" }
 compileTestKotlin { kotlinOptions.jvmTarget = "1.8" }
 
@@ -34,96 +27,4 @@ dependencies {
     compileOnly "androidx.room:room-compiler:2.2.6"
 }
 
-
-install {
-    repositories.mavenInstaller {
-        // This generates POM.xml with proper parameters
-        pom {
-            project {
-                packaging 'aar'
-                groupId libGroupId
-                artifactId libArtifactId
-
-                // Add your description here
-                name libName
-                description libDescription
-                url siteUrl
-
-                // Set your license
-                licenses {
-                    license {
-                        name 'MIT License'
-                        url 'https://opensource.org/licenses/MIT'
-                    }
-                }
-                developers {
-                    developer {
-                        id 'stefanosiano'
-                        name 'Stefano Siano'
-                        email 'stefano.siano91@gmail.com'
-                    }
-                }
-                scm {
-                    connection gitUrl
-                    developerConnection gitUrl
-                    url siteUrl
-
-                }
-            }
-        }
-    }
-}
-
-
-task generateSourcesJar(type: Jar) {
-    from sourceSets.main.java.srcDirs
-    classifier 'sources'
-}
-
-task generateJavadocs(type: Javadoc) {
-    excludes = ['**/*.kt'] // < ---- Exclude all kotlin files from javadoc file.
-    source = sourceSets.main.java.srcDirs
-    classpath += project.files(classpath.join(File.pathSeparator))
-}
-
-task generateJavaDocsJar(type: Jar) {
-    from generateJavadocs.destinationDir
-    classifier 'javadoc'
-}
-
-generateJavaDocsJar.dependsOn generateJavadocs
-
-artifacts {
-    archives generateJavaDocsJar
-    archives generateSourcesJar
-}
-
-
-
-
-// https://github.com/bintray/gradle-bintray-plugin
-bintray {
-    user = System.getenv('BINTRAY_USER')
-    key = System.getenv('BINTRAY_KEY')
-
-    configurations = ['archives']
-
-    // Package info for BinTray
-    pkg {
-        repo = 'powerful_libraries'
-        // it is the name that appears in bintray when logged
-        name = pkgName
-        desc = libDescription
-        websiteUrl = siteUrl
-        vcsUrl = gitUrl
-        licenses = ['MIT']
-        publish = true
-        publicDownloadNumbers = true
-        version {
-            name = libVersion
-            desc = libDescription
-            released = new Date()
-            vcsTag = gitTag
-        }
-    }
-}
+apply from: "${rootProject.projectDir}/sonatype-publish.gradle"
