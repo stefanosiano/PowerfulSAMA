@@ -92,7 +92,11 @@ open class SamaSearchView : SearchView, CoroutineScope {
     fun setSsvMillis(millis: Int?) { this.millis = (millis?:0).toLong() }
     fun getSsvMillis() = millis.toInt()
 
-    fun setSsvSuggestionLayout(suggestionLayoutId: Int?) { this.mSuggestionLayout = suggestionLayoutId ?: android.R.layout.simple_spinner_dropdown_item; updateSuggestionsAdapter() }
+    fun setSsvSuggestionLayout(suggestionLayoutId: Int?) {
+        this.mSuggestionLayout = suggestionLayoutId ?: android.R.layout.simple_spinner_dropdown_item
+        updateSuggestionsAdapter()
+    }
+
     fun getSsvSuggestionLayout() = mSuggestionLayout
 
     fun setSsvQuery(query: String?) { if(query != getSsvQuery()) setQuery(query, true) }
@@ -109,10 +113,10 @@ open class SamaSearchView : SearchView, CoroutineScope {
     }
 
     /** Sets the [suggestions] to show when writing. When the user clicks on a suggestion, [f] will be called */
-    private fun setSuggestions(suggestions: List<String>, f: (String) -> Unit){
+    fun setSsvSuggestions(suggestions: List<String>?, f: (String) -> Unit){
         mSuggestionsAdapter = mSuggestionsAdapter ?: ArrayAdapter(context, mSuggestionLayout)
         mSuggestionsAdapter?.clear()
-        mSuggestionsAdapter?.addAll(suggestions)
+        suggestions?.let { mSuggestionsAdapter?.addAll(it) }
         val searchAutoComplete = findViewById<SearchAutoComplete>(R.id.search_src_text)
 
         searchAutoComplete.setOnItemClickListener { _, _, position, _ ->
@@ -120,6 +124,9 @@ open class SamaSearchView : SearchView, CoroutineScope {
         }
         runOnUi { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
     }
+
+    /** Gets the suggestions shown when writing */
+    fun getSsvSuggestions(): List<String> = (0 until (mSuggestionsAdapter?.count ?:0)).mapNotNull { mSuggestionsAdapter?.getItem(it) }
 
     fun bindQuery(query: ObservableField<String>) {
         synchronized(registeredObservers) { registeredObservers.add(Pair(query, query.addOnChangedAndNow { if(it != getSsvQuery()) setSsvQuery(it) })) }

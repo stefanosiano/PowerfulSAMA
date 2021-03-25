@@ -166,7 +166,7 @@ fun setSpnKey(spinner: SamaSpinner, key: String?) { if (key != spinner.getSpnKey
 fun getSpnKey(spinner: SamaSpinner): String? = spinner.getSpnKey()
 
 @BindingAdapter("ssvQueryAttrChanged")
-fun setSpnKeyListener(searchView: SamaSearchView, listener: InverseBindingListener) {
+fun setSsvQueryListener(searchView: SamaSearchView, listener: InverseBindingListener) {
     searchView.addOnQueryTextListener(object : SearchView.OnQueryTextListener {
         override fun onQueryTextSubmit(query: String?): Boolean { listener.onChange(); return true }
         override fun onQueryTextChange(newText: String?): Boolean { listener.onChange(); return true }
@@ -177,3 +177,6 @@ fun setSsvQuery(searchView: SamaSearchView, query: String?) { if (query != searc
 @InverseBindingAdapter(attribute = "ssvQuery")
 fun getSsvQuery(searchView: SamaSearchView): String = searchView.getSsvQuery()
 
+
+@BindingAdapter("onClick")
+fun onClick(view: View, onClick: () -> Unit) { view.setOnClickListener { onClick() } }

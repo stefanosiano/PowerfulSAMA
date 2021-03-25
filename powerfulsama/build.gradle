@@ -6,7 +6,7 @@ plugins {
 
 
 ext {
-    LIB_VERSION = "0.4.07" // This is the library version used when deploying the artifact
+    LIB_VERSION = "0.4.08" // This is the library version used when deploying the artifact
     ENABLE_DEPLOY = true //Flag whether the ci/cd workflow should deploy to sonatype or not
 
     LIB_GROUP_ID = "io.github.stefanosiano.powerful_libraries"                       // Maven Group ID for the artifact
@@ -26,7 +26,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 1
-        versionName "1.0"
+        versionName LIB_VERSION
         consumerProguardFiles 'sama-proguard-rules.pro'
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
