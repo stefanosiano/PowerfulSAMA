@@ -4,10 +4,10 @@ import android.content.Context
 import android.util.AttributeSet
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.SearchView
-import androidx.databinding.Observable
-import androidx.databinding.ObservableField
-import androidx.databinding.ObservableList
-import com.stefanosiano.powerful_libraries.sama.*
+import com.stefanosiano.powerful_libraries.sama.R
+import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
+import com.stefanosiano.powerful_libraries.sama.logVerbose
+import com.stefanosiano.powerful_libraries.sama.runOnUi
 import kotlinx.coroutines.*
 
 /** Class that provides easy to use SearchView with data binding */
@@ -18,6 +18,7 @@ open class SamaSearchView : SearchView, CoroutineScope {
     /** Adapter used to show suggestions while searching */
     private var mSuggestionsAdapter: ArrayAdapter<String>? = null
 
+    /** Layout of the suggestions dropdown menu. Defaults to [android.R.layout.simple_spinner_dropdown_item] */
     private var mSuggestionLayout: Int = android.R.layout.simple_spinner_dropdown_item
 
     /** Delay in milliseconds to execute the listener or update the observable */
@@ -29,11 +30,8 @@ open class SamaSearchView : SearchView, CoroutineScope {
     /** Flag to decide whether to clear focus and close keyboard when submitting a query */
     private var clearFocusOnSubmit = true
 
-    /** Key to use after setting items (if Key was selected before items were available) */
+    /** Listeners to call when the query changes */
     private val listeners = ArrayList<OnQueryTextListener>()
-
-    /** Key to use after setting items (if Key was selected before items were available) */
-    private val registeredObservers = ArrayList<Pair<ObservableField<String>, Observable.OnPropertyChangedCallback>>()
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, R.attr.searchViewStyle)
@@ -52,7 +50,6 @@ open class SamaSearchView : SearchView, CoroutineScope {
 
             override fun onQueryTextSubmit(query: String?): Boolean {
                 synchronized(listeners) { listeners.forEach { it.onQueryTextSubmit(query) } }
-                synchronized(registeredObservers) { registeredObservers.forEach { it.first.set(query ?: "") } }
                 if(clearFocusOnSubmit) clearFocus()
                 return true
             }
@@ -64,16 +61,12 @@ open class SamaSearchView : SearchView, CoroutineScope {
                 if(millis > 0) {
                     requeryJob = launch {
                         delay(millis)
-                        if(isActive) {
+                        if(isActive)
                             synchronized(listeners) { listeners.forEach { it.onQueryTextChange(newText) } }
-                            synchronized(registeredObservers) { registeredObservers.forEach { it.first.set(newText ?: "") } }
-                        }
                     }
                 }
-                else {
+                else
                     synchronized(listeners) { listeners.forEach { it.onQueryTextChange(newText) } }
-                    synchronized(registeredObservers) { registeredObservers.forEach { it.first.set(newText ?: "") } }
-                }
 
                 return true
             }
@@ -85,12 +78,16 @@ open class SamaSearchView : SearchView, CoroutineScope {
         synchronized(listeners) { listeners.add(listener) }
     }
 
-    fun addOnQueryTextListener(listener: OnQueryTextListener) {
+    fun addOnQueryTextListener(listener: OnQueryTextListener?) {
+        listener ?: return
         synchronized(listeners) { listeners.add(listener) }
     }
 
     fun setSsvMillis(millis: Int?) { this.millis = (millis?:0).toLong() }
     fun getSsvMillis() = millis.toInt()
+
+    fun setSsvQuery(query: String?) { if(query != getSsvQuery()) setQuery(query, true) }
+    fun getSsvQuery() = query.toString()
 
     fun setSsvSuggestionLayout(suggestionLayoutId: Int?) {
         this.mSuggestionLayout = suggestionLayoutId ?: android.R.layout.simple_spinner_dropdown_item
@@ -98,19 +95,6 @@ open class SamaSearchView : SearchView, CoroutineScope {
     }
 
     fun getSsvSuggestionLayout() = mSuggestionLayout
-
-    fun setSsvQuery(query: String?) { if(query != getSsvQuery()) setQuery(query, true) }
-    fun getSsvQuery() = query.toString()
-
-
-    private fun updateSuggestionsAdapter() {
-        if(mSuggestionsAdapter == null) return
-        val oldItems = (0 until (mSuggestionsAdapter?.count ?: 0)).map { mSuggestionsAdapter?.getItem(it) }
-        mSuggestionsAdapter = ArrayAdapter(context, mSuggestionLayout)
-        mSuggestionsAdapter?.addAll(oldItems)
-        val searchAutoComplete = findViewById<SearchAutoComplete>(R.id.search_src_text)
-        runOnUi { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
-    }
 
     /** Sets the [suggestions] to show when writing. When the user clicks on a suggestion, [f] will be called */
     fun setSsvSuggestions(suggestions: List<String>?, f: (String) -> Unit){
@@ -128,11 +112,14 @@ open class SamaSearchView : SearchView, CoroutineScope {
     /** Gets the suggestions shown when writing */
     fun getSsvSuggestions(): List<String> = (0 until (mSuggestionsAdapter?.count ?:0)).mapNotNull { mSuggestionsAdapter?.getItem(it) }
 
-    fun bindQuery(query: ObservableField<String>) {
-        synchronized(registeredObservers) { registeredObservers.add(Pair(query, query.addOnChangedAndNow { if(it != getSsvQuery()) setSsvQuery(it) })) }
+
+    private fun updateSuggestionsAdapter() {
+        if(mSuggestionsAdapter == null) return
+        val oldItems = (0 until (mSuggestionsAdapter?.count ?: 0)).map { mSuggestionsAdapter?.getItem(it) }
+        mSuggestionsAdapter = ArrayAdapter(context, mSuggestionLayout)
+        mSuggestionsAdapter?.addAll(oldItems)
+        val searchAutoComplete = findViewById<SearchAutoComplete>(R.id.search_src_text)
+        runOnUi { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
     }
 
-    fun clearBoundQueries() {
-        synchronized(registeredObservers) { registeredObservers.forEach { it.first.removeOnPropertyChangedCallback(it.second) } }
-    }
 }

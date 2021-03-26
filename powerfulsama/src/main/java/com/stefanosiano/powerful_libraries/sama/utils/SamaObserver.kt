@@ -2,20 +2,73 @@ package com.stefanosiano.powerful_libraries.sama.utils
 
 import androidx.databinding.*
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.Observer
 import com.stefanosiano.powerful_libraries.sama.*
 import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicInteger
 
-/** Class that allows a component to observe variables and call methods when they change.
- * The mean methods to call are [destroyObserver], [stopObserver] and [restartObserver].
- * You can change the default [observerDelay] of 50 milliseconds to enable longer/shorter delays when variables change (useful when observing multiple variables at the same time) */
-class SamaObserver(val scope: CoroutineScope) {
+/** Interface that allows a component to observe variables and call methods when they change.
+ * The main methods to call are [initObserver], [destroyObserver], [stopObserver] and [startObserver] */
+interface SamaObserver {
+    /** Initializes the observer with the current coroutine (used to handle delays on multi-variables observe and to observe liveData on UI) */
+    fun initObserver(coroutineScope: CoroutineScope)
+
+    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
+    fun <R> observe(o: ObservableInt, vararg obs: Observable, obFun: (data: Int) -> R): ObservableField<R>
+
+    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
+    fun <R> observe(o: ObservableLong, vararg obs: Observable, obFun: (data: Long) -> R): ObservableField<R>
+
+    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
+    fun <R> observe(o: ObservableByte, vararg obs: Observable, obFun: (data: Byte) -> R): ObservableField<R>
+
+    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
+    fun <R> observe(o: ObservableChar, vararg obs: Observable, obFun: (data: Char) -> R): ObservableField<R>
+
+    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
+    fun <R> observe(o: ObservableBoolean, vararg obs: Observable, obFun: (data: Boolean) -> R): ObservableField<R>
+
+    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
+    fun <R> observe(o: ObservableFloat, vararg obs: Observable, obFun: (data: Float) -> R): ObservableField<R>
+
+    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
+    fun <R> observe(o: ObservableDouble, vararg obs: Observable, obFun: (data: Double) -> R): ObservableField<R>
+
+    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
+    fun <R, T> observe(o: ObservableField<T>, vararg obs: Observable, obFun: (data: T) -> R): ObservableField<R>
+
+    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed */
+    fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit)
+
+    /** Observes a liveData until this object is destroyed into an observable field. Does not update the observable if the value of the liveData is null */
+    fun <T> observeAsOf(liveData: LiveData<T>): ObservableField<T>
+
+    /** Observes a liveData until this object is destroyed, using a custom observer */
+    fun <T> observe(liveData: LiveData<T>, observerFunction: (data: T) -> Unit): LiveData<T>
+
+    /** Run [f] to get a [LiveData] every time any of [o] or [obs] changes, removing the old one. It return a [LiveData] of the same type as [f] */
+    fun <T> observeAndReloadLiveData(o: ObservableField<*>, vararg obs: Observable, f: () -> LiveData<T>?): LiveData<T>
+
+    /** Start observing the variables and call the methods */
+    fun startObserver()
+
+    /** Stop observing the variables */
+    fun stopObserver()
+
+    /** Clear all references to observed variables and methods, stopping and detaching them */
+    fun destroyObserver()
+}
+
+
+/** Class that implements [SamaObserver]. The main methods to call are [initObserver], [destroyObserver], [stopObserver] and [startObserver] */
+class SamaObserverImpl: SamaObserver {
+
+    var coroutineScope: CoroutineScope? = null
 
     private val observableMap: HashMap<Int, SamaObservableHelper> = HashMap()
     private val observablesId: AtomicInteger = AtomicInteger()
 
-    var observerDelay: Long = -1L
     private var isPaused: Boolean = true
 
     /** List of observable callbacks that will be observed until the viewModel is destroyed */
@@ -25,72 +78,48 @@ class SamaObserver(val scope: CoroutineScope) {
     private val listObservables: ArrayList<SamaInnerListObservable> = ArrayList()
 
     /** List of liveData that will be observed until the viewModel is destroyed */
-    private val observedLiveData = ArrayList<LiveData<out Any?>>()
-
-    /** List of liveData that will be observed until the viewModel is destroyed */
     private val customObservedLiveData = ArrayList<Pair<LiveData<Any?>, Observer<Any?>>>()
 
-    /** Empty Observer that will receive all liveData updates */
-    private val persistentObserver = Observer<Any?>{}
+    /** Initializes the observer with the current coroutine (used to handle delays on multi-variables observe and to observe liveData on UI) */
+    override fun initObserver(coroutineScope: CoroutineScope) { this.coroutineScope = coroutineScope }
 
-
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableF] with initial value of [defValue] */
-    fun <R> observe(o: ObservableInt, defValue: R, vararg obs: Observable, obFun: suspend (data: Int) -> R): ObservableF<R> = ObservableF<R>(defValue).also { toRet -> observePrivate<Int>(o, { toRet.set(obFun(it)) }, *obs) }
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
-    fun <R> observe(o: ObservableInt, vararg obs: Observable, obFun: suspend (data: Int) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Int>(o, { toRet.set(obFun(it)) }, *obs) }
+    override fun <R> observe(o: ObservableInt, vararg obs: Observable, obFun: (data: Int) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Int>(o, { toRet.set(obFun(it)) }, *obs) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableF] with initial value of [defValue] */
-    fun <R> observe(o: ObservableLong, defValue: R, vararg obs: Observable, obFun: suspend (data: Long) -> R): ObservableF<R> = ObservableF<R>(defValue).also { toRet -> observePrivate<Long>(o, { toRet.set(obFun(it)) }, *obs) }
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
-    fun <R> observe(o: ObservableLong, vararg obs: Observable, obFun: suspend (data: Long) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Long>(o, { toRet.set(obFun(it)) }, *obs) }
+    override fun <R> observe(o: ObservableLong, vararg obs: Observable, obFun: (data: Long) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Long>(o, { toRet.set(obFun(it)) }, *obs) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableF] with initial value of [defValue] */
-    fun <R> observe(o: ObservableByte, defValue: R, vararg obs: Observable, obFun: suspend (data: Byte) -> R): ObservableF<R> = ObservableF<R>(defValue).also { toRet -> observePrivate<Byte>(o, { toRet.set(obFun(it)) }, *obs) }
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
-    fun <R> observe(o: ObservableByte, vararg obs: Observable, obFun: suspend (data: Byte) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Byte>(o, { toRet.set(obFun(it)) }, *obs) }
+    override fun <R> observe(o: ObservableByte, vararg obs: Observable, obFun: (data: Byte) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Byte>(o, { toRet.set(obFun(it)) }, *obs) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableF] with initial value of [defValue] */
-    fun <R> observe(o: ObservableChar, defValue: R, vararg obs: Observable, obFun: suspend (data: Char) -> R): ObservableF<R> = ObservableF<R>(defValue).also { toRet -> observePrivate<Char>(o, { toRet.set(obFun(it)) }, *obs) }
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
-    fun <R> observe(o: ObservableChar, vararg obs: Observable, obFun: suspend (data: Char) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Char>(o, { toRet.set(obFun(it)) }, *obs) }
+    override fun <R> observe(o: ObservableChar, vararg obs: Observable, obFun: (data: Char) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Char>(o, { toRet.set(obFun(it)) }, *obs) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableF] with initial value of [defValue] */
-    fun <R> observe(o: ObservableBoolean, defValue: R, vararg obs: Observable, obFun: suspend (data: Boolean) -> R): ObservableF<R> = ObservableF<R>(defValue).also { toRet -> observePrivate<Boolean>(o, { toRet.set(obFun(it)) }, *obs) }
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
-    fun <R> observe(o: ObservableBoolean, vararg obs: Observable, obFun: suspend (data: Boolean) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Boolean>(o, { toRet.set(obFun(it)) }, *obs) }
+    override fun <R> observe(o: ObservableBoolean, vararg obs: Observable, obFun: (data: Boolean) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Boolean>(o, { toRet.set(obFun(it)) }, *obs) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableF] with initial value of [defValue] */
-    fun <R> observe(o: ObservableFloat, defValue: R, vararg obs: Observable, obFun: suspend (data: Float) -> R): ObservableF<R> = ObservableF<R>(defValue).also { toRet -> observePrivate<Float>(o, { toRet.set(obFun(it)) }, *obs) }
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
-    fun <R> observe(o: ObservableFloat, vararg obs: Observable, obFun: suspend (data: Float) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Float>(o, { toRet.set(obFun(it)) }, *obs) }
+    override fun <R> observe(o: ObservableFloat, vararg obs: Observable, obFun: (data: Float) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Float>(o, { toRet.set(obFun(it)) }, *obs) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableF] with initial value of [defValue] */
-    fun <R> observe(o: ObservableDouble, defValue: R, vararg obs: Observable, obFun: suspend (data: Double) -> R): ObservableF<R> = ObservableF<R>(defValue).also { toRet -> observePrivate<Double>(o, { toRet.set(obFun(it)) }, *obs) }
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
-    fun <R> observe(o: ObservableDouble, vararg obs: Observable, obFun: suspend (data: Double) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Double>(o, { toRet.set(obFun(it)) }, *obs) }
+    override fun <R> observe(o: ObservableDouble, vararg obs: Observable, obFun: (data: Double) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<Double>(o, { toRet.set(obFun(it)) }, *obs) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableF] with initial value of [defValue] */
-    fun <R, T> observe(o: ObservableField<T>, defValue: R, vararg obs: Observable, obFun: suspend (data: T) -> R): ObservableF<R> = ObservableF<R>(defValue).also { toRet -> observePrivate<T>(o, { toRet.set(obFun(it)) }, *obs) }
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
-    fun <R, T> observe(o: ObservableField<T>, vararg obs: Observable, obFun: suspend (data: T) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<T>(o, { toRet.set(obFun(it)) }, *obs) }
+    override fun <R, T> observe(o: ObservableField<T>, vararg obs: Observable, obFun: (data: T) -> R): ObservableField<R> = ObservableField<R>().also { toRet -> observePrivate<T>(o, { toRet.set(obFun(it)) }, *obs) }
 
 
 
     /** Observes [o] until the ViewModel is destroyed, using a custom observer, and calls [obFun] (in the background).
      * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o]. Does nothing if the value of [o] is null or already changed */
-    private fun <T> observePrivate(o: Observable, obFun: suspend (data: T) -> Unit, vararg obs: Observable) {
+    private fun <T> observePrivate(o: Observable, obFun: (data: T) -> Unit, vararg obs: Observable) {
         val obsId = observablesId.incrementAndGet()
         val helper = SamaObservableHelper(obsId, null, null)
         synchronized(observableMap) { observableMap[obsId] = helper }
 
-        val f: suspend () -> Unit = {
+        val f: () -> Unit = {
             helper.job?.cancel()
-            helper.job = scope.launch {
-                val delayToUse = when {
-                    observerDelay == -1L && obs.isEmpty() -> 0L
-                    observerDelay == -1L -> 50L
-                    else -> observerDelay
-                }
+            helper.job = coroutineScope?.launch {
+                val delayToUse = if(obs.isEmpty()) 0L else 50L
                 delay(delayToUse)
                 if(isPaused) return@launch
                 if(!isActive) return@launch
@@ -100,87 +129,88 @@ class SamaObserver(val scope: CoroutineScope) {
         }
 
         synchronized(observables) {
-            observables.addAll( obs.map { SamaInnerObservable(it, it.onChange(scope) { helper.onStart = f; f() }) } )
+            observables.addAll( obs.map { SamaInnerObservable(it, it.onPropertyChanged { helper.onStart = f; f() }) } )
             //sets the function to call when using an observable and runs it now
-            observables.add( SamaInnerObservable(o, o.addOnChangedAndNowBase (scope) { helper.onStart = f; f() }) )
+            observables.add( SamaInnerObservable(o, o.onPropertyChanged { helper.onStart = f; f() }) )
         }
     }
 
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed */
     @Suppress("UNCHECKED_CAST")
-    fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: suspend (data: ObservableList<T>) -> Unit): Unit where T: Any {
+    override fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit) {
         val obsId = observablesId.incrementAndGet()
         val helper = SamaObservableHelper(obsId, null, null)
         synchronized(observableMap) { observableMap[obsId] = helper }
 
-        val f: suspend () -> Unit = {
+        val f: () -> Unit = {
             helper.job?.cancel()
-            helper.job = scope.launch {
-                val delayToUse = when {
-                    observerDelay == -1L && obs.isEmpty() -> 0L
-                    observerDelay == -1L -> 50L
-                    else -> observerDelay
-                }
+            helper.job = coroutineScope?.launch {
+                val delayToUse = if(obs.isEmpty()) 0L else 50L
                 delay(delayToUse)
                 if(isPaused) return@launch
                 if(!isActive) return@launch
-                o.let { logVerbose(it.toString()); obFun(it) }
+                o.toList().let { logVerbose(it.toString()); obFun(it) }
                 helper.onStart = null
             }
         }
 
         synchronized(observables) {
-            observables.addAll( obs.map { SamaInnerObservable(it, it.onChange(scope) { helper.onStart = f; f() }) } )
+            observables.addAll( obs.map { SamaInnerObservable(it, it.onPropertyChanged { helper.onStart = f; f() }) } )
 
-            val c = o.onAnyChange { scope.launch { f() } }
+            val c = o.onAnyChange { f() }
             listObservables.add(SamaInnerListObservable(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
         }
-        scope.launch { obFun(o) }
+        obFun(o)
     }
 
 
     /** Observes a liveData until this object is destroyed into an observable field. Does not update the observable if the value of the liveData is null */
-    fun <T> observeAsOf(liveData: LiveData<T>): ObservableField<T> = ObservableField<T>().also { ob ->
+    override fun <T> observeAsOf(liveData: LiveData<T>): ObservableField<T> = ObservableField<T>().also { ob ->
         observe(liveData) { ob.set(it ?: return@observe) }
         ob.set(liveData.value ?: return ob)
     }
 
-    /** Observes a liveData until this object is destroyed into an observableF. Update the observable with [defaultValue] if the value of the liveData is null */
-    fun <T> observeAsOf(liveData: LiveData<T>, defaultValue: T): ObservableF<T> = ObservableF<T>(defaultValue).also { ob ->
-        observe(liveData) { ob.set(it ?: return@observe) }
-        ob.set(liveData.value ?: defaultValue)
-    }
-
-    /** Observes a liveData until this object is destroyed, using a custom observer. Useful when liveData is not used in a lifecycleOwner */
-    fun <T> observe(liveData: LiveData<T>): LiveData<T> {
-        synchronized(observedLiveData) { observedLiveData.add(liveData) }
-        runOnUi { liveData.observeForever(persistentObserver) }
-        return liveData
-    }
-
     /** Observes a liveData until this object is destroyed, using a custom observer */
     @Suppress("unchecked_cast")
-    fun <T> observe(liveData: LiveData<T>, observerFunction: suspend (data: T) -> Unit): LiveData<T> {
-        val observer: Observer<Any?> = Observer { launchOrNow(scope) { observerFunction(it as? T ?: return@launchOrNow) } }
+    override fun <T> observe(liveData: LiveData<T>, observerFunction: (data: T) -> Unit): LiveData<T> {
+        val observer: Observer<Any?> = Observer { observerFunction(it as? T ?: return@Observer) }
         synchronized(customObservedLiveData) { customObservedLiveData.add(Pair(liveData as LiveData<Any?>, observer)) }
-        runOnUi { liveData.value?.let { observer.onChanged(it) }; liveData.observeForever(observer) }
+        with(Dispatchers.Main) { liveData.value?.let { observer.onChanged(it) }; liveData.observeForever(observer) }
         return liveData
     }
 
+    /** Run [f] to get a [LiveData] every time any of [o] or [obs] changes, removing the old one. It return a [LiveData] of the same type as [f] */
+    override fun <T> observeAndReloadLiveData(o: ObservableField<*>, vararg obs: Observable, f: () -> LiveData<T>?): LiveData<T> {
+        val mediatorLiveData = MediatorLiveData<T>()
+        var lastLiveData: LiveData<T>? = null
+        observePrivate<T>(o, {
+            with(Dispatchers.Main) { lastLiveData?.let { mediatorLiveData.removeSource(it) } }
+            lastLiveData = f()
+            with(Dispatchers.Main) { lastLiveData?.let { lld -> mediatorLiveData.addSource(lld) {
+                mediatorLiveData.postValue(it)
+            } } }
+        }, *obs)
 
-
-    fun restartObserver() {
-        isPaused = false
-        synchronized(observableMap) { observableMap.values.filterNotNull().launch(scope) { it.onStart?.invoke() } }
-        synchronized(listObservables) { listObservables.filterNotNull().launch(scope) { x -> x.callback.onChanged(x.ob) } }
+        return mediatorLiveData
     }
 
-    fun stopObserver() {
+
+
+    /** Start observing the variables and call the methods */
+    override fun startObserver() {
+        isPaused = false
+        synchronized(observableMap) { observableMap.values.forEach { coroutineScope?.launch { it.onStart?.invoke() } } }
+        synchronized(listObservables) { listObservables.forEach { x -> coroutineScope?.launch { x.callback.onChanged(x.ob) } } }
+    }
+
+    /** Stop observing the variables */
+    override fun stopObserver() {
         isPaused = true
     }
 
-    fun destroyObserver() {
+    /** Clear all references to observed variables and methods, stopping and detaching them */
+    override fun destroyObserver() {
         synchronized(observables) {
             observables.forEach { it.ob.removeOnPropertyChangedCallback(it.callback) }
             observables.clear()
@@ -189,17 +219,15 @@ class SamaObserver(val scope: CoroutineScope) {
             listObservables.forEach { it.ob.removeOnListChangedCallback(it.callback) }
             listObservables.clear()
         }
-        synchronized(observedLiveData) { runOnUi {
-            observedLiveData.filterNotNull().forEach { it.removeObserver(persistentObserver) }
-            observedLiveData.clear()
-        } }
-        synchronized(customObservedLiveData) { runOnUi {
-            customObservedLiveData.filterNotNull().forEach { it.first.removeObserver(it.second) }
-            customObservedLiveData.clear()
-        } }
+        with(Dispatchers.Main) {
+            synchronized(customObservedLiveData) {
+                customObservedLiveData.forEach { it.first.removeObserver(it.second) }
+                customObservedLiveData.clear()
+            }
+        }
     }
 
-    private inner class SamaObservableHelper (val id: Int, var onStart: (suspend () -> Unit)?, var job: Job?)
+    private inner class SamaObservableHelper (val id: Int, var onStart: (() -> Unit)?, var job: Job?)
     private inner class SamaInnerObservable (val ob: Observable, val callback: Observable.OnPropertyChangedCallback)
     private inner class SamaInnerListObservable (val ob: ObservableList<Any>, val callback: ObservableList.OnListChangedCallback<ObservableList<Any>>)
 }

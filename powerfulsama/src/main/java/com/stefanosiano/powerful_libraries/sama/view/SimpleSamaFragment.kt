@@ -4,12 +4,8 @@ import android.content.Context
 import android.os.Bundle
 import android.view.*
 import androidx.databinding.DataBindingUtil
-import androidx.databinding.ObservableField
 import androidx.databinding.ViewDataBinding
 import com.stefanosiano.powerful_libraries.sama.logVerbose
-import com.stefanosiano.powerful_libraries.sama.toWeakReference
-import com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
-import java.lang.ref.WeakReference
 
 /** Base Class that provides easy way to use data binding with a fragment without the need of other classes */
 open class SimpleSamaFragment: SamaFragment() {
@@ -22,9 +18,6 @@ open class SimpleSamaFragment: SamaFragment() {
     private var defaultTitle = ""
     private var onOptionMenuCreated: ((menu: Menu?) -> Unit)? = null
     private var onDetach: ((fragment: SimpleSamaFragment) -> Unit)? = null
-    private var searchMenuId: Int = 0
-    private var searchString: ObservableField<String>? = null
-    private var searchView: WeakReference<SamaSearchView>? = null
 
     companion object {
 
@@ -86,17 +79,6 @@ open class SimpleSamaFragment: SamaFragment() {
         return this
     }
 
-    /** Binds an observableString to a SamaSearchView
-     *
-     * @param searchMenuId id of the searchView
-     * @param searchString observableString to binds the searchView to
-     */
-    fun search(searchMenuId: Int, searchString: ObservableField<String>): SimpleSamaFragment {
-        this.searchMenuId = searchMenuId
-        this.searchString = searchString
-        return this
-    }
-
     /**
      * Executes [function] when [menuId] is clicked
      *
@@ -130,15 +112,7 @@ open class SimpleSamaFragment: SamaFragment() {
         if(menuId != 0)
             inflater.inflate(menuId, menu)
         onOptionMenuCreated?.invoke(menu)
-
-        searchView = if(searchMenuId != 0) (menu.findItem(searchMenuId)?.actionView as? SamaSearchView)?.toWeakReference() else null
-        searchString?.let { searchView?.get()?.bindQuery(it) }
         super.onCreateOptionsMenu(menu, inflater)
-    }
-
-    override fun onDestroyOptionsMenu() {
-        super.onDestroyOptionsMenu()
-        searchView?.get()?.clearBoundQueries()
     }
 
 
@@ -155,7 +129,6 @@ open class SimpleSamaFragment: SamaFragment() {
 
     override fun onDetach() {
         onDetach?.invoke(this)
-        searchView?.get()?.clearBoundQueries()
         super.onDetach()
     }
 
@@ -185,9 +158,5 @@ open class SimpleSamaFragment: SamaFragment() {
         bindingPairs.clear()
         menuFunctions.clear()
         onOptionMenuCreated = null
-        searchView?.get()?.clearBoundQueries()
-        searchView?.clear()
-        searchView = null
-        searchString = null
     }
 }

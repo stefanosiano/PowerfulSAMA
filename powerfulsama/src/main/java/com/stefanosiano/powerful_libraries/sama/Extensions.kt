@@ -257,6 +257,12 @@ inline fun Observable.onChangeAndNow(c: CoroutineScope? = null, crossinline f: s
 inline fun Observable.onChange(c: CoroutineScope? = null, crossinline f: suspend () -> Unit) =
     object : Observable.OnPropertyChangedCallback() { override fun onPropertyChanged(o: Observable?, id: Int) { launchOrNow(c) { f() } } }.also { addOnPropertyChangedCallback(it) }
 
+/** Calls [f] whenever an observable property changes */
+fun Observable.onPropertyChanged(f: () -> Unit): Observable.OnPropertyChangedCallback {
+    val callback = object : Observable.OnPropertyChangedCallback() { override fun onPropertyChanged(o: Observable?, id: Int) { f() } }
+    addOnPropertyChangedCallback(callback)
+    return callback
+}
 
 /** Calls [f] whenever anything on this list changes. To have a better management use [ObservableList.addOnListChangedCallback] with an [ObservableList.OnListChangedCallback] */
 fun <T> ObservableList<T>.onAnyChange(f: (ObservableList<T>) -> Unit): ObservableList.OnListChangedCallback<ObservableList<T>> {

@@ -6,13 +6,11 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.AppCompatSpinner
-import androidx.databinding.BindingAdapter
-import androidx.databinding.InverseBindingAdapter
-import androidx.databinding.InverseBindingListener
-import androidx.databinding.ObservableField
-import com.stefanosiano.powerful_libraries.sama.*
+import com.stefanosiano.powerful_libraries.sama.getKey
+import com.stefanosiano.powerful_libraries.sama.logDebug
+import com.stefanosiano.powerful_libraries.sama.logVerbose
+import com.stefanosiano.powerful_libraries.sama.runOnUi
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner.SamaSpinnerItem
-import java.lang.ref.WeakReference
 
 
 /**
@@ -23,12 +21,6 @@ open class SamaSpinner : AppCompatSpinner {
 
     private var arrayAdapter: ArrayAdapter<String>? = null
     private val itemMap = HashMap<String, String>()
-
-    /** Set of observable strings to update when an item is selected. It will contain the key */
-    private val obserablesKeySet: MutableList<WeakReference<ObservableField<String>>> = ArrayList()
-
-    /** Set of observable strings to update when an item is selected. It will contain the value */
-    private val obserablesValueSet: MutableList<WeakReference<ObservableField<String>>> = ArrayList()
 
     /** Key to use after setting items (if Key was selected before items were available) */
     private var toSelectKey: String? = null
@@ -46,15 +38,11 @@ open class SamaSpinner : AppCompatSpinner {
         onItemSelectedListener = object: OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val key = getSpnKey()
-                val value = getSpnValue()
+                //if an item was selected, i should have key and value. this is only a lifesaver
+                val key = getSpnKey() ?: return
+                val value = getSpnValue() ?: return
                 if(key == toSelectKey) toSelectKey = null
                 logDebug("Selected item: $key -> $value")
-                obserablesKeySet.forEach { it.get()?.set(key) }
-                obserablesValueSet.forEach { it.get()?.set(value) }
-                //if an item was selected, i should have key and value. this is only a lifesaver
-                key ?: return
-                value ?: return
                 listeners.forEach { it(key, value) }
             }
         }
@@ -81,13 +69,6 @@ open class SamaSpinner : AppCompatSpinner {
 
     fun addListener(l: (key: String, value: String) -> Unit) { listeners.add(l) }
 
-
-    /** Sets [items] as the array of [String] to show in the spinner */
-    fun setItems(items: Array<out String>?) = setItems(items?.toList())
-
-    /** Sets [items] as the collection of [String] to show in the spinner */
-    fun setItems(items: Iterable<String>?) = setItems(items?.map { SimpleSpinnerItem(it, it) })
-
     /** Sets [items] as the array of [SamaSpinnerItem] to show in the spinner */
     fun setItems(items: Array<out SamaSpinnerItem>?) = setItems(items?.toList())
 
@@ -106,15 +87,6 @@ open class SamaSpinner : AppCompatSpinner {
 
         setSpnKey(toSelectKey ?: old)
     }
-
-
-    /** Sets the selection of the spinner to the first occurrence of [value]. If it was initialized with a collection of strings, it calls [setSelection] */
-    @Deprecated(message = "use [setSpnValue] instead", replaceWith = ReplaceWith("setSpnValue(value)"))
-    fun setSelectedValue(value: String) = setSpnValue(value)
-
-    /** Sets the selection of the spinner to the first occurrence of [key]. If it was initialized with a collection of strings, it calls [setSelection] */
-    @Deprecated(message = "use [setSpnKey] instead", replaceWith = ReplaceWith("setSpnKey(key)"))
-    fun setSelectedKey(key: String) = setSpnKey(key)
 
 
     /** Sets the selection of the spinner to the first occurrence of [value]. If it was initialized with a collection of strings, it calls [setSelection] */
@@ -146,15 +118,6 @@ open class SamaSpinner : AppCompatSpinner {
     }
 
 
-    /** Gets the value associated to the currently shown item. If it was initialized with a collection of strings, it calls [getSelection] */
-    @Deprecated(message = "use [getSpnValue] instead", replaceWith = ReplaceWith("getSpnValue()"))
-    fun getSelectedValue(): String? = getSpnValue()
-
-    /** Gets the key associated to the currently shown item. If it was initialized with a collection of strings, it calls [getSelection] */
-    @Deprecated(message = "use [getSpnKey] instead", replaceWith = ReplaceWith("getSpnKey()"))
-    fun getSelectedKey(): String? = getSpnKey()
-
-
     /** Gets the value associated to the currently shown item */
     fun getSpnValue(): String? = selectedItem as? String
 
@@ -166,58 +129,9 @@ open class SamaSpinner : AppCompatSpinner {
 
 
 
-    /**
-     * Adds the observable strings to the internal list.
-     * When an item is selected, all registered observables are updated. When one observable changes, the item is selected.
-     * If it was initialized with a collection of strings, it will contain the current shown value, otherwise the key associated to it
-     */
-    @Deprecated(message = "use data binding instead")
-    fun bindKey(obs: ObservableField<String>?) {
-        if (obs == null) return
-        obserablesKeySet.add(WeakReference(obs))
-        obs.addOnChangedAndNow {
-            it ?: return@addOnChangedAndNow
-            setSpnKey(it)
-        }
-    }
-
-    /**
-     * Adds the observable strings to the internal list.
-     * When an item is selected, all registered observables are updated. When one observable changes, the item is selected.
-     * If it was initialized with a collection of strings, it will contain the current shown value, otherwise the value associated to it
-     */
-    @Deprecated(message = "use data binding instead")
-    fun bindValue(obs: ObservableField<String>?) {
-        if (obs == null) return
-        obserablesValueSet.add(WeakReference(obs))
-        obs.addOnChangedAndNow {
-            it ?: return@addOnChangedAndNow
-            setSpnValue(it)
-        }
-    }
-
-
-
-
-
-
-    /** Simple class with 2 simple fields that implements [SamaSpinnerItem] */
-    data class SimpleSpinnerItem(val key: String?, val value: String?) : SamaSpinnerItem{
-        override fun value() = value ?: ""
-        override fun key() = key ?: ""
-    }
-
-
-
-
-
-    /** Interface used to populate a [SamaSpinner] */
-    interface SamaSpinnerItem {
-
-        /** Returns the value of the item */
-        fun value(): String
-
-        /** Returns the key of the item */
-        fun key(): String
+    /** Simple class representing a pair key/value */
+    open class SamaSpinnerItem(open val key: String?, open val value: String?) {
+        open fun value() = value ?: ""
+        open fun key() = key ?: ""
     }
 }
