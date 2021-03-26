@@ -7,6 +7,7 @@ import androidx.lifecycle.Observer
 import com.stefanosiano.powerful_libraries.sama.*
 import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.coroutineContext
 
 /** Interface that allows a component to observe variables and call methods when they change.
  * The main methods to call are [initObserver], [destroyObserver], [stopObserver] and [startObserver] */
@@ -176,7 +177,7 @@ class SamaObserverImpl: SamaObserver {
     override fun <T> observe(liveData: LiveData<T>, observerFunction: (data: T) -> Unit): LiveData<T> {
         val observer: Observer<Any?> = Observer { observerFunction(it as? T ?: return@Observer) }
         synchronized(customObservedLiveData) { customObservedLiveData.add(Pair(liveData as LiveData<Any?>, observer)) }
-        with(Dispatchers.Main) { liveData.value?.let { observer.onChanged(it) }; liveData.observeForever(observer) }
+        coroutineScope?.launch(Dispatchers.Main) { liveData.value?.let { observer.onChanged(it) }; liveData.observeForever(observer) }
         return liveData
     }
 
@@ -185,11 +186,13 @@ class SamaObserverImpl: SamaObserver {
         val mediatorLiveData = MediatorLiveData<T>()
         var lastLiveData: LiveData<T>? = null
         observePrivate<T>(o, {
-            with(Dispatchers.Main) { lastLiveData?.let { mediatorLiveData.removeSource(it) } }
-            lastLiveData = f()
-            with(Dispatchers.Main) { lastLiveData?.let { lld -> mediatorLiveData.addSource(lld) {
-                mediatorLiveData.postValue(it)
-            } } }
+            coroutineScope?.launch(Dispatchers.Main) {
+                withContext(Dispatchers.Main) { lastLiveData?.let { mediatorLiveData.removeSource(it) } }
+                lastLiveData = f()
+                withContext(Dispatchers.Main) { lastLiveData?.let { lld -> mediatorLiveData.addSource(lld) {
+                    mediatorLiveData.postValue(it)
+                } } }
+            }
         }, *obs)
 
         return mediatorLiveData
@@ -219,7 +222,7 @@ class SamaObserverImpl: SamaObserver {
             listObservables.forEach { it.ob.removeOnListChangedCallback(it.callback) }
             listObservables.clear()
         }
-        with(Dispatchers.Main) {
+        (coroutineScope ?: GlobalScope).launch(Dispatchers.Main) {
             synchronized(customObservedLiveData) {
                 customObservedLiveData.forEach { it.first.removeObserver(it.second) }
                 customObservedLiveData.clear()
