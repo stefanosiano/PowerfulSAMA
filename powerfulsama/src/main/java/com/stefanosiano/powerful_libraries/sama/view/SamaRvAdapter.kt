@@ -435,9 +435,9 @@ open class SamaRvAdapter(
     }
 
     /** Clears all bound items from the adapter. If [reloadList] is set, [notifyDataSetChanged] is called */
-    fun clearBoundItems(reloadList: Boolean) {
+    fun clearBoundItems(reloadList: Boolean = true) {
         mutableBoundItems.clear()
-        if(reloadList) runOnUi { notifyDataSetChanged() }
+        if(reloadList) launch(Dispatchers.Main) { notifyDataSetChanged() }
     }
 
     /** Returns the stableId of the item at position [position], if available and if adapter hasStableId. */

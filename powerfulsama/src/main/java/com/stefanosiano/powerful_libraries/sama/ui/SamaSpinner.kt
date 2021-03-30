@@ -9,7 +9,6 @@ import androidx.appcompat.widget.AppCompatSpinner
 import com.stefanosiano.powerful_libraries.sama.getKey
 import com.stefanosiano.powerful_libraries.sama.logDebug
 import com.stefanosiano.powerful_libraries.sama.logVerbose
-import com.stefanosiano.powerful_libraries.sama.runOnUi
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner.SamaSpinnerItem
 
 
@@ -57,7 +56,7 @@ open class SamaSpinner : AppCompatSpinner {
         val temp = ArrayList<String>()
         val old = getSpnKey()
         (0 until (arrayAdapter?.count ?: 0)).forEach { i -> arrayAdapter?.getItem(i)?.let { temp.add(it) } }
-        runOnUi {
+        post {
             arrayAdapter?.clear()
             arrayAdapter = ArrayAdapter(context, spinnerLayoutId)
             arrayAdapter?.addAll(temp)

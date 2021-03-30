@@ -7,7 +7,6 @@ import androidx.appcompat.widget.SearchView
 import com.stefanosiano.powerful_libraries.sama.R
 import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
 import com.stefanosiano.powerful_libraries.sama.logVerbose
-import com.stefanosiano.powerful_libraries.sama.runOnUi
 import kotlinx.coroutines.*
 
 /** Class that provides easy to use SearchView with data binding */
@@ -106,7 +105,7 @@ open class SamaSearchView : SearchView, CoroutineScope {
         searchAutoComplete.setOnItemClickListener { _, _, position, _ ->
             mSuggestionsAdapter?.getItem(position)?.let { logVerbose("Clicked on $it"); f(it) }
         }
-        runOnUi { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
+        post { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
     }
 
     /** Gets the suggestions shown when writing */
@@ -119,7 +118,7 @@ open class SamaSearchView : SearchView, CoroutineScope {
         mSuggestionsAdapter = ArrayAdapter(context, mSuggestionLayout)
         mSuggestionsAdapter?.addAll(oldItems)
         val searchAutoComplete = findViewById<SearchAutoComplete>(R.id.search_src_text)
-        runOnUi { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
+        post { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
     }
 
 }

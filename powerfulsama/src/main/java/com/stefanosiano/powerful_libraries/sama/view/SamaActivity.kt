@@ -161,7 +161,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         return true
     }*/
 
-    /** Observes the vmResponse of the [vm]. It's just a simpler way to call [SamaViewModel.observeVmResponse] */
+    /** Observes the vmResponse of the [vm]. It's just a simpler way to call [SamaViewModel.observeVmResponse]. Call it on Ui thread */
     protected fun <A> observeVmResponse(vm: SamaViewModel<A>, f: suspend (A, Any?) -> Boolean) where A: VmResponse.VmAction {
         registeredViewModels.add(vm)
         vm.observeVmResponse(this, f)

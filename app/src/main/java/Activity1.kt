@@ -7,17 +7,16 @@ import android.net.Uri
 import android.os.Bundle
 import com.stefanosiano.powerful_libraries.sama.BR
 import com.stefanosiano.powerful_libraries.sama.generatedextensions.defaultRestore
-import com.stefanosiano.powerful_libraries.sama.runOnUi
-import com.stefanosiano.powerful_libraries.sama.toFileFromProviders
 import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
-import com.stefanosiano.powerful_libraries.sama.utils.Perms
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaDialogFragment
 import com.stefanosiano.powerful_libraries.sama_annotations.ActivityIntent
 import com.stefanosiano.powerful_libraries.sama_annotations.SamaExtensions
 import com.stefanosiano.powerful_libraries.sama_sample.R
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 @SamaExtensions
@@ -33,7 +32,7 @@ class Activity1 : SamaActivity() {
 //        }
         launch {
             delay(2000)
-            runOnUi {
+            withContext(Dispatchers.Main) {
                 SampleDF(R.layout.sample_df, BR.dialog).show(this@Activity1)
             }
         }

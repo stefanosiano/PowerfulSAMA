@@ -3,7 +3,7 @@ plugins {
 }
 
 ext {
-    LIB_VERSION = "0.4.10" // This is the library version used when deploying the artifact
+    LIB_VERSION = "0.4.11" // This is the library version used when deploying the artifact
     ENABLE_DEPLOY = true //Flag whether the ci/cd workflow should deploy to sonatype or not
 
     LIB_GROUP_ID = "io.github.stefanosiano.powerful_libraries"                        // Maven Group ID for the artifact
@@ -19,7 +19,7 @@ compileTestKotlin { kotlinOptions.jvmTarget = "1.8" }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.squareup:kotlinpoet:1.4.4'
+    implementation 'com.squareup:kotlinpoet:1.6.0'
 
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"

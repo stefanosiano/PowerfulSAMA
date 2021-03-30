@@ -366,11 +366,11 @@ class Msg private constructor(
     }
 
     @Deprecated("Use 'kotlin.run { show() }' instead: it's more readable")
-    /** Shows the message and returns a [Unit]. Useful for "return Msg.showOff()". If [showMessage] is true, then the message will be shown, otherwise [onOk] will be called */
+            /** Shows the message and returns a [Unit]. Useful for "return Msg.showOff()". If [showMessage] is true, then the message will be shown, otherwise [onOk] will be called */
     fun showOff(context: Context? = null, showMessage: Boolean = true): Unit { if(showMessage) showMessage(context) else { onOk?.invoke(null) } }
 
     /** Shows the message and returns its implementation (e.g. AlertDialog). Optionally calls [f] right after building the message and before showing it.
-    * If [showMessage] is met (true by default), then the message will be shown, otherwise [onOk] will be called */
+     * If [showMessage] is met (true by default), then the message will be shown, otherwise [onOk] will be called */
     @Suppress("UNCHECKED_CAST")
     fun <T> showAs(context: Context? = null, f: ((T?) -> Unit)? = null, showMessage: Boolean = true): Msg?
             = build(context).also { f?.invoke(it.implementation?.get() as? T?) }.show(context, showMessage)
@@ -390,18 +390,18 @@ class Msg private constructor(
         val context = ctx ?: PowerfulSama.getCurrentActivity() ?: PowerfulSama.applicationContext
         initStrings(context.applicationContext)
 
-        when (messageImpl) {
-            MessageImpl.ProgressDialog -> runOnUiAndWait { getActivityFromCtx(context)?.let { buildAsProgressDialog(context) } ?: buildAsToast(context) }
-            MessageImpl.AlertDialogOneButton -> runOnUiAndWait { getActivityFromCtx(context)?.let { buildAsAlertDialogOneButton(it) } ?: buildAsToast(context) }
-            MessageImpl.AlertDialog -> runOnUiAndWait { getActivityFromCtx(context)?.let { buildAsAlertDialog(it) } ?: buildAsToast(context) }
-            MessageImpl.Toast -> runOnUiAndWait { buildAsToast(context) }
+        launch (Dispatchers.Main) { when (messageImpl) {
+            MessageImpl.ProgressDialog -> getActivityFromCtx(context)?.let { buildAsProgressDialog(context) } ?: buildAsToast(context)
+            MessageImpl.AlertDialogOneButton -> getActivityFromCtx(context)?.let { buildAsAlertDialogOneButton(it) } ?: buildAsToast(context)
+            MessageImpl.AlertDialog -> getActivityFromCtx(context)?.let { buildAsAlertDialog(it) } ?: buildAsToast(context)
+            MessageImpl.Toast -> buildAsToast(context)
             MessageImpl.Snackbar -> {
-                snackbarView?.let { runOnUiAndWait { buildAsSnackbar(it) } } ?: runOnUiAndWait {
-                    (getActivityFromCtx(context)?.window?.decorView?.findViewById(android.R.id.content) as? View?)?.let { buildAsSnackbar(it) } ?: buildAsToast(context)
-                }
+                snackbarView?.let { buildAsSnackbar(it) } ?:
+                (getActivityFromCtx(context)?.window?.decorView?.findViewById(android.R.id.content) as? View?)?.let { buildAsSnackbar(it) } ?:
+                buildAsToast(context)
             }
             else -> logError("Cannot understand the implementation type of the message. Skipping show")
-        }
+        } }
         return this
     }
 
@@ -423,15 +423,15 @@ class Msg private constructor(
             }
         }
 
-        runOnUiAndWait {
+        launch (Dispatchers.Main) {
             if (!isBuilt) build(context)
 
             when (messageImpl) {
-                MessageImpl.ProgressDialog -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as ProgressDialog?)?.show() ?: logError("No activity found to show this progress dialog. Skipping show") }
-                MessageImpl.AlertDialogOneButton -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
-                MessageImpl.AlertDialog -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
-                MessageImpl.Toast -> { onShow?.invoke(this); (implementation?.get() as? Toast?)?.show() }
-                MessageImpl.Snackbar -> { onShow?.invoke(this); if(lockOrientation) lockOrientation(context); (implementation?.get() as? Snackbar?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
+                MessageImpl.ProgressDialog -> { onShow?.invoke(this@Msg); if(lockOrientation) lockOrientation(context); (implementation?.get() as ProgressDialog?)?.show() ?: logError("No activity found to show this progress dialog. Skipping show") }
+                MessageImpl.AlertDialogOneButton -> { onShow?.invoke(this@Msg); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
+                MessageImpl.AlertDialog -> { onShow?.invoke(this@Msg); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
+                MessageImpl.Toast -> { onShow?.invoke(this@Msg); (implementation?.get() as? Toast?)?.show() }
+                MessageImpl.Snackbar -> { onShow?.invoke(this@Msg); if(lockOrientation) lockOrientation(context); (implementation?.get() as? Snackbar?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
                 else -> { logError("Cannot understand the implementation type of the message. Skipping show") }
             }
 
@@ -451,16 +451,16 @@ class Msg private constructor(
     }
 
     @Suppress("DEPRECATION")
-    /** Dismisses the message */
+            /** Dismisses the message */
     fun dismiss() {
 
         logVerbose("Dismiss message")
-        runOnUi {
+        launch (Dispatchers.Main) {
             when (messageImpl) {
                 MessageImpl.ProgressDialog -> { (implementation?.get() as? ProgressDialog?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShowing) it.dismiss() } }
                 MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> { (implementation?.get() as? AlertDialog?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShowing) it.dismiss() } }
-                MessageImpl.Toast -> { onDismiss?.invoke(this); (implementation?.get() as? Toast?)?.cancel(); waitForDismiss = false }
-                MessageImpl.Snackbar -> { onDismiss?.invoke(this); (implementation?.get() as? Snackbar?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShown) it.dismiss(); waitForDismiss = false } }
+                MessageImpl.Toast -> { onDismiss?.invoke(this@Msg); (implementation?.get() as? Toast?)?.cancel(); waitForDismiss = false }
+                MessageImpl.Snackbar -> { onDismiss?.invoke(this@Msg); (implementation?.get() as? Snackbar?)?.let { if(lockOrientation) unlockOrientation(it.context); if (it.isShown) it.dismiss(); waitForDismiss = false } }
                 else -> logError("Cannot understand the implementation type of the message. Skipping dismiss")
             }
             autoDismissJob?.cancel()
@@ -468,7 +468,7 @@ class Msg private constructor(
     }
 
     @Suppress("DEPRECATION")
-    /** Returns if the message is showing (Toasts will always return false) */
+            /** Returns if the message is showing (Toasts will always return false) */
     fun isShowing() =
         when (messageImpl) {
             MessageImpl.ProgressDialog -> (implementation?.get() as? ProgressDialog?)?.isShowing

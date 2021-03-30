@@ -8,7 +8,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.stefanosiano.powerful_libraries.sama.runOnUi
 import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import java.lang.ref.WeakReference
@@ -70,11 +69,11 @@ open class SamaBottomNavigationView: BottomNavigationView {
         this.activityReference = WeakReference(activity)
 
         //needed because "Only the original thread that created a view hierarchy can touch its views." in setSelectedItemId
-        runOnUi {
+        post {
             selectedItemId = cacheSelectedId.get(containerId)
             cacheSelectedId.delete(containerId)
 
-            val selectedPair: Pair<Int, Fragment> = pairs.firstOrNull { it.first == selectedItemId } ?: return@runOnUi
+            val selectedPair: Pair<Int, Fragment> = pairs.firstOrNull { it.first == selectedItemId } ?: return@post
 
             val fragmentTransaction = activity.supportFragmentManager.beginTransaction()
 
@@ -101,7 +100,7 @@ open class SamaBottomNavigationView: BottomNavigationView {
      */
     fun onBackPressed(id: Int): Boolean {
         if (id != 0 && id != selectedItemId) {
-            runOnUi { selectedItemId = id }
+            post { selectedItemId = id }
             return true
         }
         return false
@@ -109,7 +108,7 @@ open class SamaBottomNavigationView: BottomNavigationView {
 
     fun selectFragment(id: Int) {
         if (id != 0 && id != selectedItemId) {
-            runOnUi { selectedItemId = id }
+            post { selectedItemId = id }
         }
     }
 
