@@ -48,12 +48,59 @@ suspend inline fun delayUntil(millis: Long = 100, timeout: Long = 6000, crossinl
 inline fun launchOrNow(c: CoroutineScope?, crossinline f: suspend () -> Unit) { if(c?.isActive == false) return; c?.launch { f() } ?: runBlocking { f() } }
 
 /** Transforms the liveData using the function [onValue] every time it changes, returning another liveData. You can optionally pass a CoroutineContext [context] to execute it in the background */
-fun <T, D> LiveData<T>.transform(context: CoroutineScope? = null, onValue: suspend (t: T) -> D): LiveData<D> {
+fun <T, D> LiveData<T>.transform(onValue: (t: T) -> D): LiveData<D> {
     val transformedLiveData = MediatorLiveData<D>()
     transformedLiveData.addSource(this) {
-        launchOrNow(context) { transformedLiveData.postValue(onValue(it)) }
+        transformedLiveData.postValue(onValue(it))
     }
     return transformedLiveData
+}
+
+/** Returns a liveData which returns values only when they change. You can optionally pass a CoroutineContext [context] to execute it in the background */
+fun <T> LiveData<T>.getDistinct(): LiveData<T> = getDistinctBy { it as Any }
+
+/** Returns a liveData which returns values only when they change. You can optionally pass a CoroutineContext [context] to execute it in the background */
+fun <T> LiveData<T>.getDistinctBy(function: (T) -> Any): LiveData<T> {
+    val distinctLiveData = MediatorLiveData<T>()
+
+    distinctLiveData.addSource(this, object : Observer<T> {
+        private var lastObj: T? = null
+
+        override fun onChanged(obj: T?) {
+            if (lastObj != null && obj != null && function(lastObj!!) == function(obj)) return
+
+            lastObj = obj
+            distinctLiveData.postValue(lastObj)
+        }
+    })
+    return distinctLiveData
+}
+
+/** Returns a liveData which returns values only when they change. You can optionally pass a CoroutineContext [context] to execute it in the background */
+fun <T> LiveData<List<T>>.getListDistinct(): LiveData<List<T>> = this.getListDistinctBy { it as Any }
+
+/** Returns a liveData which returns values only when they change. You can optionally pass a CoroutineContext [context] to execute it in the background */
+fun <T> LiveData<List<T>>.getListDistinctBy(function: (T) -> Any): LiveData<List<T>> {
+    val distinctLiveData = MediatorLiveData<List<T>>()
+
+    distinctLiveData.addSource(this, object : Observer<List<T>> {
+        private var lastObj: List<T>? = null
+
+        override fun onChanged(obj: List<T>?) {
+                if (lastObj != null &&
+                    obj?.size == lastObj?.size &&
+                    compareListsContent(obj ?: ArrayList(), lastObj ?: ArrayList(), function)
+                ) return
+
+                lastObj = obj
+                distinctLiveData.postValue(lastObj)
+        }
+
+        private inline fun compareListsContent(list1: List<T>, list2: List<T>, compare: (T) -> Any): Boolean {
+            for(i in list1.indices) tryOrNull { if(compare( list1[i] ) != compare( list2[i] )) return false } ?: return false; return true
+        }
+    })
+    return distinctLiveData
 }
 
 
