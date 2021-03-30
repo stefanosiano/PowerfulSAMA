@@ -138,8 +138,6 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     /** Start sending actions to the observing activity. To stop them call [stopVmActions] */
     fun startVmActions() { actionsStopped = false }
 
-    //todo add stopAction() method instead of checks to block concurrent actions
-
 
 
 
