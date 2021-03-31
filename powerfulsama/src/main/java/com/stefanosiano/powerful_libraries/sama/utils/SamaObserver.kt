@@ -134,6 +134,7 @@ class SamaObserverImpl: SamaObserver {
             //sets the function to call when using an observable and runs it now
             observables.add( SamaInnerObservable(o, o.onPropertyChanged { helper.onStart = f; f() }) )
         }
+        f()
     }
 
 
