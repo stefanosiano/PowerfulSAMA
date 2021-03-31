@@ -208,4 +208,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
     protected fun <R, T> observe(o: ObservableField<T>, vararg obs: Observable, obFun: (data: T) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
 
+    /** Run [f] to get a [LiveData] every time any of [o] or [obs] changes, removing the old one. It return a [LiveData] of the same type as [f] */
+    fun <T> observeAndReloadLiveData(o: ObservableField<*>, vararg obs: Observable, f: () -> LiveData<T>?): LiveData<T> = samaObserver.observeAndReloadLiveData(o, *obs) { f() }
+
 }

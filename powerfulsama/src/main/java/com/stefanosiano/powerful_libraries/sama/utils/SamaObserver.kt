@@ -186,7 +186,7 @@ class SamaObserverImpl: SamaObserver {
         val mediatorLiveData = MediatorLiveData<T>()
         var lastLiveData: LiveData<T>? = null
         observePrivate<T>(o, {
-            coroutineScope?.launch(Dispatchers.Main) {
+            coroutineScope?.launch {
                 withContext(Dispatchers.Main) { lastLiveData?.let { mediatorLiveData.removeSource(it) } }
                 lastLiveData = f()
                 withContext(Dispatchers.Main) { lastLiveData?.let { lld -> mediatorLiveData.addSource(lld) {
