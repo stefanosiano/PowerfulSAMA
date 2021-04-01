@@ -134,6 +134,7 @@ class SamaObserverImpl: SamaObserver {
             //sets the function to call when using an observable and runs it now
             observables.add( SamaInnerObservable(o, o.onPropertyChanged { helper.onStart = f; f() }) )
         }
+        helper.onStart = f
         f()
     }
 
@@ -160,10 +161,11 @@ class SamaObserverImpl: SamaObserver {
         synchronized(observables) {
             observables.addAll( obs.map { SamaInnerObservable(it, it.onPropertyChanged { helper.onStart = f; f() }) } )
 
-            val c = o.onAnyChange { f() }
+            val c = o.onAnyChange { helper.onStart = f; f() }
             listObservables.add(SamaInnerListObservable(o as ObservableList<Any>, c as ObservableList.OnListChangedCallback<ObservableList<Any>>))
         }
-        obFun(o)
+        helper.onStart = f
+        f()
     }
 
 

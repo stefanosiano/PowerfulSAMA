@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
+import androidx.databinding.ObservableField
 import com.stefanosiano.powerful_libraries.sama.BR
 import com.stefanosiano.powerful_libraries.sama.generatedextensions.defaultRestore
 import com.stefanosiano.powerful_libraries.sama.utils.Msg
@@ -26,11 +28,14 @@ class Activity1 : SamaActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val ob = ObservableField("aaa")
+        observe(ob) { Log.e("AAAA", it) }
         val perms = arrayListOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
         val m = Msg.adob("asd").show()//.dismiss()
         launch {
             delay(3000)
             m.dismiss()
+            ob.set("231")
         }
 //        Perms.call(perms, R.string.app_name, R.string.app_name2) {
 //            Uri.fromFile(File("")).toFileFromProviders(this, "a")
