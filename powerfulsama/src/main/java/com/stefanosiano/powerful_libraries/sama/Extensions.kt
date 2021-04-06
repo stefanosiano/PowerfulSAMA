@@ -303,16 +303,16 @@ fun <T> T.toWeakReference() = WeakReference<T>(this)
 fun <K, V> Map<K, V>.getKey(value: V): K? = this.filterValues { it == value }.keys.firstOrNull()
 
 /** Removes all items that satisfy [filter] predicate */
-inline fun <K, V, M> M.removeWhen(filter: (Map.Entry<K, V>) -> Boolean): M where M: MutableMap<K, V> { this.keys.removeAll(this.filter { filter(it) }.keys); return this }
+inline fun <K, V, M: MutableMap<K, V>> M.removeWhen(filter: (Map.Entry<K, V>) -> Boolean): M { this.keys.removeAll(this.filter { filter(it) }.keys); return this }
 
 /** Removes all items that satisfy [filter] predicate */
-inline fun <E, M> M.removeWhen(filter: (E) -> Boolean): M where M: MutableCollection<E> { this.removeAll(this.filter { filter(it) }); return this }
+inline fun <E, M: MutableCollection<E>> M.removeWhen(filter: (E) -> Boolean): M { this.removeAll(this.filter { filter(it) }); return this }
 
 /** For loop that uses iterator item (useful to modify elements in a list without concurrentModification exceptions) */
-inline fun <T,S> T.iterate(f: (S) -> Unit): T where T: Iterable<S> { val i = iterator(); while(i.hasNext()) { f(i.next()) }; return this }
+inline fun <T: Iterable<S>, S> T.iterate(f: (S) -> Unit): T { val i = iterator(); while(i.hasNext()) { f(i.next()) }; return this }
 
 /** For loop that uses iterator item (useful to modify elements in a list without concurrentModification exceptions) */
-inline fun <T,S> T.iterateIndexed(f: (S, index: Int) -> Unit): T where T: Iterable<S> { val i = iterator(); var index = 0; while(i.hasNext()) { f(i.next(), index); index++ }; return this }
+inline fun <T: Iterable<S>, S> T.iterateIndexed(f: (S, index: Int) -> Unit): T { val i = iterator(); var index = 0; while(i.hasNext()) { f(i.next(), index); index++ }; return this }
 
 /** Creates a [CoroutineExceptionHandler] that calls [PowerfulSama.onCoroutineException] in case of error and logs the stackTrace */
 internal fun CoroutineScope.coroutineSamaHandler(job: Job): CoroutineContext = job + CoroutineExceptionHandler { _, t -> logException(t) }

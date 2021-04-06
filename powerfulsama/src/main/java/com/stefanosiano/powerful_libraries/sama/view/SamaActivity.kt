@@ -96,34 +96,17 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     internal fun unregisterSamaCallback(cb: SamaActivityCallback) = synchronized(registeredCallbacks) { registeredCallbacks.remove(cb) }
 
     /** Manages a dialogFragment, making it restore and show again if it was dismissed due to device rotation */
-    fun <T> manageDialog(f: () -> T): T where T: SamaDialogFragment =
+    fun <T: SamaDialogFragment> manageDialog(f: () -> T): T =
         f().also { dialog -> managedDialog.put(dialog.getUidInternal(), dialog) }
 
     /** Manages a dialogFragment, making it restore and show again if it was dismissed due to device rotation */
     internal fun manageDialogInternal(dialog: SamaDialogFragment) = managedDialog.put(dialog.getUidInternal(), dialog)
-
-    /** Initializes the toolbar leaving the default title */
-    protected fun initActivity() = initActivity("")
-
-    /** Initializes the toolbar with the title provided */
-    protected fun initActivity(titleId: Int){
-        if(titleId != 0) initActivity(getString(titleId))
-        else initActivity("")
-    }
-
-    /** Initializes the toolbar with the title provided */
-    protected fun initActivity(title: String){
-        if(title.isNotEmpty()) supportActionBar?.title = title
-        supportActionBar?.setHomeButtonEnabled(true)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-    }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         logVerbose("Selected item ${item.title}")
         if (item.itemId == android.R.id.home) {
             onBackPressed()
             return true
-
         }
         return super.onOptionsItemSelected(item)
     }
@@ -132,11 +115,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
 
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         Perms.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
@@ -148,23 +127,17 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     }
 
 
-    /**
-     * Handles the response of the ViewModel, in case everything went alright.
-     *
-     * @param vmAction Action sent from the ViewModel. It will never be null.
-     * @param vmData Data sent from the ViewModel. It can be null.
-     * @return True to clear the response after being sent to the observer. False to retain it.
-     * If false, the response should be cleared using [com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel.clearVmResponse] method.
-     *//*
-    open fun handleVmResponse(vmAction: VmResponse.VmAction, vmData: Any?): Boolean {
-        //This method does nothing. It's here just to have a reference to the javadoc used by extending activities
-        return true
-    }*/
-
+    @Deprecated("Use onVmAction")
     /** Observes the vmResponse of the [vm]. It's just a simpler way to call [SamaViewModel.observeVmResponse]. Call it on Ui thread */
-    protected fun <A> observeVmResponse(vm: SamaViewModel<A>, f: suspend (A, Any?) -> Boolean) where A: VmResponse.VmAction {
+    protected fun <A: VmResponse.VmAction> observeVmResponse(vm: SamaViewModel<A>, f: suspend (A, Any?) -> Boolean) {
         registeredViewModels.add(vm)
         vm.observeVmResponse(this, f)
+    }
+
+    /** Observes the vmResponse of the [vm]. It's just a simpler way to call [SamaViewModel.observeVmResponse]. Call it on Ui thread */
+    protected fun <A: VmResponse.VmAction> onVmAction(vm: SamaViewModel<A>, f: (A) -> Unit) {
+        registeredViewModels.add(vm)
+        vm.onVmAction(this, f)
     }
 
     val samaIntent
@@ -182,7 +155,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
     protected fun <T> observe(liveData: LiveData<T>, observerFunction: (data: T) -> Unit): LiveData<T> = samaObserver.observe(liveData, observerFunction)
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed */
-    protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit): Unit where T: Any = samaObserver.observe(o, *obs) { obFun(it) }
+    protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit): Unit = samaObserver.observe(o, *obs) { obFun(it) }
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
     protected fun <R> observe(o: ObservableInt, vararg obs: Observable, obFun: (data: Int) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }

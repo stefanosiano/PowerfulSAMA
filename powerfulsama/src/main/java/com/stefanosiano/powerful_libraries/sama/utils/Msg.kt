@@ -338,6 +338,12 @@ class Msg private constructor(
      * If the activity changed while showing the message, it's possible that the orientation will not be restored after dismissing the message */
     fun lockOrientation(lockOrientation: Boolean): Msg { this.lockOrientation = lockOrientation; return this }
 
+    /** Customization function of the message, called right after showing it. Note: It will be called on main thread */
+    fun customize(customize: (Any) -> Unit): Msg {
+        this.customize = customize
+        return this
+    }
+
 
 
     /** Retrieves the activity name by the context. If the activity is not found, it returns the current activity reference */
@@ -413,6 +419,30 @@ class Msg private constructor(
         }
         return this
     }
+    /** Build the message and returns it */
+    private suspend fun build2(ctx: Context?): Msg {
+
+        logVerbose("Building message")
+        val context = ctx ?: PowerfulSama.getCurrentActivity() ?: PowerfulSama.applicationContext
+        initStrings(context.applicationContext)
+        withContext(Dispatchers.Main) {
+//            logError("a1")
+            when (messageImpl) {
+                MessageImpl.ProgressDialog -> getActivityFromCtx(context)?.let { buildAsProgressDialog(context) } ?: buildAsToast(context)
+                MessageImpl.AlertDialogOneButton -> getActivityFromCtx(context)?.let { buildAsAlertDialogOneButton(it) } ?: buildAsToast(context)
+                MessageImpl.AlertDialog -> getActivityFromCtx(context)?.let { buildAsAlertDialog(it) } ?: buildAsToast(context)
+                MessageImpl.Toast -> buildAsToast(context)
+                MessageImpl.Snackbar -> {
+                    snackbarView?.let { buildAsSnackbar(it) } ?: run {
+                        (getActivityFromCtx(context)?.window?.decorView?.findViewById(android.R.id.content) as? View?)?.let { buildAsSnackbar(it) } ?: buildAsToast(context)
+                    }
+                }
+                else -> logError("Cannot understand the implementation type of the message. Skipping show")
+            }
+//            logError("a2")
+        }
+        return this
+    }
 
 
     @Suppress("DEPRECATION")
@@ -432,26 +462,19 @@ class Msg private constructor(
             }
         }
 
-        var finished = false
-        runBlocking {
-            runOnUi {
-                logError("b1")
-                if (!isBuilt) build(context)
-
-                logError("b2")
-                when (messageImpl) {
-                    MessageImpl.ProgressDialog -> { onShow?.invoke(this@Msg); if(lockOrientation) lockOrientation(context); (implementation?.get() as ProgressDialog?)?.show() ?: logError("No activity found to show this progress dialog. Skipping show") }
-                    MessageImpl.AlertDialogOneButton -> { onShow?.invoke(this@Msg); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
-                    MessageImpl.AlertDialog -> { onShow?.invoke(this@Msg); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
-                    MessageImpl.Toast -> { onShow?.invoke(this@Msg); (implementation?.get() as? Toast?)?.show() }
-                    MessageImpl.Snackbar -> { onShow?.invoke(this@Msg); if(lockOrientation) lockOrientation(context); (implementation?.get() as? Snackbar?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
-                    else -> { logError("Cannot understand the implementation type of the message. Skipping show") }
-                }
-
-                implementation?.get()?.let { customize?.invoke(it) }
-                finished = true
+        launch (Dispatchers.Main) {
+//                logError("b1")
+            if (!isBuilt) build2(context)
+//                logError("b2")
+            when (messageImpl) {
+                MessageImpl.ProgressDialog -> { onShow?.invoke(this@Msg); if(lockOrientation) lockOrientation(context); (implementation?.get() as ProgressDialog?)?.show() ?: logError("No activity found to show this progress dialog. Skipping show") }
+                MessageImpl.AlertDialogOneButton -> { onShow?.invoke(this@Msg); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
+                MessageImpl.AlertDialog -> { onShow?.invoke(this@Msg); if(lockOrientation) lockOrientation(context); (implementation?.get() as? AlertDialog?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
+                MessageImpl.Toast -> { onShow?.invoke(this@Msg); (implementation?.get() as? Toast?)?.show() }
+                MessageImpl.Snackbar -> { onShow?.invoke(this@Msg); if(lockOrientation) lockOrientation(context); (implementation?.get() as? Snackbar?)?.show() ?: (implementation?.get() as? Toast?)?.show() }
+                else -> { logError("Cannot understand the implementation type of the message. Skipping show") }
             }
-            while (isActive && !finished) delay(10)
+            implementation?.get()?.let { customize?.invoke(it) }
         }
 
         return this

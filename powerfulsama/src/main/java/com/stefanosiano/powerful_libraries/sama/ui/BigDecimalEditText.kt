@@ -133,7 +133,7 @@ private fun initFormatter(locale: Int, minFractionDigits: Int, maxFractionDigits
     return formatter
 }
 
-private fun <T> setTextBd(v: T, oldValue: BigDecimal, newValue: BigDecimal?, formatter: NumberFormat) where T: TextView {
+private fun <T: TextView> setTextBd(v: T, oldValue: BigDecimal, newValue: BigDecimal?, formatter: NumberFormat) {
     if(oldValue.toDouble() != newValue?.toDouble() || v.text.isEmpty()) {
         val cursorPosition = v.selectionEnd
         val toSet = formatter.format(newValue ?: BigDecimal.ZERO)
@@ -143,12 +143,12 @@ private fun <T> setTextBd(v: T, oldValue: BigDecimal, newValue: BigDecimal?, for
     }
 }
 
-private class BigDecimalTextWatcher<T> (
+private class BigDecimalTextWatcher<T: TextView> (
     val v: T,
     var formatter: NumberFormat,
     val decimalSeparator: Char,
     val f: (BigDecimal) -> Unit
-) : TextWatcher where T: TextView {
+) : TextWatcher {
 
     var oldText = ""
 

@@ -177,6 +177,8 @@ fun setSsvQuery(searchView: SamaSearchView, query: String?) { if (query != searc
 @InverseBindingAdapter(attribute = "ssvQuery")
 fun getSsvQuery(searchView: SamaSearchView): String = searchView.getSsvQuery()
 
+@BindingAdapter("onLongClick")
+fun onLongClick(view: View, onLongClick: (() -> Unit)?) { onLongClick?.let { view.setOnLongClickListener { it(); true } } }
 
 @BindingAdapter("onClick")
-fun onClick(view: View, onClick: () -> Unit) { view.setOnClickListener { onClick() } }
+fun onClick(view: View, onClick: (() -> Unit)?) { onClick?.let { view.setOnClickListener { it() } } }

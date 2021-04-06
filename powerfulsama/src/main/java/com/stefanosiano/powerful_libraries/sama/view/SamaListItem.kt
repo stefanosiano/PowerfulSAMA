@@ -21,7 +21,10 @@ abstract class SamaListItem : CoroutineScope {
     /** Object that takes care of observing liveData and observableFields */
     @Ignore private val samaObserver: SamaObserver = SamaObserverImpl()
 
-    @Ignore internal var onPostAction : (suspend (SamaListItemAction?, SamaListItem, Any?) -> Unit)? = null
+    @Deprecated("Use sendAction")
+    @Ignore internal var onPostActionOld : (suspend (SamaListItemAction?, SamaListItem, Any?) -> Unit)? = null
+
+    @Ignore internal var onPostAction : ((SamaListItemAction, SamaListItem) -> Unit)? = null
 
     /** Delay in milliseconds after which a function in "observe(ob, ob, ob...)" can be called again.
      * Used to avoid calling the same method multiple times due to observing multiple variables */
@@ -29,6 +32,10 @@ abstract class SamaListItem : CoroutineScope {
 
     /** Root View this item is bound to. Use it only in [onBind] method */
     @Ignore lateinit var root: WeakReference<View>
+        internal set
+
+    /** Root View this item is bound to. Use it only in [onBind] method */
+    @Ignore lateinit var binding: WeakReference<ViewDataBinding>
         internal set
 
     @Ignore internal var updateJobs = HashMap<String, Job>()
@@ -78,15 +85,26 @@ abstract class SamaListItem : CoroutineScope {
     fun getRecyclerView() = adapter?.get()?.recyclerView?.get()
 
 
+    @Deprecated("Use sendAction")
     /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] after [millis] milliseconds, optionally passing an [action].
      * If called again before [millis] milliseconds are passed, previous call is cancelled */
-    protected fun <T> postAction(action: T? = null, millis: Long = 0, data: Any? = null) where T: SamaListItemAction, T: Enum<T> {
+    protected fun <T> postAction(action: T? = null, millis: Long = 0, data: Any? = null) where T: SamaListItemAction, T: Enum<T>{
         updateJobs[action?.name ?: ""]?.cancel()
-        updateJobs[action?.name ?: ""] = launch { delay(millis); if(isActive) onPostAction?.invoke(action, this@SamaListItem, data) }
+        updateJobs[action?.name ?: ""] = launch { delay(millis); if(isActive) onPostActionOld?.invoke(action, this@SamaListItem, data) }
     }
 
+
+    /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] passing an [action] */
+    protected fun <T: SamaListItemAction> sendAction(action: T) {
+        onPostAction?.invoke(action, this@SamaListItem)
+    }
+
+    @Deprecated("Use sendAction")
     /** Sets a listener through [SamaRvAdapter] to be called by the item */
-    internal fun setPostActionListener(f: suspend (SamaListItemAction?, SamaListItem, Any?) -> Unit) { onPostAction = f }
+    internal fun setPostActionListener(f: suspend (SamaListItemAction?, SamaListItem, Any?) -> Unit) { onPostActionOld = f }
+
+    /** Sets a listener through [SamaRvAdapter] to be called by the item */
+    internal fun setSendActionListener(f: (SamaListItemAction, SamaListItem) -> Unit) { onPostAction = f }
 
     /** Returns the unique id of the item (defaults to [RecyclerView.NO_ID]). Overrides [getStableIdString] if specified */
     open fun getStableId(): Long = RecyclerView.NO_ID
@@ -179,7 +197,7 @@ abstract class SamaListItem : CoroutineScope {
     protected fun <T> observe(liveData: LiveData<T>, observerFunction: (data: T) -> Unit): LiveData<T> = samaObserver.observe(liveData, observerFunction)
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed */
-    protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit): Unit where T: Any = samaObserver.observe(o, *obs) { obFun(it) }
+    protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit): Unit = samaObserver.observe(o, *obs) { obFun(it) }
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
     protected fun <R> observe(o: ObservableInt, vararg obs: Observable, obFun: (data: Int) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }

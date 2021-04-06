@@ -83,8 +83,12 @@ open class SamaRvAdapter(
 
     internal var recyclerViewColumnCount = 1
 
+    @Deprecated("Use itemUpdatedListeners")
     /** Listener passed to items to provide a callback to the adapter's caller */
-    private var itemUpdatedListeners : MutableList<suspend (SamaListItem.SamaListItemAction?, SamaListItem, Any?) -> Unit> = ArrayList()
+    private var itemUpdatedListenersOld : MutableList<suspend (SamaListItem.SamaListItemAction?, SamaListItem, Any?) -> Unit> = ArrayList()
+
+    /** Listener passed to items to provide a callback to the adapter's caller */
+    private var itemUpdatedListeners : MutableList<(SamaListItem.SamaListItemAction, SamaListItem) -> Unit> = ArrayList()
 
     /** Function called when adapter starts loading items (one of [bindItems] or [bindPagedItems] is called) */
     private var onLoadStarted : (() -> Unit)? = null
@@ -145,6 +149,7 @@ open class SamaRvAdapter(
     override fun onBindViewHolder(holder: SimpleViewHolder, position: Int) {
         val item = getItem(position) ?: return
         holder.binding.get()?.root?.let { item.root = WeakReference(it) }
+        item.binding = holder.binding
         holder.binding.get()?.setVariable(itemBindingId, item)
 
         item.adapterPosition = holder.adapterPosition
@@ -162,7 +167,8 @@ open class SamaRvAdapter(
         else
             item.onBind(passedObjects)
 
-        item.setPostActionListener { action, item2, data -> itemUpdatedListeners.forEach { it.invoke(action, item2, data) } }
+        item.setPostActionListener { action, item2, data -> itemUpdatedListenersOld.forEach { it.invoke(action, item2, data) } }
+        item.setSendActionListener { action, li -> itemUpdatedListeners.forEach { it.invoke(action, li) } }
         item.onStart()
     }
 
@@ -182,17 +188,24 @@ open class SamaRvAdapter(
     }
 
 
-    /** Observe the items of this [RecyclerView] passing an action, the item and optional data when they change (when [SamaListItem.onPostAction] is called) */
+    /** Observe the items of this [RecyclerView] passing an action, the item and optional data when they change (when [SamaListItem.sendAction] is called) */
     @Suppress("UNCHECKED_CAST")
-    fun <T> observe(f: suspend (action: SamaListItem.SamaListItemAction?, item: T, data: Any?) -> Unit) where T: SamaListItem { this.itemUpdatedListeners.add(f as suspend (SamaListItem.SamaListItemAction?, SamaListItem, Any?) -> Unit) }
+    fun <T: SamaListItem> onAction(f: (action: SamaListItem.SamaListItemAction, item: T) -> Unit) { this.itemUpdatedListeners.add(f as (SamaListItem.SamaListItemAction, SamaListItem) -> Unit) }
 
-    /** Observe the items of this [RecyclerView] passing an action and the item when they change (when [SamaListItem.onPostAction] is called) */
+    @Deprecated("Use onAction")
+    /** Observe the items of this [RecyclerView] passing an action, the item and optional data when they change (when [SamaListItem.onPostActionOld] is called) */
     @Suppress("UNCHECKED_CAST")
-    fun <T> observe(f: suspend (action: SamaListItem.SamaListItemAction?, item: T) -> Unit) where T: SamaListItem { observe<T> { action, item, _ -> f(action, item) } }
+    fun <T: SamaListItem> observe(f: suspend (action: SamaListItem.SamaListItemAction?, item: T, data: Any?) -> Unit) { this.itemUpdatedListenersOld.add(f as suspend (SamaListItem.SamaListItemAction?, SamaListItem, Any?) -> Unit) }
 
-    /** Observe the items of this [RecyclerView] passing an action when they change (when [SamaListItem.onPostAction] is called) */
+    @Deprecated("Use onAction")
+    /** Observe the items of this [RecyclerView] passing an action and the item when they change (when [SamaListItem.onPostActionOld] is called) */
     @Suppress("UNCHECKED_CAST")
-    fun <T> observe(f: suspend (action: SamaListItem.SamaListItemAction?) -> Unit) where T: SamaListItem { observe<T> { action, _, _ -> f(action) } }
+    fun <T: SamaListItem> observe(f: suspend (action: SamaListItem.SamaListItemAction?, item: T) -> Unit) { observe<T> { action, item, _ -> f(action, item) } }
+
+    @Deprecated("Use onAction")
+    /** Observe the items of this [RecyclerView] passing an action when they change (when [SamaListItem.onPostActionOld] is called) */
+    @Suppress("UNCHECKED_CAST")
+    fun <T: SamaListItem> observe(f: suspend (action: SamaListItem.SamaListItemAction?) -> Unit) { observe<T> { action, _, _ -> f(action) } }
 
     /**
      * Binds the items of the adapter to the passed list
@@ -411,7 +424,7 @@ open class SamaRvAdapter(
             liveDataPagedItems?.removeObserver(pagedLiveDataObserver)
         }
 
-        itemUpdatedListeners.clear()
+        itemUpdatedListenersOld.clear()
         items.forEach { it.onDestroy() }
     }
 
@@ -424,7 +437,7 @@ open class SamaRvAdapter(
 
     /** Returns the list of bound items to [SamaMutableListItem], if adapter hasStableId */
     @Suppress("UNCHECKED_CAST")
-    fun <T> getBoundItems(): List<T> where T: Any {
+    fun <T> getBoundItems(): List<T> {
         val size = mutableBoundItems.size()
 
         val boundItems = ArrayList<T?>(size)
@@ -500,7 +513,7 @@ open class SamaRvAdapter(
 
     /** Class that implement the ViewHolder of the Adapter */
     class SimpleViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val binding: WeakReference<ViewDataBinding?> = WeakReference(DataBindingUtil.bind(view))
+        val binding: WeakReference<ViewDataBinding> = WeakReference(DataBindingUtil.bind(view))
         override fun toString(): String = "$adapterPosition: " + super.toString()
     }
 

@@ -16,9 +16,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @param <A> Enum extending [VmResponse.VmAction]. It indicates the action of the response the activity/fragment should handle.
 </E></A>
  */
-open class SamaViewModel<A>
+open class SamaViewModel<A: VmResponse.VmAction>
 /** Initializes the LiveData of the response */
-protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAction {
+protected constructor() : ViewModel(), CoroutineScope {
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
@@ -32,8 +32,12 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     @Deprecated("blocking actions should me managed differently ([startVmActions] and [stopVmActions])")
     private var lastSentAction: A? = null
 
+    @Deprecated("Use liveAction")
     /** LiveData of the response the ViewModel sends to the observer (activity/fragment) */
     private var liveResponse: MediatorLiveData<VmResponse<A>> = MediatorLiveData()
+
+    /** LiveData of the response the ViewModel sends to the observer (activity/fragment) */
+    private var liveAction: MediatorLiveData<A> = MediatorLiveData()
 
     /** Flag to understand whether multiple actions can be pushed at once (e.g. multiple buttons clicked at the same time) */
     @Deprecated("blocking actions should me managed differently ([startVmActions] and [stopVmActions])")
@@ -54,8 +58,12 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     /** Sends the [actionId] to the active observer with a nullable [data] */
     protected fun postAction(actionId: A, data: Any? = null) = postAction(VmResponse(actionId, data))
 
+    @Deprecated("Use sendAction")
     /** Sends the action to the active observer */
     protected fun postAction(vmResponse: VmResponse<A>) = liveResponse.postValue(vmResponse)
+
+    /** Sends the action to the active observer */
+    protected fun sendAction(action: A) = liveAction.postValue(action)
 
     init {
         samaObserver.initObserver(this)
@@ -76,6 +84,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
         stopVmActions()
         samaObserver.stopObserver()
         liveResponse.postValue(null)
+        liveAction.postValue(null)
     }
 
 
@@ -87,6 +96,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     }
 
 
+    @Deprecated("Use onVmAction")
     /** Observes the action of the ViewModel. Call it on Ui thread */
     fun observeVmResponse(lifecycleOwner: LifecycleOwner, observer: (suspend (vmAction: A, vmData: Any?) -> Boolean)? = null) {
         liveResponse.observe(lifecycleOwner, {
@@ -120,6 +130,22 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
                         liveResponse.postValue(null)
                 }
 
+            }
+        })
+    }
+
+
+    /** Observes the action of the ViewModel. Call it on Ui thread */
+    fun onVmAction(lifecycleOwner: LifecycleOwner, observer: (vmAction: A) -> Unit) {
+        liveAction.observe(lifecycleOwner, {
+
+            synchronized(this) {
+                if(!isActive) return@observe
+                if(actionsStopped) return@observe
+                it ?: return@observe
+                logVerbose("Sending to activity: $it")
+                tryOrPrint { observer(it) }
+                liveAction.postValue(null)
             }
         })
     }
@@ -163,7 +189,7 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
     protected fun <T> observe(liveData: LiveData<T>, observerFunction: (data: T) -> Unit): LiveData<T> = samaObserver.observe(liveData, observerFunction)
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed */
-    protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit): Unit where T: Any = samaObserver.observe(o, *obs) { obFun(it) }
+    protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit): Unit = samaObserver.observe(o, *obs) { obFun(it) }
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
     protected fun <R> observe(o: ObservableInt, vararg obs: Observable, obFun: (data: Int) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
@@ -195,16 +221,16 @@ protected constructor() : ViewModel(), CoroutineScope where A : VmResponse.VmAct
 }
 
 /** Executes [f] only once. If this is called multiple times, it will have no effect */
-@Synchronized fun <T> T.onFirstTime(f: T.() -> Unit) where T : SamaViewModel<*> {
+@Synchronized fun <T: SamaViewModel<*>> T.onFirstTime(f: T.() -> Unit) {
     if(!isInitialized.getAndSet(true)) this.f()
 }
 
 /** Class containing action and data sent from the ViewModel to its observers */
-open class VmResponse<A> (
+open class VmResponse<A: VmResponse.VmAction> (
     /** Specifies what the response is about  */
     val action: A,
     /** Optional data provided by the action  */
-    val data: Any?) where A : VmResponse.VmAction {
+    val data: Any?) {
 
     override fun toString() = "VmResponse{ action= $action, data=$data }"
 

@@ -32,11 +32,13 @@ class Activity1 : SamaActivity() {
         observe(ob) { Log.e("AAAA", it) }
         val perms = arrayListOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
         val m = Msg.adob("asd").show()//.dismiss()
+//        m.dismiss()
         launch {
             delay(3000)
             m.dismiss()
             ob.set("231")
         }
+
 //        Perms.call(perms, R.string.app_name, R.string.app_name2) {
 //            Uri.fromFile(File("")).toFileFromProviders(this, "a")
 //            println("asd")

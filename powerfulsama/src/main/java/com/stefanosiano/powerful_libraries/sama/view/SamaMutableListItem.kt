@@ -4,7 +4,7 @@ import androidx.room.Ignore
 import kotlinx.coroutines.launch
 
 
-abstract class SamaMutableListItem<T> : SamaListItem() where T: Any {
+abstract class SamaMutableListItem<T: Any> : SamaListItem() {
 
     @Deprecated(message = "Use method with bound object, since this is a mutableListItem", replaceWith = ReplaceWith("onBind(bound, initObjects)"))
     final override suspend fun onBind() = super.onBind()
