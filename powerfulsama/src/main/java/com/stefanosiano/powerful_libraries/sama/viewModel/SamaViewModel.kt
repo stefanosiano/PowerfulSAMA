@@ -9,13 +9,7 @@ import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicBoolean
 
 
-/**
- * Base class for ViewModels.
- * It will contain the fields used by the databinding and all the logic of the data contained into the layouts.
- *
- * @param <A> Enum extending [VmResponse.VmAction]. It indicates the action of the response the activity/fragment should handle.
-</E></A>
- */
+/** Base class for ViewModels. It will contain the fields used by the databinding and all the logic of the data contained into the layouts */
 open class SamaViewModel<A: VmAction>
 /** Initializes the LiveData of the response */
 protected constructor() : ViewModel(), CoroutineScope {
@@ -142,17 +136,17 @@ protected constructor() : ViewModel(), CoroutineScope {
     /** Observes the action of the ViewModel. Call it on Ui thread */
     fun onVmAction(lifecycleOwner: LifecycleOwner, observer: (vmAction: A) -> Unit) {
         liveAction.observe(lifecycleOwner, {
-
-            synchronized(this) {
-                if(!isActive) return@observe
-                if(actionsStopped) return@observe
-                it ?: return@observe
-                logVerbose("Sending to activity: $it")
-                tryOrPrint { observer(it) }
-                if(it is VmAction.VmActionSticky)
-                    lastStickyAction = it
-                liveAction.postValue(null)
+            if(!isActive) return@observe
+            if(actionsStopped) return@observe
+            if(it == null) {
+                lastStickyAction = null
+                return@observe
             }
+            logVerbose("Sending to activity: $it")
+            tryOrPrint { observer(it) }
+            if(it is VmAction.VmActionSticky)
+                lastStickyAction = it
+            liveAction.postValue(null)
         })
         lastStickyAction?.let { observer(it) }
     }
