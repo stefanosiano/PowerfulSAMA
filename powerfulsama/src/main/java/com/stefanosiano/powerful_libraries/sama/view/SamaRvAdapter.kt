@@ -88,7 +88,7 @@ open class SamaRvAdapter(
     private var itemUpdatedListenersOld : MutableList<suspend (SamaListItem.SamaListItemAction?, SamaListItem, Any?) -> Unit> = ArrayList()
 
     /** Listener passed to items to provide a callback to the adapter's caller */
-    private var itemUpdatedListeners : MutableList<(SamaListItem.SamaListItemAction, SamaListItem) -> Unit> = ArrayList()
+    private var itemUpdatedListeners : MutableList<(SamaListItem.SamaListItemAction) -> Unit> = ArrayList()
 
     /** Function called when adapter starts loading items (one of [bindItems] or [bindPagedItems] is called) */
     private var onLoadStarted : (() -> Unit)? = null
@@ -168,7 +168,7 @@ open class SamaRvAdapter(
             item.onBind(passedObjects)
 
         item.setPostActionListener { action, item2, data -> itemUpdatedListenersOld.forEach { it.invoke(action, item2, data) } }
-        item.setSendActionListener { action, li -> itemUpdatedListeners.forEach { it.invoke(action, li) } }
+        item.setSendActionListener { action -> itemUpdatedListeners.forEach { it.invoke(action) } }
         item.onStart()
     }
 
@@ -190,20 +190,20 @@ open class SamaRvAdapter(
 
     /** Observe the items of this [RecyclerView] passing an action, the item and optional data when they change (when [SamaListItem.sendAction] is called) */
     @Suppress("UNCHECKED_CAST")
-    fun <T: SamaListItem> onAction(f: (action: SamaListItem.SamaListItemAction, item: T) -> Unit) { this.itemUpdatedListeners.add(f as (SamaListItem.SamaListItemAction, SamaListItem) -> Unit) }
+    fun <T: SamaListItem.SamaListItemAction> onAction(f: (action: T) -> Unit) { this.itemUpdatedListeners.add(f as (SamaListItem.SamaListItemAction) -> Unit) }
 
     @Deprecated("Use onAction")
-    /** Observe the items of this [RecyclerView] passing an action, the item and optional data when they change (when [SamaListItem.onPostActionOld] is called) */
+    /** Observe the items of this [RecyclerView] passing an action, the item and optional data when they change (when [SamaListItem.onPostAction] is called) */
     @Suppress("UNCHECKED_CAST")
     fun <T: SamaListItem> observe(f: suspend (action: SamaListItem.SamaListItemAction?, item: T, data: Any?) -> Unit) { this.itemUpdatedListenersOld.add(f as suspend (SamaListItem.SamaListItemAction?, SamaListItem, Any?) -> Unit) }
 
     @Deprecated("Use onAction")
-    /** Observe the items of this [RecyclerView] passing an action and the item when they change (when [SamaListItem.onPostActionOld] is called) */
+    /** Observe the items of this [RecyclerView] passing an action and the item when they change (when [SamaListItem.onPostAction] is called) */
     @Suppress("UNCHECKED_CAST")
     fun <T: SamaListItem> observe(f: suspend (action: SamaListItem.SamaListItemAction?, item: T) -> Unit) { observe<T> { action, item, _ -> f(action, item) } }
 
     @Deprecated("Use onAction")
-    /** Observe the items of this [RecyclerView] passing an action when they change (when [SamaListItem.onPostActionOld] is called) */
+    /** Observe the items of this [RecyclerView] passing an action when they change (when [SamaListItem.onPostAction] is called) */
     @Suppress("UNCHECKED_CAST")
     fun <T: SamaListItem> observe(f: suspend (action: SamaListItem.SamaListItemAction?) -> Unit) { observe<T> { action, _, _ -> f(action) } }
 

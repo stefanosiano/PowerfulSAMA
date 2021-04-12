@@ -13,6 +13,7 @@ import com.stefanosiano.powerful_libraries.sama.logVerbose
 import com.stefanosiano.powerful_libraries.sama.utils.*
 import com.stefanosiano.powerful_libraries.sama.utils.SamaActivityCallback
 import com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel
+import com.stefanosiano.powerful_libraries.sama.viewModel.VmAction
 import com.stefanosiano.powerful_libraries.sama.viewModel.VmResponse
 import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -129,13 +130,13 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
     @Deprecated("Use onVmAction")
     /** Observes the vmResponse of the [vm]. It's just a simpler way to call [SamaViewModel.observeVmResponse]. Call it on Ui thread */
-    protected fun <A: VmResponse.VmAction> observeVmResponse(vm: SamaViewModel<A>, f: suspend (A, Any?) -> Boolean) {
+    protected fun <A: VmAction> observeVmResponse(vm: SamaViewModel<A>, f: suspend (A, Any?) -> Boolean) {
         registeredViewModels.add(vm)
         vm.observeVmResponse(this, f)
     }
 
     /** Observes the vmResponse of the [vm]. It's just a simpler way to call [SamaViewModel.observeVmResponse]. Call it on Ui thread */
-    protected fun <A: VmResponse.VmAction> onVmAction(vm: SamaViewModel<A>, f: (A) -> Unit) {
+    protected fun <A: VmAction> onVmAction(vm: SamaViewModel<A>, f: (A) -> Unit) {
         registeredViewModels.add(vm)
         vm.onVmAction(this, f)
     }

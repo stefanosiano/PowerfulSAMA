@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @param <A> Enum extending [VmResponse.VmAction]. It indicates the action of the response the activity/fragment should handle.
 </E></A>
  */
-open class SamaViewModel<A: VmResponse.VmAction>
+open class SamaViewModel<A: VmAction>
 /** Initializes the LiveData of the response */
 protected constructor() : ViewModel(), CoroutineScope {
     private val coroutineJob: Job = SupervisorJob()
@@ -31,6 +31,9 @@ protected constructor() : ViewModel(), CoroutineScope {
     /** Last action sent to the activity. Used to avoid sending multiple actions together (like pressing on 2 buttons) */
     @Deprecated("blocking actions should me managed differently ([startVmActions] and [stopVmActions])")
     private var lastSentAction: A? = null
+
+    /** Last [VmAction.VmActionSticky] sent to the activity */
+    private var lastStickyAction: A? = null
 
     @Deprecated("Use liveAction")
     /** LiveData of the response the ViewModel sends to the observer (activity/fragment) */
@@ -55,6 +58,7 @@ protected constructor() : ViewModel(), CoroutineScope {
     @Deprecated("blocking actions should me managed differently ([startVmActions] and [stopVmActions])")
     fun clearVmResponse() = liveResponse.postValue(null)
 
+    @Deprecated("Use sendAction")
     /** Sends the [actionId] to the active observer with a nullable [data] */
     protected fun postAction(actionId: A, data: Any? = null) = postAction(VmResponse(actionId, data))
 
@@ -145,9 +149,12 @@ protected constructor() : ViewModel(), CoroutineScope {
                 it ?: return@observe
                 logVerbose("Sending to activity: $it")
                 tryOrPrint { observer(it) }
+                if(it is VmAction.VmActionSticky)
+                    lastStickyAction = it
                 liveAction.postValue(null)
             }
         })
+        lastStickyAction?.let { observer(it) }
     }
 
     /** Set whether multiple same actions at once are allowed (e.g. same button clicked multiple times at the same time). Defaults to [true] */
@@ -163,6 +170,9 @@ protected constructor() : ViewModel(), CoroutineScope {
 
     /** Start sending actions to the observing activity. To stop them call [stopVmActions] */
     fun startVmActions() { actionsStopped = false }
+
+    /** Start sending actions to the observing activity. To stop them call [stopVmActions] */
+    fun clearStickyAction() { lastStickyAction = null }
 
 
 
@@ -226,7 +236,7 @@ protected constructor() : ViewModel(), CoroutineScope {
 }
 
 /** Class containing action and data sent from the ViewModel to its observers */
-open class VmResponse<A: VmResponse.VmAction> (
+open class VmResponse<A: VmAction> (
     /** Specifies what the response is about  */
     val action: A,
     /** Optional data provided by the action  */
@@ -234,7 +244,11 @@ open class VmResponse<A: VmResponse.VmAction> (
 
     override fun toString() = "VmResponse{ action= $action, data=$data }"
 
-    /** Interface that indicates the action of the VmResponse sent by the ViewModel */
-    interface VmAction
 }
 
+/** Interface that indicates the action sent by the ViewModel */
+interface VmAction {
+    /** Indicates that this [VmAction] should be retained when activity is recreated. Any new [VmActionSticky] overrides previous one, so that only 1 action will be retained.
+     * If an action is sent and the device is rotated, when the activity restarts it needs to get that action again */
+    interface VmActionSticky
+}
