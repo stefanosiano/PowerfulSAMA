@@ -13,7 +13,6 @@ import com.stefanosiano.powerful_libraries.sama.utils.Msg
 import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaDialogFragment
-import com.stefanosiano.powerful_libraries.sama_annotations.ActivityIntent
 import com.stefanosiano.powerful_libraries.sama_annotations.SamaExtensions
 import com.stefanosiano.powerful_libraries.sama_sample.R
 import kotlinx.coroutines.Dispatchers
@@ -59,28 +58,10 @@ class Activity2 : Activity() {
         private const val ExtraSync = "sync"
         private const val ExtraIsTempPassword = "isTempPassword"
 
-        @ActivityIntent
-        /** asd */
-        fun getIntent(context: Context, sync: Boolean?, isTempPassword: Boolean = true): Intent =
-            Intent(context, Activity2::class.java).apply {
-                putExtra(ExtraSync, sync)
-                putExtra(ExtraIsTempPassword, isTempPassword)
-            }
-
-        /** dsa */
-        @ActivityIntent
-        fun getIntent(context: Activity, sync: Boolean): Intent =
-            Intent(context, Activity2::class.java).apply {
-                putExtra(ExtraSync, sync)
-            }
-
-        /** */
-//        @ActivityIntent("A2")
         fun getIntent2(context: Activity, sync: Boolean): Intent =
             Intent(context, Activity2::class.java).apply {
                 putExtra(ExtraSync, sync)
             }
-
 
 
     }
