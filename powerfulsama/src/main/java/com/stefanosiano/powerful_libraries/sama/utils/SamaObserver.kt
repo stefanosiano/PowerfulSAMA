@@ -16,7 +16,7 @@ interface SamaObserver {
     /** Initializes the observer with the current coroutine (used to handle delays on multi-variables observe and to observe liveData on UI) */
     fun initObserver(coroutineScope: CoroutineScope)
 
-    fun <R> observe(o: Flow<R>, vararg obs: Observable, obFun: (data: R) -> R): ObservableField<R>
+    fun <R, T> observe(o: Flow<T>, vararg obs: Observable, obFun: (data: T) -> R): ObservableField<R>
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
     fun <R> observe(o: ObservableInt, vararg obs: Observable, obFun: (data: Int) -> R): ObservableField<R>
@@ -182,13 +182,13 @@ class SamaObserverImpl: SamaObserver {
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed */
     @Suppress("UNCHECKED_CAST")
-    override fun <R> observe(o: Flow<R>, vararg obs: Observable, obFun: (data: R) -> R): ObservableField<R> {
+    override fun <R, T> observe(o: Flow<T>, vararg obs: Observable, obFun: (data: T) -> R): ObservableField<R> {
         val toRet = ObservableField<R>()
         val obsId = observablesId.incrementAndGet()
         val helper = SamaFlowHelper(obsId, null, null, null)
         synchronized(flowMap) { flowMap[obsId] = helper }
 
-        val f: (t: R) -> Unit = { t ->
+        val f: (t: T) -> Unit = { t ->
             helper.job?.cancel()
             helper.lastValue = t
             helper.job = coroutineScope?.launch {
