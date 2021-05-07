@@ -1,4 +1,4 @@
-package sample
+package com.stefanosiano.powerful_libraries.sama_sample
 
 import androidx.room.Ignore
 import com.stefanosiano.powerful_libraries.sama.generatedextensions.defaultContentEquals

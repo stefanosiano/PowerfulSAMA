@@ -12,7 +12,9 @@ import androidx.databinding.ViewDataBinding
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.paging.AsyncPagedListDiffer
+import androidx.paging.AsyncPagingDataDiffer
 import androidx.paging.PagedList
+import androidx.paging.PagingData
 import androidx.recyclerview.widget.*
 import com.stefanosiano.powerful_libraries.sama.*
 import kotlinx.coroutines.*
@@ -37,10 +39,10 @@ open class SamaRvAdapter(
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
-    private val mDiffer: AsyncPagedListDiffer<SamaListItem> = AsyncPagedListDiffer(this, object : DiffUtil.ItemCallback<SamaListItem>() {
+    private val mDiffer: AsyncPagingDataDiffer<SamaListItem> = AsyncPagingDataDiffer(object : DiffUtil.ItemCallback<SamaListItem>() {
         override fun areItemsTheSame(old: SamaListItem, new: SamaListItem) = getItemStableId(old) == getItemStableId(new)
         override fun areContentsTheSame(old: SamaListItem, new: SamaListItem) = old.contentEquals(new)
-    })
+    }, AdapterListUpdateCallback(this))
 
     private var isPaged = false
     private var isObservableList = false
@@ -60,7 +62,7 @@ open class SamaRvAdapter(
     private var liveDataItems: LiveData<out List<SamaListItem>>? = null
 
     /** items implemented through live data */
-    private var liveDataPagedItems: LiveData<out PagedList<SamaListItem>>? = null
+    private var liveDataPagedItems: LiveData<out PagingData<SamaListItem>>? = null
 
     /** Whether liveData observers have been stopped by [stopLiveDataObservers] */
     private var liveDataObserversStopped = false
@@ -75,7 +77,7 @@ open class SamaRvAdapter(
     private val liveDataObserver = Observer<List<SamaListItem>> { if(it != null) bindItems(it) }
 
     /** Function to be called when the liveData changes. It will reload the list */
-    private val pagedLiveDataObserver = Observer<PagedList<SamaListItem>> { if(it != null) bindPagedItems(it) }
+    private val pagedLiveDataObserver = Observer<PagingData<SamaListItem>> { if(it != null) bindPagingItems(it) }
 
     /** Reference to the recyclerView. Will be used to post runnables to the UIthread */
     var recyclerView: WeakReference<RecyclerView>? = null
@@ -152,9 +154,9 @@ open class SamaRvAdapter(
         item.binding = holder.binding
         holder.binding.get()?.setVariable(itemBindingId, item)
 
-        item.adapterPosition = holder.adapterPosition
-        item.adapterSpannedPosition = if(recyclerViewColumnCount == 1 || holder.adapterPosition == 0) holder.adapterPosition else
-            (getItem(holder.adapterPosition-1)?.adapterSpannedPosition?.plus(spannedSizes.get(holder.adapterPosition-1, 1))) ?: holder.adapterPosition
+        item.adapterPosition = holder.bindingAdapterPosition
+        item.adapterSpannedPosition = if(recyclerViewColumnCount == 1 || holder.bindingAdapterPosition == 0) holder.bindingAdapterPosition else
+            (getItem(holder.bindingAdapterPosition-1)?.adapterSpannedPosition?.plus(spannedSizes.get(holder.bindingAdapterPosition-1, 1))) ?: holder.bindingAdapterPosition
         item.adapterSize = itemCount
         item.adapterColumnCount = recyclerViewColumnCount
         item.adapter = WeakReference(this)
@@ -176,14 +178,14 @@ open class SamaRvAdapter(
 
     override fun onViewDetachedFromWindow(holder: SimpleViewHolder) {
         super.onViewDetachedFromWindow(holder)
-        lastDetached = holder.adapterPosition
-        val item = getItem(holder.adapterPosition) ?: return
+        lastDetached = holder.bindingAdapterPosition
+        val item = getItem(holder.bindingAdapterPosition) ?: return
         item.onStop()
     }
 
     override fun onViewAttachedToWindow(holder: SimpleViewHolder) {
         super.onViewAttachedToWindow(holder)
-        val item = getItem(holder.adapterPosition) ?: return
+        val item = getItem(holder.bindingAdapterPosition) ?: return
         item.onStart()
     }
 
@@ -308,37 +310,47 @@ open class SamaRvAdapter(
     }
 
 
+
     /**
      * Binds the items of the adapter to the passed paged list
      *
      * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter
      */
     @Suppress("UNCHECKED_CAST")
-    @Synchronized fun bindPagedItems(list: PagedList<out SamaListItem?>) : SamaRvAdapter {
+    @Deprecated("Use bindPagingItems(PagingData)")
+    @Synchronized fun bindPagedItems(list: PagedList<out SamaListItem>) : SamaRvAdapter = bindPagingItems(PagingData.from(list))
+
+    /**
+     * Binds the items of the adapter to the passed paged list
+     *
+     * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter
+     */
+    @Suppress("UNCHECKED_CAST")
+    @Synchronized fun bindPagingItems(list: PagingData<out SamaListItem>) : SamaRvAdapter {
 
         isPaged = true
         isObservableList = false
         this.items.removeOnListChangedCallback(onListChangedCallback)
         onLoadStarted?.invoke()
         launch(Dispatchers.Main) {
+            items.clear()
+            mDiffer.submitData(list as PagingData<SamaListItem>)
             recyclerView?.get()?.also {
                 //I have to stop the scrolling if the new list has less items then current item list
-                if(itemCount > list.size) {
+                if(itemCount > mDiffer.itemCount) {
                     val firstPos = (it.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition() ?: items.size
-                    if(firstPos > list.size)
+                    if(firstPos > mDiffer.itemCount)
                         it.stopScroll()
                 }
             }
 
-            items.clear()
-            mDiffer.submitList(list as PagedList<SamaListItem>) {
-                items = list.filterNotNull<SamaListItem>().mapTo(ObservableArrayList()) { it }
-                onLoadFinished?.invoke()
-                if(justRestarted) {
-                    notifyDataSetChanged()
-                    justRestarted = false
-                }
+            items = mDiffer.snapshot().items.mapTo(ObservableArrayList()) { it }
+            onLoadFinished?.invoke()
+            if(justRestarted) {
+                notifyDataSetChanged()
+                justRestarted = false
             }
+
         }
 
         return this
@@ -354,14 +366,24 @@ open class SamaRvAdapter(
      * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
      */
     @Suppress("UNCHECKED_CAST")
-    @Synchronized fun bindPagedItems(list: LiveData<out PagedList<out SamaListItem>>?) : SamaRvAdapter {
+    @Deprecated("Use bindPagingItems(LiveData<PagingData>)")
+    @Synchronized fun bindPagedItems(list: LiveData<out PagedList<out SamaListItem>>?) : SamaRvAdapter =
+        bindPagingItems(list?.transform { PagingData.from(it) })
+
+    /**
+     * Binds the items of the adapter to the passed list
+     *
+     * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
+     */
+    @Suppress("UNCHECKED_CAST")
+    @Synchronized fun bindPagingItems(list: LiveData<out PagingData<out SamaListItem>>?) : SamaRvAdapter {
         isPaged = true
         isObservableList = false
         //remove the observer from the optional current liveData
         launch(Dispatchers.Main) {
             liveDataItems?.removeObserver(liveDataObserver)
             liveDataPagedItems?.removeObserver(pagedLiveDataObserver)
-            liveDataPagedItems = list as LiveData<PagedList<SamaListItem>>?
+            liveDataPagedItems = list as LiveData<PagingData<SamaListItem>>?
             liveDataPagedItems?.observeForever(pagedLiveDataObserver)
         }
         return this
@@ -430,8 +452,8 @@ open class SamaRvAdapter(
 
     override fun onViewRecycled(holder: SimpleViewHolder) {
         super.onViewRecycled(holder)
-        if(holder.adapterPosition == lastDetached)
-            tryOrNull { items[holder.adapterPosition] }?.onStart()
+        if(holder.bindingAdapterPosition == lastDetached)
+            tryOrNull { items[holder.bindingAdapterPosition] }?.onStart()
     }
 
 
@@ -474,10 +496,12 @@ open class SamaRvAdapter(
      *  [bindPagedItems], because a diff is computed asynchronously before updating the currentList value.
      * May be null if no PagedList is being presented or adapter is not using a paged list */
     @Suppress("UNCHECKED_CAST")
-    fun getPagedItems(): PagedList<SamaListItem>? = if(isPaged) mDiffer.currentList as PagedList<SamaListItem> else null
+    @Deprecated("It will always return null now")
+    fun getPagedItems(): PagedList<SamaListItem>? =  null
 
     /** Returns the item at position [position]. If the items are from a paged list the item is returned only if it was already loaded */
-    private fun getItemOrNull(position: Int): SamaListItem? = tryOrNull { if(isPaged) mDiffer.currentList?.get(position) ?: items[position] else items[position] }
+    @Deprecated("Use getItem(Int)")
+    private fun getItemOrNull(position: Int): SamaListItem? = tryOrNull { if(isPaged) mDiffer.getItem(position) ?: items[position] else items[position] }
 
     /** Returns the item at position [position] */
     fun getItem(position: Int): SamaListItem? = tryOrNull { if(isPaged) mDiffer.getItem(position) else items[position] }
@@ -514,7 +538,7 @@ open class SamaRvAdapter(
     /** Class that implement the ViewHolder of the Adapter */
     class SimpleViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val binding: WeakReference<ViewDataBinding> = WeakReference(DataBindingUtil.bind(view))
-        override fun toString(): String = "$adapterPosition: " + super.toString()
+        override fun toString(): String = "$bindingAdapterPosition: " + super.toString()
     }
 
     /** Class that listens for changes of the passed list and calls the methods of the adapter */

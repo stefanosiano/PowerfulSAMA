@@ -10,6 +10,7 @@ import com.stefanosiano.powerful_libraries.sama.*
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserver
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserverImpl
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -194,7 +195,7 @@ abstract class SamaListItem : CoroutineScope {
     /** Observes a liveData until this object is destroyed into an observable field. Does not update the observable if the value of the liveData is null */
     protected fun <T> observeAsOf(liveData: LiveData<T>): ObservableField<T> = samaObserver.observeAsOf(liveData)
     /** Observes a liveData until this object is destroyed, using a custom observer */
-    protected fun <T> observe(liveData: LiveData<T>, observerFunction: (data: T) -> Unit): LiveData<T> = samaObserver.observe(liveData, observerFunction)
+    protected fun <T> observe(liveData: LiveData<T>, vararg obs: Observable, observerFunction: (data: T) -> Unit): LiveData<T> = samaObserver.observe(liveData, *obs) { observerFunction(it) }
 
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed */
     protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit): Unit = samaObserver.observe(o, *obs) { obFun(it) }
@@ -223,8 +224,11 @@ abstract class SamaListItem : CoroutineScope {
     /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null */
     protected fun <R, T> observe(o: ObservableField<T>, vararg obs: Observable, obFun: (data: T) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
 
+    /** Observes the flow [f] until this object is destroyed and calls [obFun] in the background, now and whenever [f] or any of [obs] change, with the current value of [f]. Does nothing if [f] is null or already changed. Returns an [ObservableField] with initial value of null */
+    protected fun <R> observe(f: Flow<R>, vararg obs: Observable, obFun: (data: R) -> R): ObservableField<R> = samaObserver.observe(f, *obs) { obFun(it) }
+
     /** Run [f] to get a [LiveData] every time any of [o] or [obs] changes, removing the old one. It return a [LiveData] of the same type as [f] */
-    fun <T> observeAndReloadLiveData(o: ObservableField<*>, vararg obs: Observable, f: () -> LiveData<T>?): LiveData<T> = samaObserver.observeAndReloadLiveData(o, *obs) { f() }
+    protected fun <T> observeAndReloadLiveData(o: ObservableField<*>, vararg obs: Observable, f: () -> LiveData<T>?): LiveData<T> = samaObserver.observeAndReloadLiveData(o, *obs) { f() }
 
 
 

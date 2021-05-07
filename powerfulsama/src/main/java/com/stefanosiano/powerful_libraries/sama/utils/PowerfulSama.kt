@@ -42,13 +42,13 @@ object PowerfulSama {
         applicationContext = application
         isAppDebug = isDebug
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
-            override fun onActivityPaused(activity: Activity?) {}
-            override fun onActivityResumed(activity: Activity?) { setCurrentActivity(activity) }
-            override fun onActivityStarted(activity: Activity?) { setCurrentActivity(activity) }
-            override fun onActivityDestroyed(activity: Activity?) { clearIntent(activity) }
-            override fun onActivitySaveInstanceState(activity: Activity?, outState: Bundle?) {}
-            override fun onActivityStopped(activity: Activity?) {}
-            override fun onActivityCreated(activity: Activity?, savedInstanceState: Bundle?) { setCurrentActivity(activity) }
+            override fun onActivityPaused(activity: Activity) {}
+            override fun onActivityResumed(activity: Activity) { setCurrentActivity(activity) }
+            override fun onActivityStarted(activity: Activity) { setCurrentActivity(activity) }
+            override fun onActivityDestroyed(activity: Activity) { clearIntent(activity) }
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+            override fun onActivityStopped(activity: Activity) {}
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) { setCurrentActivity(activity) }
         })
 
         Res.setApplicationContext(application)

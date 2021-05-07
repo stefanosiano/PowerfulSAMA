@@ -1,6 +1,5 @@
 package com.stefanosiano.powerful_libraries.sama_annotations
 
-import asTypeElement
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import org.jetbrains.annotations.Nullable
@@ -81,7 +80,7 @@ abstract class BaseAnnotationProcessor : AbstractProcessor() {
 
     fun Element.isAssignable(tm: TypeMirror, generics: Int = 0): Boolean {
         val geners = (0 until generics).map { processingEnv.typeUtils.getWildcardType(null, null) }
-        val declaredType = processingEnv.typeUtils.getDeclaredType(tm.asTypeElement(), *geners.toTypedArray())
+        val declaredType = processingEnv.typeUtils.getDeclaredType(processingEnv.typeUtils.asElement(tm) as? TypeElement, *geners.toTypedArray())
         return processingEnv.typeUtils.isAssignable(this.asType(), declaredType)
     }
 

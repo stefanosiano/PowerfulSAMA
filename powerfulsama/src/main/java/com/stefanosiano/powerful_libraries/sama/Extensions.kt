@@ -199,6 +199,7 @@ fun Observable.get() = when(this) {
     is ObservableDouble -> get()
     is ObservableBoolean -> get()
     is ObservableByte -> get()
+    is ObservableChar -> get()
     is ObservableField<*> -> get()
     else -> null
 }

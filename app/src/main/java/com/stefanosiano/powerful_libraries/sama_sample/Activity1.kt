@@ -1,25 +1,18 @@
-package sample
+package com.stefanosiano.powerful_libraries.sama_sample
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.databinding.ObservableField
-import com.stefanosiano.powerful_libraries.sama.BR
 import com.stefanosiano.powerful_libraries.sama.generatedextensions.defaultRestore
 import com.stefanosiano.powerful_libraries.sama.utils.Msg
 import com.stefanosiano.powerful_libraries.sama.utils.ObservableF
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaDialogFragment
 import com.stefanosiano.powerful_libraries.sama_annotations.SamaExtensions
-import com.stefanosiano.powerful_libraries.sama_sample.R
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
 
 @SamaExtensions
 class Activity1 : SamaActivity() {
