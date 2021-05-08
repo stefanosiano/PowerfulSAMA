@@ -33,7 +33,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class CountryListSearchTest {
+class AllCustomViewActivityTest {
 
 
     /** Create and launch the activity under test before each test, and close it after each test */
@@ -107,6 +107,9 @@ class CountryListSearchTest {
         itemsObservableList.addAll(listOf(
             TestListItem("title Obs 1", "subtitle Obs 1"), TestListItem("title Obs 2", "subtitle Obs 2")
         ))
+        val flowList = MutableStateFlow(listOf(
+            TestListItem("title Flow 1", "subtitle Flow 1"), TestListItem("title Flow 2", "subtitle Flow 2")
+        ))
 
         testVm.bindTestItems(emptyList())
         runBlocking { delay(30) }
@@ -139,6 +142,18 @@ class CountryListSearchTest {
         itemsObservableList.clear()
         runBlocking { delay(30) }
         Espresso.onView(withId(R.id.testRecyclerView)).check(withItemCount(0))
+
+        testVm.bindTestItems(flowList)
+        runBlocking { delay(30) }
+        Espresso.onView(withId(R.id.testRecyclerView)).check(withItemCount(2))
+
+        runBlocking { flowList.emit( listOf(
+            TestListItem("title Flow 1", "subtitle Flow 1"),
+            TestListItem("title Flow 2", "subtitle Flow 2"),
+            TestListItem("title Flow 3", "subtitle Flow 3")
+        ) ) }
+        runBlocking { delay(30) }
+        Espresso.onView(withId(R.id.testRecyclerView)).check(withItemCount(3))
     }
 
     /** Test binding of text and milliseconds of searchview, whenever a text is written or the observableField is changed */

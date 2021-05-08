@@ -11,6 +11,7 @@ import androidx.databinding.ObservableList
 import androidx.databinding.ViewDataBinding
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
+import androidx.lifecycle.asLiveData
 import androidx.paging.AsyncPagedListDiffer
 import androidx.paging.AsyncPagingDataDiffer
 import androidx.paging.PagedList
@@ -18,6 +19,10 @@ import androidx.paging.PagingData
 import androidx.recyclerview.widget.*
 import com.stefanosiano.powerful_libraries.sama.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.filter
 import java.lang.ref.WeakReference
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -232,12 +237,7 @@ open class SamaRvAdapter(
     }
 
 
-    /**
-     * Binds the items of the adapter to the passed list
-     *
-     * @param list List that will be bound to the adapter. Checks differences with previous items to check what changed
-     * @param forceReload Force the adapter to completely reload all of its items, calling [notifyDataSetChanged]. Use it if you know all the items will change (will be faster), otherwise leave the default (false)
-     */
+    /** Binds the items of the adapter to the passed [list]. Checks differences with previous items to check what changed */
     @Synchronized fun bindItems(list: List<SamaListItem>) : SamaRvAdapter {
         isPaged = false
         isObservableList = false
@@ -269,11 +269,7 @@ open class SamaRvAdapter(
 
 
 
-    /**
-     * Binds the items of the adapter to the passed list
-     *
-     * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
-     */
+    /** Binds the items of the adapter to the passed LiveData [list]. When it changes, differences with the previous items will be performed and reflected to the adapter */
     @Synchronized fun bindItems(list: LiveData<out List<SamaListItem>>?) : SamaRvAdapter {
         isPaged = false
         isObservableList = false
@@ -286,6 +282,12 @@ open class SamaRvAdapter(
         }
         return this
     }
+
+
+
+    /** Binds the items of the adapter to the passed Flow [list]. When it changes, differences with the previous items will be performed and reflected to the adapter */
+    @Synchronized fun bindItems(list: Flow<List<SamaListItem>>?) : SamaRvAdapter =
+        bindItems(list?.asLiveData(coroutineContext))
 
     fun stopLiveDataObservers() {
         logDebug("Stop observing liveData in adapter")
@@ -311,20 +313,12 @@ open class SamaRvAdapter(
 
 
 
-    /**
-     * Binds the items of the adapter to the passed paged list
-     *
-     * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter
-     */
+    /** Binds the items of the adapter to the passed PagedList [list]. When it changes, differences with the previous items will be performed and reflected to the adapter */
     @Suppress("UNCHECKED_CAST")
     @Deprecated("Use bindPagingItems(PagingData)")
     @Synchronized fun bindPagedItems(list: PagedList<out SamaListItem>) : SamaRvAdapter = bindPagingItems(PagingData.from(list))
 
-    /**
-     * Binds the items of the adapter to the passed paged list
-     *
-     * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter
-     */
+    /** Binds the items of the adapter to the passed PagingData [list]. When it changes, differences with the previous items will be performed and reflected to the adapter */
     @Suppress("UNCHECKED_CAST")
     @Synchronized fun bindPagingItems(list: PagingData<out SamaListItem>) : SamaRvAdapter {
 
@@ -360,21 +354,13 @@ open class SamaRvAdapter(
 
 
 
-    /**
-     * Binds the items of the adapter to the passed list
-     *
-     * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
-     */
+    /** Binds the items of the adapter to the passed LiveData of PagedList [list]. When it changes, differences with the previous items will be performed and reflected to the adapter */
     @Suppress("UNCHECKED_CAST")
     @Deprecated("Use bindPagingItems(LiveData<PagingData>)")
     @Synchronized fun bindPagedItems(list: LiveData<out PagedList<out SamaListItem>>?) : SamaRvAdapter =
         bindPagingItems(list?.transform { PagingData.from(it) })
 
-    /**
-     * Binds the items of the adapter to the passed list
-     *
-     * @param list LiveData of List that will be bound to the adapter. When it changes, the changes will be reflected to the adapter.
-     */
+    /** Binds the items of the adapter to the passed LiveData of PagingData [list]. When it changes, differences with the previous items will be performed and reflected to the adapter */
     @Suppress("UNCHECKED_CAST")
     @Synchronized fun bindPagingItems(list: LiveData<out PagingData<out SamaListItem>>?) : SamaRvAdapter {
         isPaged = true

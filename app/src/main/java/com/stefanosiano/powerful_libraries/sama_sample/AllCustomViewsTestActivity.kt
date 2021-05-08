@@ -11,6 +11,7 @@ import com.stefanosiano.powerful_libraries.sama.view.SamaRvAdapter
 import com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel
 import com.stefanosiano.powerful_libraries.sama.viewModel.VmAction
 import com.stefanosiano.powerful_libraries.sama_sample.databinding.ActivityAllCustomViewsBinding
+import kotlinx.coroutines.flow.Flow
 
 class AllCustomViewsTestActivity : SamaActivity() {
 
@@ -38,6 +39,7 @@ class AllCustomViewsTestVM : SamaViewModel<AlcvTestAction>() {
     fun setSearchTerm(term: String) { searchTerm.set(term) }
     fun setSpnItems(items: List<SamaSpinner.SamaSpinnerItem>) { spnItems.set(items) }
     fun bindTestItems(items: ObservableList<TestListItem>) { rvAdapter.bindItems(items) }
+    fun bindTestItems(items: Flow<List<TestListItem>>) { rvAdapter.bindItems(items) }
     fun bindTestItems(items: LiveData<List<TestListItem>>) { rvAdapter.bindItems(items) }
     fun bindTestItems(items: List<TestListItem>) { rvAdapter.bindItems(items) }
 }
