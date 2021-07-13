@@ -33,8 +33,8 @@ object PowerfulSama {
         isDebug: Boolean,
         defaultMessagesTheme: Int? = null,
         defaultMessageCustomization: ((Any) -> Unit)? = null,
-        defaultYeslabel: Int = android.R.string.yes,
-        defaultNolabel: Int = android.R.string.no,
+        defaultYeslabel: Int = android.R.string.ok,
+        defaultNolabel: Int = android.R.string.cancel,
         logger: PowerfulSamaLogger? = null,
         checkSignatureFunction: ((Array<Signature>) -> Boolean)? = null,
         onSignatureChackFailed: ((Array<Signature>) -> Unit)? = null) {
