@@ -6,7 +6,7 @@ plugins {
 
 
 ext {
-    LIB_VERSION = "0.4.21" // This is the library version used when deploying the artifact
+    LIB_VERSION = "0.4.22" // This is the library version used when deploying the artifact
     ENABLE_DEPLOY = true //Flag whether the ci/cd workflow should deploy to sonatype or not
 
     LIB_GROUP_ID = "io.github.stefanosiano.powerful_libraries"                       // Maven Group ID for the artifact
@@ -63,10 +63,10 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
 
     //google libraries
-    implementation "androidx.activity:activity-ktx:1.2.3"
-    implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'androidx.recyclerview:recyclerview:1.2.0'
-    implementation 'com.google.android.material:material:1.3.0'
+    implementation "androidx.activity:activity-ktx:1.2.4"
+    implementation 'androidx.appcompat:appcompat:1.3.0'
+    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    implementation 'com.google.android.material:material:1.4.0'
 
     // Architecture Components
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'                                  //ViewModel and LiveData
