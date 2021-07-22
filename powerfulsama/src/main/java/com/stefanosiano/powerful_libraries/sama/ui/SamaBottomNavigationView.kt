@@ -112,7 +112,7 @@ open class SamaBottomNavigationView: BottomNavigationView {
         }
     }
 
-    override fun onSaveInstanceState(): Parcelable? {
+    override fun onSaveInstanceState(): Parcelable {
         cacheSelectedId.put(containerId, selectedItemId)
         return super.onSaveInstanceState()
     }
