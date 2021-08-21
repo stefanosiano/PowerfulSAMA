@@ -13,3 +13,4 @@ Utilities include management of:
 - messages (toasts, alert dialogs, etc.)
 - resources (strings, colors, etc.)
 - notifications
+- messages
