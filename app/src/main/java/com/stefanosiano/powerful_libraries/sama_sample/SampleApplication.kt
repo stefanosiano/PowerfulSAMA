@@ -1,21 +1,11 @@
 package com.stefanosiano.powerful_libraries.sama_sample
 
 import android.app.Application
-import android.content.Context
 import android.util.Log
-import androidx.multidex.MultiDex
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSamaLogger
-import com.stefanosiano.powerful_libraries.sama_sample.BuildConfig
-import com.stefanosiano.powerful_libraries.sama_sample.R
 
-class SampleApplication : Application() {
-
-
-    override fun attachBaseContext(base: Context) {
-        super.attachBaseContext(base)
-        MultiDex.install(this)
-    }
+internal class SampleApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()

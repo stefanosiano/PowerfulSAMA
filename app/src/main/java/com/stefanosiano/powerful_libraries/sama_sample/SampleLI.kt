@@ -5,7 +5,7 @@ import com.stefanosiano.powerful_libraries.sama.generatedextensions.defaultConte
 import com.stefanosiano.powerful_libraries.sama.view.SamaListItem
 import java.math.BigDecimal
 
-class SampleLI(
+internal class SampleLI(
     val uid: String,
     val destinazioneUid: String,
     val destinatario: String,
@@ -24,9 +24,9 @@ class SampleLI(
     }
 }
 
-abstract class S2: SamaListItem()
+internal abstract class S2: SamaListItem()
 
-class S3 : S2() {
+internal class S3 : S2() {
 
     val id2 : String = ""
     @Ignore val id : String = ""
@@ -35,8 +35,8 @@ class S3 : S2() {
         return defaultContentEquals(other)
     }
 }
-open class S4 : S2()
-open class S5(
+internal open class S4 : S2()
+internal open class S5(
     val asd: String
 ) : S4()
-class S6 : S5("a")
+internal class S6 : S5("a")

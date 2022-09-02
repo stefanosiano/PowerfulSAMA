@@ -14,7 +14,7 @@ object SamaSignature {
 
 
     /** Reads the signatures of the app, through [PackageManager] apis, and return all signatures found.
-     * For more info check [android.content.pm.PackageInfo.signingInfo] and [android.content.pm.PackageInfo.signatures] */
+     * For more info check [android.content.pm.PackageInfo.signingInfo] and [android.content.pm.PackageInfo.signatures]. */
     fun readSignatures(): Array<Signature> {
         val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             val signingInfo = pm.getPackageInfo(pkgName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
@@ -30,7 +30,7 @@ object SamaSignature {
 
 
     /** Reads the signatures of the app, through [PackageManager] apis, and run [f] passing all signatures found.
-     * For more info check [android.content.pm.PackageInfo.signingInfo] and [android.content.pm.PackageInfo.signatures] */
+     * For more info check [android.content.pm.PackageInfo.signingInfo] and [android.content.pm.PackageInfo.signatures]. */
     inline fun readSignatures(crossinline f: (Array<Signature>) -> Unit) {
         val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             val signingInfo = pm.getPackageInfo(pkgName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
@@ -45,7 +45,7 @@ object SamaSignature {
 
 
     /** Initializes the check of the signatures. Whenever [checkSignatures] will be called,
-     * if [checkF] returns false [f] will be executed */
+     * if [checkF] returns false [f] will be executed. */
     internal fun init(checkF: (Array<Signature>) -> Boolean, f: (Array<Signature>) -> Unit) {
         onCheckSignature = checkF
         onSignatureFailed = f
@@ -54,7 +54,7 @@ object SamaSignature {
 
 
     /** Checks the signatures of the app and eventually calls the associated function, defined in [PowerfulSama.init]
-     * If you want more control, or just want to make tampering more difficult, call [readSignatures] and make your checks there */
+     * If you want more control, or just want to make tampering more difficult, call [readSignatures] and make your checks there. */
     inline fun checkSignatures() {
         onSignatureFailed?.let { f ->
             val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {

@@ -16,15 +16,14 @@ import com.stefanosiano.powerful_libraries.sama.replaceAfterFirst
 import com.stefanosiano.powerful_libraries.sama.tryOr
 import java.math.BigDecimal
 import java.text.NumberFormat
-import java.util.*
+import java.util.Locale
 
-
-/** Custom AppCompatEditText that writes a bigdecimal formatted in selected locale and with convenient methods to set and get the number written */
+/** Custom AppCompatEditText that writes a bigdecimal formatted in selected locale and with convenient methods to set and get the number written. */
 class BigDecimalEditText : AppCompatEditText {
 
     private var formatter = NumberFormat.getNumberInstance(Locale.getDefault())
 
-    /** Decimal separator based on current locale */
+    /** Decimal separator based on current locale. */
     private val decimalSeparator by lazy { formatter.format(0.1F).firstOrNull { !it.isDigit() } ?: '.' }
 
     private var currentDecimal = BigDecimal.ZERO
@@ -53,12 +52,12 @@ class BigDecimalEditText : AppCompatEditText {
     fun getTextBd() : BigDecimal = currentDecimal
 }
 
-/** Custom TextInputEditText that writes a bigdecimal formatted in selected locale and with convenient methods to set and get the number written */
+/** Custom TextInputEditText that writes a bigdecimal formatted in selected locale and with convenient methods to set and get the number written. */
 class BigDecimalTextInputEditText : TextInputEditText {
 
     private var formatter = NumberFormat.getNumberInstance(Locale.getDefault())
 
-    /** Decimal separator based on current locale */
+    /** Decimal separator based on current locale. */
     private val decimalSeparator by lazy { formatter.format(0.1F).firstOrNull { !it.isDigit() } ?: '.' }
 
     private var currentDecimal = BigDecimal.ZERO
@@ -87,12 +86,12 @@ class BigDecimalTextInputEditText : TextInputEditText {
     fun getTextBd() : BigDecimal = currentDecimal
 }
 
-/** Custom AppCompatTextView that writes a bigdecimal formatted in selected locale and with convenient methods to set and get the number written */
+/** Custom AppCompatTextView that writes a bigdecimal formatted in selected locale and with convenient methods to set and get the number written. */
 class BigDecimalTextView : AppCompatTextView {
 
     private var formatter = NumberFormat.getNumberInstance(Locale.getDefault())
 
-    /** Decimal separator based on current locale */
+    /** Decimal separator based on current locale. */
     private val decimalSeparator by lazy { formatter.format(0.1F).firstOrNull { !it.isDigit() } ?: '.' }
 
     private var currentDecimal = BigDecimal.ZERO

@@ -11,7 +11,6 @@ import com.stefanosiano.powerful_libraries.sama.logDebug
 import com.stefanosiano.powerful_libraries.sama.logVerbose
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner.SamaSpinnerItem
 
-
 /**
  * Custom Spinner that uses data binding to always have the most updated values.
  * It supports a collection of strings, or a collection of [SamaSpinnerItem] (pairs key, value).
@@ -21,18 +20,13 @@ open class SamaSpinner : AppCompatSpinner {
     private var arrayAdapter: ArrayAdapter<String>? = null
     private val itemMap = HashMap<String, String>()
 
-    /** Key to use after setting items (if Key was selected before items were available) */
+    /** Key to use after setting items (if Key was selected before items were available). */
     private var toSelectKey: String? = null
 
-    /** Key to use after setting items (if Key was selected before items were available) */
+    /** Key to use after setting items (if Key was selected before items were available). */
     private val listeners = ArrayList<(key: String, value: String) -> Unit>()
 
-    constructor(context: Context) : super(context)
-    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
-
-
-    /** Common initialization of the spinner */
+    /** Common initialization of the spinner. */
     init {
         onItemSelectedListener = object: OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
@@ -50,8 +44,11 @@ open class SamaSpinner : AppCompatSpinner {
         super.setAdapter(arrayAdapter)
     }
 
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
-    /** Initializes the spinner, using [spinnerLayoutId] for the spinner items */
+    /** Initializes the spinner, using [spinnerLayoutId] for the spinner items. */
     fun init(spinnerLayoutId: Int) {
         val temp = ArrayList<String>()
         val old = getSpnKey()
@@ -68,10 +65,10 @@ open class SamaSpinner : AppCompatSpinner {
 
     fun addListener(l: (key: String, value: String) -> Unit) { listeners.add(l) }
 
-    /** Sets [items] as the array of [SamaSpinnerItem] to show in the spinner */
+    /** Sets [items] as the array of [SamaSpinnerItem] to show in the spinner. */
     fun setItems(items: Array<out SamaSpinnerItem>?) = setItems(items?.toList())
 
-    /** Sets [items] as the collection of [SamaSpinnerItem] to show in the spinner */
+    /** Sets [items] as the collection of [SamaSpinnerItem] to show in the spinner. */
     fun setItems(items: Collection<SamaSpinnerItem>?) {
         if(items == null) return
         itemMap.clear()
@@ -88,7 +85,7 @@ open class SamaSpinner : AppCompatSpinner {
     }
 
 
-    /** Sets the selection of the spinner to the first occurrence of [value]. If it was initialized with a collection of strings, it calls [setSelection] */
+    /** Sets the selection of the spinner to the first occurrence of [value]. If it was initialized with a collection of strings, it calls [setSelection]. */
     fun setSpnValue(value: String?) {
         value ?: return
         if(getSpnValue() == value) return
@@ -102,7 +99,7 @@ open class SamaSpinner : AppCompatSpinner {
         }
     }
 
-    /** Sets the selection of the spinner to the first occurrence of [key]. If it was initialized with a collection of strings, it calls [setSelection] */
+    /** Sets the selection of the spinner to the first occurrence of [key]. If it was initialized with a collection of strings, it calls [setSelection]. */
     fun setSpnKey(key: String?) {
         key ?: return
         if(getSpnKey() == key) return
@@ -117,10 +114,10 @@ open class SamaSpinner : AppCompatSpinner {
     }
 
 
-    /** Gets the value associated to the currently shown item */
+    /** Gets the value associated to the currently shown item. */
     fun getSpnValue(): String? = selectedItem as? String
 
-    /** Gets the key associated to the currently shown item */
+    /** Gets the key associated to the currently shown item. */
     fun getSpnKey(): String? = (selectedItem as? String).let { itemMap.getKey(it) }
 
 
@@ -128,7 +125,7 @@ open class SamaSpinner : AppCompatSpinner {
 
 
 
-    /** Simple class representing a pair key/value */
+    /** Simple class representing a pair key/value. */
     open class SamaSpinnerItem(open val key: String?, open val value: String?) {
         open fun value() = value ?: ""
         open fun key() = key ?: ""

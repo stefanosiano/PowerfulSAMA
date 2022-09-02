@@ -13,9 +13,7 @@ import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import java.lang.ref.WeakReference
 
 
-/**
- * Class that provides easy Bottom Navigation
- */
+/** Class that provides easy Bottom Navigation. */
 open class SamaBottomNavigationView: BottomNavigationView {
 
     companion object {
@@ -61,7 +59,7 @@ open class SamaBottomNavigationView: BottomNavigationView {
 
     fun addItemSelectedListener(listener: (Int) -> Unit) = itemSelectedListeners.add(listener)
 
-    /** Sets pairs of <menuId, fragment> and binds them to the bottom navigation view. Remove any preexisting fragment already attached (memory leaks may still occur) */
+    /** Sets pairs of <menuId, fragment> and binds them to the bottom navigation view. Remove any preexisting fragment already attached (memory leaks may still occur). */
     fun bindFragments(containerId: Int, activity: SamaActivity, pairs: Array<out Pair<Int, Fragment>>) {
 
         this.containerId = containerId
@@ -97,7 +95,7 @@ open class SamaBottomNavigationView: BottomNavigationView {
      * Call this function to know if bottom navigation should return to first tab.
      * @return true if it returns to first tab,
      *          false if it's already at the first tab and you can close the activity
-     */
+    . */
     fun onBackPressed(id: Int): Boolean {
         if (id != 0 && id != selectedItemId) {
             post { selectedItemId = id }

@@ -41,7 +41,7 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
 
 
 
-    /** Add SamaListItems default contentEquals() implementations as extension functions */
+    /** Add SamaListItems default contentEquals() implementations as extension functions. */
     private fun addDefaultContentEquals(roundEnv: RoundEnvironment): ArrayList<FunSpec> {
         val functions = ArrayList<FunSpec>()
 
@@ -71,7 +71,7 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
     }
 
 
-    /** Add SamaListItems default contentEquals() implementations as extension functions */
+    /** Add SamaListItems default contentEquals() implementations as extension functions. */
     private fun addDefaultRestore(roundEnv: RoundEnvironment): ArrayList<FunSpec> {
         val functions = ArrayList<FunSpec>()
 
@@ -112,7 +112,7 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
 
 /*
 
-/** Observes a sharedPreference until the ViewModel is destroyed, using a custom live data, and transforms it into an observable field. Does not update the observable if the value of the preference is null */
+/** Observes a sharedPreference until the ViewModel is destroyed, using a custom live data, and transforms it into an observable field. Does not update the observable if the value of the preference is null. */
 fun <T> SamaViewModel<*>.observeAsOf(preference: PowerfulPreference<T>): ObservableField<T> {
 	val observable = ObservableField<T>()
 	observe(preference.asLiveData()) { observable.set(it ?: return@observe) }

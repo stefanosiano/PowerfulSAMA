@@ -14,7 +14,7 @@ object PowerfulSama {
     internal var isAppDebug: Boolean = false
     internal lateinit var applicationContext: Context
 
-    /** Weak reference to the current activity */
+    /** Weak reference to the current activity. */
     private var currentActivity : WeakReference<Activity>? = null
 
     /** Initializes the SAMA library
@@ -27,7 +27,7 @@ object PowerfulSama {
      * [logger] Logger used internally for base Sama classes
      * [checkSignatureFunction] Function to check whether the signatures of the app are correct
      * [onSignatureChackFailed] Function to run if the signatures of the app are NOT correct (will be run by [SamaSignature.checkSignatures])
-     */
+    . */
     fun init(
         application: Application,
         isDebug: Boolean,
@@ -62,17 +62,17 @@ object PowerfulSama {
             SamaSignature.init(checkSignatureFunction, onSignatureChackFailed)
     }
 
-    /** Clears the intent used to start an activity */
+    /** Clears the intent used to start an activity. */
     private fun clearIntent(activity: Activity?) = activity?.let { if(it is SamaActivity) SamaIntent.clear("${it.samaIntent.uid} ") }
 
-    /** Sets the current activity on which to show the messages */
+    /** Sets the current activity on which to show the messages. */
     private fun setCurrentActivity(activity: Activity?) = activity?.let {
         currentActivity?.clear()
         currentActivity = WeakReference(activity)
     }
 
     /** Get the current activity as a weak reference. Can be null if no activities are running
-     * (e.g. in services, broadcast receivers, threads finishing after activity's onDestroy, etc.) */
+     * (e.g. in services, broadcast receivers, threads finishing after activity's onDestroy, etc.). */
     fun getCurrentActivity(): Activity? = currentActivity?.get()
 }
 

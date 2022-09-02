@@ -15,7 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @SamaExtensions
-class Activity1 : SamaActivity() {
+internal class Activity1 : SamaActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,7 +45,7 @@ class Activity1 : SamaActivity() {
     }
 }
 
-class Activity2 : Activity() {
+internal class Activity2 : Activity() {
 
     companion object {
         private const val ExtraSync = "sync"
@@ -66,7 +66,7 @@ class Activity2 : Activity() {
     }
 }
 
-class SampleDF(
+internal class SampleDF(
     private val layoutId: Int,
     private val dataBindingId: Int = -1,
     private val bindingData: Any? = null,

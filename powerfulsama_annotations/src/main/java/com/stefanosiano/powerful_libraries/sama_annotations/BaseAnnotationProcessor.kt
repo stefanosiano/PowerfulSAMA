@@ -37,7 +37,7 @@ abstract class BaseAnnotationProcessor : AbstractProcessor() {
     protected fun logn(message: String) { messager.printMessage(Diagnostic.Kind.NOTE, "$message\n") }
     protected fun loge(message: String) { messager.printMessage(Diagnostic.Kind.ERROR, "$message\n") }
 
-    /** Return the kotlin type of the this variable */
+    /** Return the kotlin type of the this variable. */
     protected fun VariableElement.toKotlinType(): TypeName {
         val tn = asType().asTypeName()
         if(tn.isNullable) return tn.javaToKotlinType().copy(nullable = true)
@@ -45,14 +45,14 @@ abstract class BaseAnnotationProcessor : AbstractProcessor() {
     }
 
 
-    /** Return the kotlin type of this typeMirror */
+    /** Return the kotlin type of this typeMirror. */
     protected fun TypeMirror.toKotlinType() = asTypeName().javaToKotlinType()
 
 
-    /** Transforms a java type to the corresponding kotlin type */
+    /** Transforms a java type to the corresponding kotlin type. */
     protected fun TypeName.javaToKotlinType(): TypeName = if (this is ParameterizedTypeName) {
         (rawType.javaToKotlinType() as ClassName).parameterizedBy(
-            *typeArguments.map { it.javaToKotlinType() }.toTypedArray()
+            typeArguments.map { it.javaToKotlinType() }
         )
     } else {
         val className = JavaToKotlinClassMap.INSTANCE
@@ -68,19 +68,19 @@ abstract class BaseAnnotationProcessor : AbstractProcessor() {
 
 
     /** Return the simpleName of the targetClass of the QueryServer annotation of this element.
-     * If the annotation is not present, or the targetClass is Unit, it returns the simple p of this element class */
+     * If the annotation is not present, or the targetClass is Unit, it returns the simple p of this element class. */
     fun TypeElement.getClassOrTargetClassName(): String = simpleName.toString()
 
     /** Return the typeMirror of the targetClass of the QueryServer annotation of this element.
-     * If the annotation is not present, or the targetClass is Unit, it returns the typeMirror of this element class */
+     * If the annotation is not present, or the targetClass is Unit, it returns the typeMirror of this element class. */
     fun TypeElement.getClassOrTargetClass(): TypeMirror = try { processingEnv.elementUtils.getTypeElement(qualifiedName).asType() } catch (e: MirroredTypeException) { e.typeMirror }
 
     fun Element.isAssignable(qualifiedName: String, generics: Int = 0): Boolean =
         isAssignable(processingEnv.elementUtils.getTypeElement(qualifiedName).asType(), generics)
 
     fun Element.isAssignable(tm: TypeMirror, generics: Int = 0): Boolean {
-        val geners = (0 until generics).map { processingEnv.typeUtils.getWildcardType(null, null) }
-        val declaredType = processingEnv.typeUtils.getDeclaredType(processingEnv.typeUtils.asElement(tm) as? TypeElement, *geners.toTypedArray())
+        val geners = (0 until generics).map { processingEnv.typeUtils.getWildcardType(null, null) }.toTypedArray()
+        val declaredType = processingEnv.typeUtils.getDeclaredType(processingEnv.typeUtils.asElement(tm) as? TypeElement, *geners)
         return processingEnv.typeUtils.isAssignable(this.asType(), declaredType)
     }
 

@@ -12,7 +12,7 @@ import com.stefanosiano.powerful_libraries.sama.utils.SamaActivityCallback
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaRvAdapter
 
-/** Simple RecyclerView implementation. It just have a fix to avoid memory leaks when using a long living adapter */
+/** Simple RecyclerView implementation. It just have a fix to avoid memory leaks when using a long living adapter. */
 open class SamaRecyclerView: RecyclerView {
 
     private var inconsistencyWorkaround = true
@@ -101,7 +101,7 @@ open class SamaRecyclerView: RecyclerView {
     }
 
     /** Call [LinearLayoutManager.scrollToPositionWithOffset] if the underlying layoutManager is a [LinearLayoutManager].
-     * Otherwise it calls [scrollToPosition] */
+     * Otherwise it calls [scrollToPosition]. */
     fun scrollToPositionWithOffset(position: Int, offset: Int = 0) {
         if(layoutManager is LinearLayoutManager)
             (layoutManager as LinearLayoutManager).scrollToPositionWithOffset(position, offset)
@@ -110,7 +110,7 @@ open class SamaRecyclerView: RecyclerView {
     }
 
     /** Sets whether to disable the predictive animation. Useful when items are changed and take some time to reload the adapter.
-     * Used only with srvInconsistencyWorkaround. Reduces (or removes) inconsistency exceptions */
+     * Used only with srvInconsistencyWorkaround. Reduces (or removes) inconsistency exceptions. */
     fun setSrvDisablePredictiveAnimation(srvDisablePredictiveAnimation: Boolean) {
         this.disablePredictiveAnimation = srvDisablePredictiveAnimation
         updateDisablePredictiveAnimationInManager()

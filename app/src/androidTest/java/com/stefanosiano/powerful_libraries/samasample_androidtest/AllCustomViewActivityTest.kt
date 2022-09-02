@@ -36,7 +36,7 @@ import org.junit.runner.RunWith
 class AllCustomViewActivityTest {
 
 
-    /** Create and launch the activity under test before each test, and close it after each test */
+    /** Create and launch the activity under test before each test, and close it after each test. */
     @get:Rule var activityScenarioRule = ActivityScenarioRule(AllCustomViewsTestActivity::class.java)
 
     lateinit var testVm : AllCustomViewsTestVM
@@ -47,7 +47,7 @@ class AllCustomViewActivityTest {
     }
 
 
-    /** Run each tests 10 times to be sure everything works */
+    /** Run each tests 10 times to be sure everything works. */
     @Test
     fun testAll_AllCustomViewActivity() {
         for (i in 0 until 10) {
@@ -58,7 +58,7 @@ class AllCustomViewActivityTest {
         }
     }
 
-    /** Test binding of key and value of spinner, whenever an item is selected or the observableField is changed */
+    /** Test binding of key and value of spinner, whenever an item is selected or the observableField is changed. */
     @Test
     fun spinnerKeyValueChange_AllCustomViewActivity() {
         testVm.setSpnItems(
@@ -94,7 +94,7 @@ class AllCustomViewActivityTest {
     }
 
 
-    /** Test binding of items of recyclerViewAdapter, whenever they change. Using List, ObservableList, LiveData<List> */
+    /** Test binding of items of recyclerViewAdapter, whenever they change. Using List, ObservableList, LiveData<List>. */
     @Test
     fun recyclerViewListChange_AllCustomViewActivity() {
 
@@ -156,7 +156,7 @@ class AllCustomViewActivityTest {
         Espresso.onView(withId(R.id.testRecyclerView)).check(withItemCount(3))
     }
 
-    /** Test binding of text and milliseconds of searchview, whenever a text is written or the observableField is changed */
+    /** Test binding of text and milliseconds of searchview, whenever a text is written or the observableField is changed. */
     @Test
     fun searchViewValueChange_AllCustomViewActivity() {
         testVm.setSearchMillis(0)

@@ -9,7 +9,13 @@ import android.util.SparseArray
 import androidx.documentfile.provider.DocumentFile
 import com.stefanosiano.powerful_libraries.sama.tryOrPrint
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.Closeable
 import java.io.File
 import java.io.InputStream
@@ -19,11 +25,11 @@ object Saf : CoroutineScope {
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineJob + CoroutineExceptionHandler { _, t -> t.printStackTrace() }
 
-    /** Array of helpers for managing saf results */
+    /** Array of helpers for managing saf results. */
     private val safHelperMap = SparseArray<SafHelper>()
 
 
-    /** Manages the Saf request results. Activities extending [SamaActivity] already call it */
+    /** Manages the Saf request results. Activities extending [SamaActivity] already call it. */
     internal fun onRequestSafResult(activity: Activity, requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         val safHelper = safHelperMap[requestCode] ?: return false
         if(resultCode != Activity.RESULT_OK) return false
@@ -60,7 +66,7 @@ object Saf : CoroutineScope {
     }
 
 
-    /** Release persisted uris held by this app. Does nothing if Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT */
+    /** Release persisted uris held by this app. Does nothing if Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT. */
     fun releasePersistedUri(uri: Uri) {
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) return
         val persisted = persistedUriPermissions().firstOrNull { it.uri == uri }
@@ -71,22 +77,22 @@ object Saf : CoroutineScope {
         PowerfulSama.applicationContext.contentResolver.releasePersistableUriPermission(uri, flags)
     }
 
-    /** Lists persisted uris held by this app. Returns an empty list if Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT */
+    /** Lists persisted uris held by this app. Returns an empty list if Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT. */
     fun persistedUriPermissions(): List<UriPermission> = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) PowerfulSama.applicationContext.contentResolver.persistedUriPermissions else emptyList()
 
-    /** Returns a [DocumentFile] from passed [uri] */
+    /** Returns a [DocumentFile] from passed [uri]. */
     fun getDocument(uri: Uri, activity: Activity? = null): DocumentFile? =
         tryOrPrint { DocumentFile.fromSingleUri(activity ?: PowerfulSama.applicationContext, uri) } ?:
         tryOrPrint { if(uri.scheme == "file" && uri.path != null) DocumentFile.fromFile(File(uri.path)) else null }
 
-    /** Returns a [DocumentFile]Tree from passed [uri] */
+    /** Returns a [DocumentFile]Tree from passed [uri]. */
     fun getDocumentTree(uri: Uri, activity: Activity? = null): DocumentFile? =
         tryOrPrint { DocumentFile.fromTreeUri(activity ?: PowerfulSama.applicationContext, uri) } ?:
         tryOrPrint { if(uri.scheme == "file" && uri.path != null) DocumentFile.fromFile(File(uri.path)) else null }
 
 
     /** Ask the user to choose an existing file or content, optionally ask persistent access through [persistableUriPermission].
-     * Call [f] with an input stream of the content selected by the user and then closes it down */
+     * Call [f] with an input stream of the content selected by the user and then closes it down. */
     fun openDocumentIs(persistableUriPermission: Boolean, mimeType: String = "*/*", f: suspend (inputStream: InputStream?) -> Unit) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
             .setType(mimeType)
@@ -102,7 +108,7 @@ object Saf : CoroutineScope {
     }
 
     /** Ask the user to choose an existing file or content, optionally ask persistent access through [persistableUriPermission].
-     * Call [f] with the content selected by the user as DocumentFile */
+     * Call [f] with the content selected by the user as DocumentFile. */
     fun openDocument(persistableUriPermission: Boolean, mimeType: String = "*/*", f: (documentFile: DocumentFile) -> Unit) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
             .setType(mimeType)
@@ -119,7 +125,7 @@ object Saf : CoroutineScope {
     }
 
     /** Ask the user to choose where to place a file or content, optionally ask persistent access through [persistableUriPermission].
-     * Call [f] with an output stream of the content selected by the user and then closes it down */
+     * Call [f] with an output stream of the content selected by the user and then closes it down. */
     fun createDocumentOs(persistableUriPermission: Boolean, mimeType: String, f: (outputStream: OutputStream?) -> Unit) {
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
             .setType(mimeType)
@@ -136,7 +142,7 @@ object Saf : CoroutineScope {
     }
 
     /** Ask the user to choose where to place a file or content, optionally ask persistent access through [persistableUriPermission].
-     * Call [f] with the content selected by the user as DocumentFile */
+     * Call [f] with the content selected by the user as DocumentFile. */
     fun createDocument(persistableUriPermission: Boolean, mimeType: String, f: (documentFile: DocumentFile) -> Unit) {
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
             .setType(mimeType)
@@ -154,7 +160,7 @@ object Saf : CoroutineScope {
 
 
     /** Ask the user to choose a directory where to place one or more files or contents, optionally ask persistent access through [persistableUriPermission].
-     * Call [f] with the content selected by the user as DocumentFileTree */
+     * Call [f] with the content selected by the user as DocumentFileTree. */
     fun openDocumentTree(persistableUriPermission: Boolean, f: (documentFile: DocumentFile) -> Unit) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -173,7 +179,7 @@ object Saf : CoroutineScope {
 
 
 
-    /** Internal class used to manage Saf request results */
+    /** Internal class used to manage Saf request results. */
     private class SafHelper (val reqCode: Int, val persistableUriPermission: Boolean, val isInput: Boolean, val isSingleDocument: Boolean,
                              val f: ((stream: Closeable?) -> Unit)?, val fDf: ((documentFile: DocumentFile) -> Unit)?)
 }

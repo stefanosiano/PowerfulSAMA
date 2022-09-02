@@ -4,12 +4,18 @@ import androidx.databinding.BaseObservable
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import com.stefanosiano.powerful_libraries.sama.onChange
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
+@Suppress("UnnecessaryAbstractClass")
 abstract class SamaRepository {
 
     @Deprecated("Use [SamaObserver.observeAndReloadLiveData]", ReplaceWith("SamaObserver.observeAndReloadLiveData"))
-    /** Run [f] to get a [LiveData] every time any of [obs] changes. It return a [LiveData] of the same type as [f] */
+    /** Run [f] to get a [LiveData] every time any of [obs] changes. It return a [LiveData] of the same type as [f]. */
     suspend fun <T> observe(vararg obs: BaseObservable, f: suspend () -> LiveData<T>?): LiveData<T> {
         val mediatorLiveData = MediatorLiveData<T>()
         var lastLiveData: LiveData<T>? = null
@@ -37,7 +43,7 @@ abstract class SamaRepository {
     }
 
     @Deprecated("Use [SamaObserver.observeAndReloadLiveData]", ReplaceWith("SamaObserver.observeAndReloadLiveData"))
-    /** Run [f] to get a value every time any of [obs] changes. It return a [LiveData] of the same type as [f] */
+    /** Run [f] to get a value every time any of [obs] changes. It return a [LiveData] of the same type as [f]. */
     suspend fun <T> observeF(vararg obs: BaseObservable, f: suspend () -> T): LiveData<T> {
         val mediatorLiveData = MediatorLiveData<T>()
 

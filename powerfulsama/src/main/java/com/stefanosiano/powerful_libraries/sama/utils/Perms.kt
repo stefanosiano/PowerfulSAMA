@@ -13,16 +13,16 @@ import com.stefanosiano.powerful_libraries.sama.logError
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.applicationContext
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 
-/** Utility class to manage permissions */
+/** Utility class to manage permissions. */
 object Perms {
 
-    /** Permissions requested in the manifest of the app */
+    /** Permissions requested in the manifest of the app. */
     private val requestedPermissions by lazy { applicationContext.let { it.packageManager.getPackageInfo(it.packageName, PackageManager.GET_PERMISSIONS).requestedPermissions } ?: arrayOf<String>() }
 
-    /** Array of helpers for asking permissions */
+    /** Array of helpers for asking permissions. */
     private val permHelperMap = SparseArray<PermHelper>()
 
-    /** Manages the permissions request results. Activities extending [SamaActivity] already call it */
+    /** Manages the permissions request results. Activities extending [SamaActivity] already call it. */
     internal fun onRequestPermissionsResult(activity: Activity, requestCode: Int, permissions: Array<out String>, grantResults: IntArray): Boolean {
         val permHelper = permHelperMap[requestCode] ?: return false
         if(!permHelper.isCallingResult) return false
@@ -30,15 +30,15 @@ object Perms {
         return permHelper.onRequestPermissionsResult(activity, permissions, grantResults)
     }
 
-    /** Checks if all [perms] are granted. Return true only if all of them are granted */
+    /** Checks if all [perms] are granted. Return true only if all of them are granted. */
     fun hasPermissions(vararg perms: String): Boolean =
         perms.all { ActivityCompat.checkSelfPermission(applicationContext, it) == PackageManager.PERMISSION_GRANTED }
 
-    /** Checks if all [perms] are granted. Return true only if all of them are granted */
+    /** Checks if all [perms] are granted. Return true only if all of them are granted. */
     fun hasPermissions(perms: Collection<String>): Boolean =
         perms.all { ActivityCompat.checkSelfPermission(applicationContext, it) == PackageManager.PERMISSION_GRANTED }
 
-    /** Checks if all [perms] are granted. Return true only if all of them are granted */
+    /** Checks if all [perms] are granted. Return true only if all of them are granted. */
     fun hasPermissions(perms: List<String>): Boolean =
         perms.all { ActivityCompat.checkSelfPermission(applicationContext, it) == PackageManager.PERMISSION_GRANTED }
 
@@ -221,21 +221,22 @@ object Perms {
     }
 }
 
-/** Abstract class that contains informations regarding permissions to run a specific function. Used through [Perms.call] */
+/** Abstract class that contains informations regarding permissions to run a specific function. Used through [Perms.call]. */
+@Suppress("UnnecessaryAbstractClass")
 abstract class PermissionContainer(
-    /** Required permissions needed for the function that will be asked for (if not already granted) */
+    /** Required permissions needed for the function that will be asked for (if not already granted). */
     val perms: List<String>,
-    /** Optional permissions for the function that will be asked for (if not already granted). If denied, the function will be called anyway */
+    /** Optional permissions for the function that will be asked for (if not already granted). If denied, the function will be called anyway. */
     val optionalPerms: List<String> = ArrayList(),
-    /** String for the rationale to show after denying required permissions, to show the user why permissions are needed. If null [onShowRationale] will be called */
+    /** String for the rationale to show after denying required permissions, to show the user why permissions are needed. If null [onShowRationale] will be called. */
     val rationaleId: Int? = null,
-    /** String for the message to show when the user chooses "Don't ask again" when denying required permissions. If null, [onPermanentlyDenied] will be called */
+    /** String for the message to show when the user chooses "Don't ask again" when denying required permissions. If null, [onPermanentlyDenied] will be called. */
     val permanentlyDeniedId: Int? = null
 ) {
-    /** Called in case one or more of [perms] or [optionalPerms] were previously denied and the app should show a rationale */
-    fun onShowRationale(perms: Array<String>, activity: Activity, requestCode: Int) {}
+    /** Called in case one or more of [perms] or [optionalPerms] were previously denied and the app should show a rationale. */
+    fun onShowRationale(perms: Array<String>, activity: Activity, requestCode: Int) { }
 
     /** Called if "Don't ask again" was checked when denying a permission, with all permanently denied permissions and permissions needing the rationale to show.
-     * Permanently denied permissions will never include [optionalPerms] */
-    fun onPermanentlyDenied(permanentlyDeniedPerms: Array<String>, showRationalePerms: Array<String>, activity: Activity, requestCode: Int) {}
+     * Permanently denied permissions will never include [optionalPerms]. */
+    fun onPermanentlyDenied(permanentlyDeniedPerms: Array<String>, showRationalePerms: Array<String>, activity: Activity, requestCode: Int) { }
 }

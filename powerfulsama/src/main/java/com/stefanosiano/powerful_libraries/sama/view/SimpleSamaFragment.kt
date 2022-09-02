@@ -2,12 +2,17 @@ package com.stefanosiano.powerful_libraries.sama.view
 
 import android.content.Context
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import com.stefanosiano.powerful_libraries.sama.logVerbose
 
-/** Base Class that provides easy way to use data binding with a fragment without the need of other classes */
+/** Base Class that provides easy way to use data binding with a fragment without the need of other classes. */
 open class SimpleSamaFragment: SamaFragment() {
 
     private var layoutId: Int = 0
@@ -27,14 +32,14 @@ open class SimpleSamaFragment: SamaFragment() {
         /**
          * Creates a new SimpleFragment
          * @param layoutId The id of the layout to use. (0 means no layout is shown)
-         */
+        . */
         fun new(layoutId: Int): SimpleSamaFragment = new(layoutId, 0)
 
         /**
          * Creates a new SimpleFragment
          * @param layoutId The id of the layout to use. (0 means no layout is shown)
          * @param menuId The id of the menu to load. (0 means no menu is shown)
-         */
+        . */
         fun new(layoutId: Int, menuId: Int): SimpleSamaFragment {
 
             val fragment = SimpleSamaFragment()
@@ -54,26 +59,26 @@ open class SimpleSamaFragment: SamaFragment() {
      *
      * @param dataBindingId the id of the variable in the layout
      * @param bindingData the data to bind to the id
-     */
+    . */
     fun with(dataBindingId: Int, bindingData: Any): SimpleSamaFragment {
         if(!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId))
             this.bindingPairs.add(Pair(dataBindingId, bindingData))
         return this
     }
 
-    /** Sets the title to show on the toolbar (optional) */
+    /** Sets the title to show on the toolbar (optional). */
     fun title(titleId: Int): SimpleSamaFragment {
         this.title = getString(titleId)
         return this
     }
 
-    /** Sets the title to show on the toolbar (optional) */
+    /** Sets the title to show on the toolbar (optional). */
     fun title(title: String): SimpleSamaFragment {
         this.title = title
         return this
     }
 
-    /** Sets the tag shown in logs */
+    /** Sets the tag shown in logs. */
     fun logTag(logTag: String): SimpleSamaFragment {
         this.logTag = logTag
         return this
@@ -84,19 +89,19 @@ open class SimpleSamaFragment: SamaFragment() {
      *
      * @param menuId
      * @param function
-     */
+    . */
     fun onOption(menuId: Int, function: () -> Unit): SimpleSamaFragment {
         menuFunctions.add(Pair(menuId, function))
         return this
     }
 
-    /** Sets the function to call when creating the menu (optional) */
+    /** Sets the function to call when creating the menu (optional). */
     fun onOptionMenu(onOptionMenuCreated: (menu: Menu?) -> Unit): SimpleSamaFragment {
         this.onOptionMenuCreated = onOptionMenuCreated
         return this
     }
 
-    /** Sets the function to call when this fragment is detached from the activity */
+    /** Sets the function to call when this fragment is detached from the activity. */
     fun onDetach(onDetach: (fragment: SimpleSamaFragment) -> Unit): SimpleSamaFragment {
         this.onDetach = onDetach
         return this
@@ -153,7 +158,7 @@ open class SimpleSamaFragment: SamaFragment() {
         else if (defaultTitle.isNotEmpty()) activity?.title = defaultTitle
     }
 
-    /** Clear references of dataBinding, searchView observable and menu functions */
+    /** Clear references of dataBinding, searchView observable and menu functions. */
     override fun clear() {
         bindingPairs.clear()
         menuFunctions.clear()
