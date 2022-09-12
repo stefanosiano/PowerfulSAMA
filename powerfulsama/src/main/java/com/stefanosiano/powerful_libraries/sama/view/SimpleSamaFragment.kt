@@ -32,14 +32,14 @@ open class SimpleSamaFragment: SamaFragment() {
         /**
          * Creates a new SimpleFragment
          * @param layoutId The id of the layout to use. (0 means no layout is shown)
-        . */
+         */
         fun new(layoutId: Int): SimpleSamaFragment = new(layoutId, 0)
 
         /**
          * Creates a new SimpleFragment
          * @param layoutId The id of the layout to use. (0 means no layout is shown)
          * @param menuId The id of the menu to load. (0 means no menu is shown)
-        . */
+         */
         fun new(layoutId: Int, menuId: Int): SimpleSamaFragment {
 
             val fragment = SimpleSamaFragment()
@@ -59,7 +59,7 @@ open class SimpleSamaFragment: SamaFragment() {
      *
      * @param dataBindingId the id of the variable in the layout
      * @param bindingData the data to bind to the id
-    . */
+     */
     fun with(dataBindingId: Int, bindingData: Any): SimpleSamaFragment {
         if(!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId))
             this.bindingPairs.add(Pair(dataBindingId, bindingData))
@@ -89,7 +89,7 @@ open class SimpleSamaFragment: SamaFragment() {
      *
      * @param menuId
      * @param function
-    . */
+     */
     fun onOption(menuId: Int, function: () -> Unit): SimpleSamaFragment {
         menuFunctions.add(Pair(menuId, function))
         return this
@@ -109,7 +109,8 @@ open class SimpleSamaFragment: SamaFragment() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         logVerbose("$logTag: Selected item: ${item.title}")
-        menuFunctions.firstOrNull { it.first == item.itemId }?.second?.invoke() ?: return super.onOptionsItemSelected(item)
+        menuFunctions.firstOrNull { it.first == item.itemId }?.second?.invoke()
+            ?: return super.onOptionsItemSelected(item)
         return true
     }
 

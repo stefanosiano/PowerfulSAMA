@@ -5,7 +5,10 @@ import kotlinx.coroutines.launch
 
 abstract class SamaMutableListItem<T: Any> : SamaListItem() {
 
-    @Deprecated(message = "Use method with bound object, since this is a mutableListItem", replaceWith = ReplaceWith("onBind(bound, initObjects)"))
+    @Deprecated(
+        message = "Use method with bound object, since this is a mutableListItem",
+        replaceWith = ReplaceWith("onBind(bound, initObjects)")
+    )
     final override suspend fun onBind() = super.onBind()
 
     /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind]. */
@@ -22,6 +25,10 @@ abstract class SamaMutableListItem<T: Any> : SamaListItem() {
 
     /** Called to bind the item to the view. */
     @Suppress("UNCHECKED_CAST")
-    internal fun bind(bound: Any, initObjects: Map<String, Any>) { this.passedObjects = initObjects; launchableFunctions.clear(); launch { onBind(bound as T) } }
+    internal fun bind(bound: Any, initObjects: Map<String, Any>) {
+        this.passedObjects = initObjects
+        launchableFunctions.clear()
+        launch { onBind(bound as T) }
+    }
 
 }

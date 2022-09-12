@@ -24,7 +24,7 @@ abstract class SamaRepository {
             withContext(Dispatchers.Main) { lastLiveData?.also { mediatorLiveData.removeSource(it) } }
             lastLiveData = f()
             withContext(Dispatchers.Main) {
-                if(lastLiveData != null) mediatorLiveData.addSource(lastLiveData!!) {
+                if (lastLiveData != null) mediatorLiveData.addSource(lastLiveData!!) {
                     mediatorLiveData.postValue(it)
                 }
             }
@@ -35,7 +35,7 @@ abstract class SamaRepository {
         obs.forEach {
             it.onChange {
                 lastJob.cancel()
-                lastJob = runBlocking { launch { delay(50); if(!isActive) return@launch; onChanged() } }
+                lastJob = runBlocking { launch { delay(50); if (!isActive) return@launch; onChanged() } }
             }
         }
 
@@ -54,7 +54,7 @@ abstract class SamaRepository {
         obs.forEach {
             it.onChange {
                 lastJob.cancel()
-                lastJob = runBlocking { launch { delay(50); if(!isActive) return@launch; onChanged() } }
+                lastJob = runBlocking { launch { delay(50); if (!isActive) return@launch; onChanged() } }
             }
         }
 

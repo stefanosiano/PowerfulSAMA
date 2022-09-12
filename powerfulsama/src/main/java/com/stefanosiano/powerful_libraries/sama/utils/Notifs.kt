@@ -62,8 +62,11 @@ object Notifs {
     fun update(channel: SamaNotifChannel, notifId: Int, f: (NotificationCompat.Builder) -> NotificationCompat.Builder) =
         update(channel.getChannelId(), notifId, f)
 
-    /** Update a notification pushed in the channel [channelId] with id [notifId]. You can customize the notification builder
-     *  before notification is shown through [f]. If it's not found, a new notification builder is passed to [f]. */
+    /**
+     * Update a notification pushed in the channel [channelId] with id [notifId].
+     * You can customize the notification builder before notification is shown through [f].
+     * If it's not found, a new notification builder is passed to [f].
+     */
     fun update(channelId: String, notifId: Int, f: (NotificationCompat.Builder) -> NotificationCompat.Builder) {
         var notif = notificationBuilders.get(notifId) ?: NotificationCompat.Builder(applicationContext, channelId)
         notificationBuilders.put(notifId, notif)
@@ -107,6 +110,9 @@ interface SamaNotifChannel {
     fun getChannelImportance(): Int = NotificationManagerCompat.IMPORTANCE_DEFAULT
     /** The channel description string id. Defaults to [getChannelNameId]. */
     fun getChannelDescriptionId(): Int = getChannelNameId()
-    /** Function used to customize the channel before instantiate it. Do not rely on it being called multiple times, as it should be called only once. */
+    /**
+     * Function used to customize the channel before instantiate it.
+     * Do not rely on it being called multiple times, as it should be called only once.
+     */
     fun customize(channel: NotificationChannel): NotificationChannel { return channel }
 }

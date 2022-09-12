@@ -35,38 +35,67 @@ object Saf : CoroutineScope {
         if(resultCode != Activity.RESULT_OK) return false
         safHelperMap.remove(requestCode)
         data?.data?.let { uri ->
-            //If persisted permission is required: for single documents i ask read or read/write permission, for folders i need read/write permissions
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && safHelper.persistableUriPermission) { when {
-                safHelper.isSingleDocument && safHelper.isInput -> activity.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                safHelper.isSingleDocument && !safHelper.isInput -> {
-                    activity.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                    activity.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            // If persisted permission is required:
+            // for single documents i ask read or read/write permission, for folders i need read/write permissions
+            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT && safHelper.persistableUriPermission) {
+                when {
+                    safHelper.isSingleDocument && safHelper.isInput -> {
+                        activity.contentResolver.takePersistableUriPermission(
+                            uri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    }
+                    safHelper.isSingleDocument && !safHelper.isInput -> {
+                        activity.contentResolver.takePersistableUriPermission(
+                            uri,
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        )
+                        activity.contentResolver.takePersistableUriPermission(
+                            uri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    }
+                    else -> {
+                        activity.contentResolver.takePersistableUriPermission(
+                            uri,
+                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        )
+                        activity.contentResolver.takePersistableUriPermission(
+                            uri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        )
+                    }
                 }
-                else -> {
-                    activity.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                    activity.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-            } }
+            }
             val fDf = safHelper.fDf
             if(fDf != null) {
-                val df = if(safHelper.isSingleDocument) getDocument(uri, activity) else getDocumentTree(uri, activity)
-                df?.let { launch { withContext(Dispatchers.IO) { fDf(it) } }; return true }
+                val df = if(safHelper.isSingleDocument) {
+                    getDocument(uri, activity)
+                } else {
+                    getDocumentTree(uri, activity)
+                }
+                df?.let {
+                    launch(Dispatchers.IO) { fDf(it) }
+                    return true
+                }
             }
-            launch { withContext(Dispatchers.IO) {
+            launch(Dispatchers.IO) {
                 val stream = tryOrPrint {
-                    if(safHelper.isInput)
+                    if (safHelper.isInput) {
                         activity.contentResolver.openInputStream(uri)
-                    else
+                    }
+                    else {
                         activity.contentResolver.openOutputStream(uri)
+                    }
                 }
                 stream?.use { safHelper.f!!.invoke(it) }
-            } }
+            }
         } ?: let { return false }
         return true
     }
 
 
-    /** Release persisted uris held by this app. Does nothing if Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT. */
+    /** Release persisted uris held by this app. Does nothing if version < Build.VERSION_CODES.KITKAT. */
     fun releasePersistedUri(uri: Uri) {
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) return
         val persisted = persistedUriPermissions().firstOrNull { it.uri == uri }
@@ -77,8 +106,13 @@ object Saf : CoroutineScope {
         PowerfulSama.applicationContext.contentResolver.releasePersistableUriPermission(uri, flags)
     }
 
-    /** Lists persisted uris held by this app. Returns an empty list if Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT. */
-    fun persistedUriPermissions(): List<UriPermission> = if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) PowerfulSama.applicationContext.contentResolver.persistedUriPermissions else emptyList()
+    /** Lists persisted uris held by this app. Returns an empty list if version < Build.VERSION_CODES.KITKAT. */
+    fun persistedUriPermissions(): List<UriPermission> =
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            PowerfulSama.applicationContext.contentResolver.persistedUriPermissions
+        } else {
+            emptyList()
+        }
 
     /** Returns a [DocumentFile] from passed [uri]. */
     fun getDocument(uri: Uri, activity: Activity? = null): DocumentFile? =
@@ -91,14 +125,21 @@ object Saf : CoroutineScope {
         tryOrPrint { if(uri.scheme == "file" && uri.path != null) DocumentFile.fromFile(File(uri.path)) else null }
 
 
-    /** Ask the user to choose an existing file or content, optionally ask persistent access through [persistableUriPermission].
-     * Call [f] with an input stream of the content selected by the user and then closes it down. */
-    fun openDocumentIs(persistableUriPermission: Boolean, mimeType: String = "*/*", f: suspend (inputStream: InputStream?) -> Unit) {
+    /**
+     * Ask the user to choose an existing file or content.
+     * Optionally ask persistent access through [persistableUriPermission].
+     * Call [f] with an input stream of the content selected by the user and then closes it down.
+     */
+    fun openDocumentIs(
+        persistableUriPermission: Boolean,
+        mimeType: String = "*/*",
+        f: suspend (inputStream: InputStream?) -> Unit
+    ) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
             .setType(mimeType)
             .addCategory(Intent.CATEGORY_OPENABLE)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        if(persistableUriPermission) intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        if (persistableUriPermission) intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
 
         val reqCode = SamaActivity.samaRequestCodes.incrementAndGet()
         val permHelper = SafHelper(reqCode, persistableUriPermission, true, true, f as (Closeable?) -> Unit, null)
@@ -107,9 +148,16 @@ object Saf : CoroutineScope {
         PowerfulSama.getCurrentActivity()?.startActivityForResult(intent, reqCode)
     }
 
-    /** Ask the user to choose an existing file or content, optionally ask persistent access through [persistableUriPermission].
-     * Call [f] with the content selected by the user as DocumentFile. */
-    fun openDocument(persistableUriPermission: Boolean, mimeType: String = "*/*", f: (documentFile: DocumentFile) -> Unit) {
+    /**
+     * Ask the user to choose an existing file or content.
+     * Optionally ask persistent access through [persistableUriPermission].
+     * Call [f] with the content selected by the user as DocumentFile.
+     */
+    fun openDocument(
+        persistableUriPermission: Boolean,
+        mimeType: String = "*/*",
+        f: (documentFile: DocumentFile) -> Unit
+    ) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
             .setType(mimeType)
             .addCategory(Intent.CATEGORY_OPENABLE)
@@ -124,9 +172,16 @@ object Saf : CoroutineScope {
         PowerfulSama.getCurrentActivity()?.startActivityForResult(intent, reqCode)
     }
 
-    /** Ask the user to choose where to place a file or content, optionally ask persistent access through [persistableUriPermission].
-     * Call [f] with an output stream of the content selected by the user and then closes it down. */
-    fun createDocumentOs(persistableUriPermission: Boolean, mimeType: String, f: (outputStream: OutputStream?) -> Unit) {
+    /**
+     * Ask the user to choose where to place a file or content.
+     * Optionally ask persistent access through [persistableUriPermission].
+     * Call [f] with an output stream of the content selected by the user and then closes it down.
+     */
+    fun createDocumentOs(
+        persistableUriPermission: Boolean,
+        mimeType: String,
+        f: (outputStream: OutputStream?) -> Unit
+    ) {
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
             .setType(mimeType)
             .addCategory(Intent.CATEGORY_OPENABLE)
@@ -141,8 +196,11 @@ object Saf : CoroutineScope {
         PowerfulSama.getCurrentActivity()?.startActivityForResult(intent, reqCode)
     }
 
-    /** Ask the user to choose where to place a file or content, optionally ask persistent access through [persistableUriPermission].
-     * Call [f] with the content selected by the user as DocumentFile. */
+    /**
+     * Ask the user to choose where to place a file or content.
+     * Optionally ask persistent access through [persistableUriPermission].
+     * Call [f] with the content selected by the user as DocumentFile.
+     */
     fun createDocument(persistableUriPermission: Boolean, mimeType: String, f: (documentFile: DocumentFile) -> Unit) {
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
             .setType(mimeType)
@@ -159,8 +217,11 @@ object Saf : CoroutineScope {
     }
 
 
-    /** Ask the user to choose a directory where to place one or more files or contents, optionally ask persistent access through [persistableUriPermission].
-     * Call [f] with the content selected by the user as DocumentFileTree. */
+    /**
+     * Ask the user to choose a directory where to place one or more files or contents.
+     * Optionally ask persistent access through [persistableUriPermission].
+     * Call [f] with the content selected by the user as DocumentFileTree.
+     */
     fun openDocumentTree(persistableUriPermission: Boolean, f: (documentFile: DocumentFile) -> Unit) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -180,6 +241,12 @@ object Saf : CoroutineScope {
 
 
     /** Internal class used to manage Saf request results. */
-    private class SafHelper (val reqCode: Int, val persistableUriPermission: Boolean, val isInput: Boolean, val isSingleDocument: Boolean,
-                             val f: ((stream: Closeable?) -> Unit)?, val fDf: ((documentFile: DocumentFile) -> Unit)?)
+    private class SafHelper (
+        val reqCode: Int,
+        val persistableUriPermission: Boolean,
+        val isInput: Boolean,
+        val isSingleDocument: Boolean,
+        val f: ((stream: Closeable?) -> Unit)?,
+        val fDf: ((documentFile: DocumentFile) -> Unit)?
+    )
 }

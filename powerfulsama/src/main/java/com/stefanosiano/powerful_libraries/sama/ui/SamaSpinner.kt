@@ -85,7 +85,10 @@ open class SamaSpinner : AppCompatSpinner {
     }
 
 
-    /** Sets the selection of the spinner to the first occurrence of [value]. If it was initialized with a collection of strings, it calls [setSelection]. */
+    /**
+     * Sets the selection of the spinner to the first occurrence of [value].
+     * If it was initialized with a collection of strings, it calls [setSelection].
+     */
     fun setSpnValue(value: String?) {
         value ?: return
         if(getSpnValue() == value) return
@@ -99,7 +102,10 @@ open class SamaSpinner : AppCompatSpinner {
         }
     }
 
-    /** Sets the selection of the spinner to the first occurrence of [key]. If it was initialized with a collection of strings, it calls [setSelection]. */
+    /**
+     * Sets the selection of the spinner to the first occurrence of [key].
+     * If it was initialized with a collection of strings, it calls [setSelection].
+     */
     fun setSpnKey(key: String?) {
         key ?: return
         if(getSpnKey() == key) return

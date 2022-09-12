@@ -16,6 +16,7 @@ internal class SamaActivityCallback(
     companion object {
         val id = AtomicLong()
     }
+
     val uid = id.incrementAndGet()
 
     fun onCreate(activity: SamaActivity) = onCreate?.invoke(activity)

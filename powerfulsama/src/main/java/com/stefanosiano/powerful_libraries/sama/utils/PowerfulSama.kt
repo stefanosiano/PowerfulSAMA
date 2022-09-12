@@ -21,13 +21,15 @@ object PowerfulSama {
      *
      * [application] needed to initialize the library
      * [defaultMessagesTheme] is used as theme for all messages
-     * [defaultMessageCustomization] is used as customization function called after the message has been shown. Note: It will be called on UI thread
+     * [defaultMessageCustomization] is used as customization function called after the message has been shown.
+     *  Note: It will be called on UI thread
      * [defaultYeslabel] Default "Yes" text
      * [defaultNolabel] Default "No" text
      * [logger] Logger used internally for base Sama classes
      * [checkSignatureFunction] Function to check whether the signatures of the app are correct
-     * [onSignatureChackFailed] Function to run if the signatures of the app are NOT correct (will be run by [SamaSignature.checkSignatures])
-    . */
+     * [onSignatureChackFailed] Function to run if the signatures of the app are NOT correct
+     *  (will be run by [SamaSignature.checkSignatures])
+     */
     fun init(
         application: Application,
         isDebug: Boolean,
@@ -48,7 +50,9 @@ object PowerfulSama {
             override fun onActivityDestroyed(activity: Activity) { clearIntent(activity) }
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
             override fun onActivityStopped(activity: Activity) {}
-            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) { setCurrentActivity(activity) }
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                setCurrentActivity(activity)
+            }
         })
 
         Res.setApplicationContext(application)
@@ -63,7 +67,8 @@ object PowerfulSama {
     }
 
     /** Clears the intent used to start an activity. */
-    private fun clearIntent(activity: Activity?) = activity?.let { if(it is SamaActivity) SamaIntent.clear("${it.samaIntent.uid} ") }
+    private fun clearIntent(activity: Activity?) =
+        activity?.let { if(it is SamaActivity) SamaIntent.clear("${it.samaIntent.uid} ") }
 
     /** Sets the current activity on which to show the messages. */
     private fun setCurrentActivity(activity: Activity?) = activity?.let {

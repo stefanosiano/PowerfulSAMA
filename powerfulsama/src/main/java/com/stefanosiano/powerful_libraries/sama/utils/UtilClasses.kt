@@ -18,8 +18,11 @@ open class WeakPair<T, R>(first: T, second: R) {
     fun clear() { p.first.clear(); p.second.clear() }
 }
 
-/** An [ObservableField] with non-nullable values. You can specify to update the value with [onlyWhen] function.
- * By default the new value will be set only when it's different from old (via != comparison). Supports [BigDecimal], too. */
+/**
+ * An [ObservableField] with non-nullable values. You can specify to update the value with [onlyWhen] function.
+ * By default the new value will be set only when it's different from old (via != comparison).
+ * Supports [BigDecimal], too.
+ */
 class ObservableF<T>(value: T, onlyWhen: ((old: T, new: T) -> Boolean)? = null) : ObservableField<T>(value) {
     private val setOnlyWhen: (old: T, new: T) -> Boolean = onlyWhen ?: { old: T, new: T -> when {
         new is BigDecimal -> (old as BigDecimal).toDouble() != new.toDouble()

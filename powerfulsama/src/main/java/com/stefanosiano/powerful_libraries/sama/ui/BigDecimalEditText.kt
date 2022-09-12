@@ -18,7 +18,10 @@ import java.math.BigDecimal
 import java.text.NumberFormat
 import java.util.Locale
 
-/** Custom AppCompatEditText that writes a bigdecimal formatted in selected locale and with convenient methods to set and get the number written. */
+/**
+ * Custom AppCompatEditText that writes a [BigDecimal] formatted in selected locale,
+ * and with convenient methods to set and get the number written.
+ */
 class BigDecimalEditText : AppCompatEditText {
 
     private var formatter = NumberFormat.getNumberInstance(Locale.getDefault())
@@ -28,9 +31,15 @@ class BigDecimalEditText : AppCompatEditText {
 
     private var currentDecimal = BigDecimal.ZERO
 
-    constructor(context: Context) : super(context) { init(null, 0) }
-    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) { init(attrs, 0) }
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)  { init(attrs, defStyleAttr) }
+    constructor(context: Context) : super(context) {
+        init(null, 0)
+    }
+    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {
+        init(attrs, 0)
+    }
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)  {
+        init(attrs, defStyleAttr)
+    }
 
     fun init(attrs: AttributeSet?, defStyleAttr: Int) {
         inputType = (inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
@@ -52,7 +61,10 @@ class BigDecimalEditText : AppCompatEditText {
     fun getTextBd() : BigDecimal = currentDecimal
 }
 
-/** Custom TextInputEditText that writes a bigdecimal formatted in selected locale and with convenient methods to set and get the number written. */
+/**
+ * Custom TextInputEditText that writes a [BigDecimal] formatted in selected locale
+ * and with convenient methods to set and get the number written.
+ */
 class BigDecimalTextInputEditText : TextInputEditText {
 
     private var formatter = NumberFormat.getNumberInstance(Locale.getDefault())
@@ -64,7 +76,9 @@ class BigDecimalTextInputEditText : TextInputEditText {
 
     constructor(context: Context) : super(context) { init(null, 0) }
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) { init(attrs, 0) }
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)  { init(attrs, defStyleAttr) }
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)  {
+        init(attrs, defStyleAttr)
+    }
 
     fun init(attrs: AttributeSet?, defStyleAttr: Int) {
         inputType = (inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
@@ -86,7 +100,10 @@ class BigDecimalTextInputEditText : TextInputEditText {
     fun getTextBd() : BigDecimal = currentDecimal
 }
 
-/** Custom AppCompatTextView that writes a bigdecimal formatted in selected locale and with convenient methods to set and get the number written. */
+/**
+ * Custom AppCompatTextView that writes a [BigDecimal] formatted in selected locale
+ * and with convenient methods to set and get the number written.
+ */
 class BigDecimalTextView : AppCompatTextView {
 
     private var formatter = NumberFormat.getNumberInstance(Locale.getDefault())
@@ -98,7 +115,9 @@ class BigDecimalTextView : AppCompatTextView {
 
     constructor(context: Context) : super(context) { init(null, 0) }
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) { init(attrs, 0) }
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)  { init(attrs, defStyleAttr) }
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)  {
+        init(attrs, defStyleAttr)
+    }
 
     fun init(attrs: AttributeSet?, defStyleAttr: Int) {
         inputType = (inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
@@ -161,8 +180,10 @@ private class BigDecimalTextWatcher<T: TextView> (
             val num: Number = tryOr(0 as Number) { formatter.parse(clearText) ?: 0 }
             val toSet = formatter.format(num)
             val cursorPosition = when {
-                toSet.length - oldText.length > 1 -> (v.selectionEnd + (toSet.length - oldText.length - 1).coerceAtLeast(0))
-                toSet.length - oldText.length < -1 -> (v.selectionEnd + (toSet.length - oldText.length + 1).coerceAtMost(0))
+                toSet.length - oldText.length > 1 ->
+                    v.selectionEnd + (toSet.length - oldText.length - 1).coerceAtLeast(0)
+                toSet.length - oldText.length < -1 ->
+                    v.selectionEnd + (toSet.length - oldText.length + 1).coerceAtMost(0)
                 else -> v.selectionEnd
             }
 
@@ -183,7 +204,8 @@ private class BigDecimalTextWatcher<T: TextView> (
 
         //remove all chars after maximum set fraction digits
         if(clearText.substringAfter(decimalSeparator.toString(), "").length > formatter.maximumFractionDigits) {
-            val decimalText = clearText.substringAfter(decimalSeparator.toString()).substring(0, formatter.maximumFractionDigits)
+            val decimalText =
+                clearText.substringAfter(decimalSeparator.toString()).substring(0, formatter.maximumFractionDigits)
             v.setText("${clearText.substringBefore(decimalSeparator.toString())}$decimalSeparator$decimalText")
             if(v is EditText)
                 v.setSelection(v.text.toString().length)

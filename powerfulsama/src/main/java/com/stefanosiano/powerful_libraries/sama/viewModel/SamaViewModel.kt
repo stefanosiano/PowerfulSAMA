@@ -216,45 +216,120 @@ protected constructor() : ViewModel(), CoroutineScope {
 
 
 
-    /** Observes a liveData until this object is destroyed into an observable field. Does not update the observable if the value of the liveData is null. */
+    /**
+     * Observes a liveData until this object is destroyed into an observable field.
+     * Does not update the observable if the value of the liveData is null.
+     */
     protected fun <T> observeAsOf(liveData: LiveData<T>): ObservableField<T> = samaObserver.observeAsOf(liveData)
 
     /** Observes a liveData until this object is destroyed, using a custom observer. */
-    protected fun <T> observe(liveData: LiveData<T>, vararg obs: Observable, observerFunction: (data: T) -> Unit): LiveData<T> = samaObserver.observe(liveData, *obs) { observerFunction(it) }
+    protected fun <T> observe(
+        liveData: LiveData<T>,
+        vararg obs: Observable,
+        observerFunction: (data: T) -> Unit
+    ): LiveData<T> = samaObserver.observe(liveData, *obs) { observerFunction(it) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. */
-    protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit): Unit = samaObserver.observe(o, *obs) { obFun(it) }
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     * now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed.
+     */
+    protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit): Unit =
+        samaObserver.observe(o, *obs) { obFun(it) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableInt, vararg obs: Observable, obFun: (data: Int) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     * now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null.
+     */
+    protected fun <R> observe(o: ObservableInt, vararg obs: Observable, obFun: (data: Int) -> R): ObservableField<R> =
+        samaObserver.observe(o, *obs) { obFun(it) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableLong, vararg obs: Observable, obFun: (data: Long) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     * now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null.
+     */
+    protected fun <R> observe(o: ObservableLong, vararg obs: Observable, obFun: (data: Long) -> R): ObservableField<R> =
+        samaObserver.observe(o, *obs) { obFun(it) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableByte, vararg obs: Observable, obFun: (data: Byte) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     * now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null.
+     */
+    protected fun <R> observe(o: ObservableByte, vararg obs: Observable, obFun: (data: Byte) -> R): ObservableField<R> =
+        samaObserver.observe(o, *obs) { obFun(it) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableChar, vararg obs: Observable, obFun: (data: Char) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     * now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null.
+     */
+    protected fun <R> observe(o: ObservableChar, vararg obs: Observable, obFun: (data: Char) -> R): ObservableField<R> =
+        samaObserver.observe(o, *obs) { obFun(it) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableBoolean, vararg obs: Observable, obFun: (data: Boolean) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     * now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null.
+     */
+    protected fun <R> observe(
+        o: ObservableBoolean,
+        vararg obs: Observable,
+        obFun: (data: Boolean) -> R
+    ): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableFloat, vararg obs: Observable, obFun: (data: Float) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     * now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null.
+     */
+    protected fun <R> observe(
+        o: ObservableFloat,
+        vararg obs: Observable,
+        obFun: (data: Float) -> R
+    ): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableDouble, vararg obs: Observable, obFun: (data: Double) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     * now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null.
+     */
+    protected fun <R> observe(
+        o: ObservableDouble,
+        vararg obs: Observable,
+        obFun: (data: Double) -> R
+    ): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
 
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R, T> observe(o: ObservableField<T>, vararg obs: Observable, obFun: (data: T) -> R): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     * now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null.
+     */
+    protected fun <R, T> observe(
+        o: ObservableField<T>,
+        vararg obs: Observable,
+        obFun: (data: T) -> R
+    ): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
 
-    /** Observes the flow [f] until this object is destroyed and calls [obFun] in the background, now and whenever [f] or any of [obs] change, with the current value of [f]. Does nothing if [f] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R, T> observe(f: Flow<T>, vararg obs: Observable, obFun: (data: T) -> R): ObservableField<R> = samaObserver.observe(f, *obs) { obFun(it) }
+    /**
+     * Observes the flow [f] until this object is destroyed and calls [obFun] in the background,
+     * now and whenever [f] or any of [obs] change, with the current value of [f].
+     * Does nothing if [f] is null or already changed. Returns an [ObservableField] with initial value of null.
+     */
+    protected fun <R, T> observe(f: Flow<T>, vararg obs: Observable, obFun: (data: T) -> R): ObservableField<R> =
+        samaObserver.observe(f, *obs) { obFun(it) }
 
-    /** Run [f] to get a [LiveData] every time any of [o] or [obs] changes, removing the old one. It return a [LiveData] of the same type as [f]. */
-    protected fun <T> observeAndReloadLiveData(o: ObservableField<*>, vararg obs: Observable, f: () -> LiveData<T>?): LiveData<T> = samaObserver.observeAndReloadLiveData(o, *obs) { f() }
-
+    /**
+     * Run [f] to get a [LiveData] every time any of [o] or [obs] changes, removing the old one.
+     * It return a [LiveData] of the same type as [f].
+     */
+    protected fun <T> observeAndReloadLiveData(
+        o: ObservableField<*>,
+        vararg obs: Observable,
+        f: () -> LiveData<T>?
+    ): LiveData<T> = samaObserver.observeAndReloadLiveData(o, *obs) { f() }
 }
 
 /** Executes [f] only once. If this is called multiple times, it will have no effect. */
@@ -264,9 +339,9 @@ protected constructor() : ViewModel(), CoroutineScope {
 
 /** Class containing action and data sent from the ViewModel to its observers. */
 open class VmResponse<A: VmAction> (
-    /** Specifies what the response is about . */
+    /** Specifies what the response is about. */
     val action: A,
-    /** Optional data provided by the action . */
+    /** Optional data provided by the action. */
     val data: Any?) {
 
     override fun toString() = "VmResponse{ action= $action, data=$data }"
@@ -275,7 +350,10 @@ open class VmResponse<A: VmAction> (
 
 /** Interface that indicates the action sent by the ViewModel. */
 interface VmAction {
-    /** Indicates that this [VmAction] should be retained when activity is recreated. Any new [VmActionSticky] overrides previous one, so that only 1 action will be retained.
-     * If an action is sent and the device is rotated, when the activity restarts it needs to get that action again. */
+    /**
+     * Indicates that this [VmAction] should be retained when activity is recreated.
+     * Any new [VmActionSticky] overrides previous one, so that only 1 action will be retained.
+     * If an action is sent and the device is rotated, when the activity restarts it needs to get that action again.
+     */
     interface VmActionSticky
 }

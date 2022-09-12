@@ -114,7 +114,8 @@ open class SamaSearchView : SearchView, CoroutineScope {
     }
 
     /** Gets the suggestions shown when writing. */
-    fun getSsvSuggestions(): List<String> = (0 until (mSuggestionsAdapter?.count ?:0)).mapNotNull { mSuggestionsAdapter?.getItem(it) }
+    fun getSsvSuggestions(): List<String> =
+        (0 until (mSuggestionsAdapter?.count ?:0)).mapNotNull { mSuggestionsAdapter?.getItem(it) }
 
 
     private fun updateSuggestionsAdapter() {

@@ -49,10 +49,12 @@ abstract class SamaFragment: Fragment(), CoroutineScope {
         coroutineContext.cancel()
     }
 
-    /** Used by extending classes to programmatically clear references used by the fragment (does nothing by default). */
+    /** Used by extending classes to clear references used by the fragment (does nothing by default). */
     open fun clear() {}
 
     /** Removes this fragment from the stack of the fragment manager. */
-    fun remove() { tryOrNull { fragmentManager?.beginTransaction()?.remove(this)?.commit() } }
+    fun remove() {
+        tryOrNull { fragmentManager?.beginTransaction()?.remove(this)?.commit() }
+    }
 
 }
