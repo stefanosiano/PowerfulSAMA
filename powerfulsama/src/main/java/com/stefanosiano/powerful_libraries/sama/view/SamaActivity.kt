@@ -47,12 +47,9 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
 
     private val managedDialog = SparseArray<SamaDialogFragment>()
 
-
-    companion object {
-        /** Request codes used to pass to activity's onRequestPermissionsResult method. */
-        internal val samaRequestCodes = AtomicInteger(42000)
-    }
-
+    val samaIntent
+        /** Returns the intent that started this activity as [SamaIntent] allowing [SamaIntent.getExtraStatic]. */
+        get() = SamaIntent(super.getIntent())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -164,13 +161,6 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         registeredViewModels.add(vm)
         vm.onVmAction(this, f)
     }
-
-    val samaIntent
-        /**
-         * Returns the intent that started this activity as [SamaIntent],
-         * allowing the use of [SamaIntent.getExtraStatic].
-         */
-        get() = SamaIntent(super.getIntent())
 
 
     /**
@@ -306,4 +296,8 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope {
         f: () -> LiveData<T>?
     ): LiveData<T> = samaObserver.observeAndReloadLiveData(o, *obs) { f() }
 
+    companion object {
+        /** Request codes used to pass to activity's onRequestPermissionsResult method. */
+        internal val samaRequestCodes = AtomicInteger(42000)
+    }
 }

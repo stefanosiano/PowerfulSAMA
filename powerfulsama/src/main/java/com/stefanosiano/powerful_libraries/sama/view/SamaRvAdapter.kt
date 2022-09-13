@@ -135,6 +135,11 @@ open class SamaRvAdapter(
     /** Whether the adapter has just been restarted through [restartLiveDataObservers]. */
     private var justRestarted = false
 
+    init {
+        setHasStableIds(hasStableId)
+        itemLayoutIds.put(-1, itemLayoutId)
+    }
+
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
      * [hasStableId] defaults to true
@@ -143,11 +148,6 @@ open class SamaRvAdapter(
      * @param itemBindingId Id of the dataBinding variable in the row layout
      */
     constructor(itemLayoutId: Int, itemBindingId: Int): this(itemLayoutId, itemBindingId, true)
-
-    init {
-        setHasStableIds(hasStableId)
-        itemLayoutIds.put(-1, itemLayoutId)
-    }
 
 
     /** Set a [layoutId] for a [viewType] (viewTypes should be used in [SamaListItem.getViewType] of the items). */

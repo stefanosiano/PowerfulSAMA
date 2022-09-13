@@ -41,12 +41,6 @@ abstract class SamaDialogFragment(
     private var uid: Int = -1
 ): CoroutineScope {
 
-    companion object {
-        val map = SparseArray<SamaDialogFragment>()
-        val uidMap = HashMap<String, Int>()
-        val lastUid = AtomicInteger(10000)
-    }
-
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
@@ -64,13 +58,13 @@ abstract class SamaDialogFragment(
      */
     protected var enableAutoManagement = true
 
-    internal fun getUidInternal() = uid
-
     init {
         samaObserver.initObserver(this)
         if (uid == -1)
             uid = uidMap.getOrPut(this::class.java.name) { lastUid.incrementAndGet() }
     }
+
+    internal fun getUidInternal() = uid
 
     /**
      * Restore previous data from events like device rotating when a dialog is shown.
@@ -276,4 +270,10 @@ abstract class SamaDialogFragment(
         vararg obs: Observable,
         f: () -> LiveData<T>?
     ): LiveData<T> = samaObserver.observeAndReloadLiveData(o, *obs) { f() }
+
+    companion object {
+        val map = SparseArray<SamaDialogFragment>()
+        val uidMap = HashMap<String, Int>()
+        val lastUid = AtomicInteger(10000)
+    }
 }

@@ -24,34 +24,6 @@ open class SimpleSamaFragment: SamaFragment() {
     private var onOptionMenuCreated: ((menu: Menu?) -> Unit)? = null
     private var onDetach: ((fragment: SimpleSamaFragment) -> Unit)? = null
 
-    companion object {
-
-        private const val ExtraLayoutId = "ExtraLayoutId"
-        private const val ExtraMenuId = "ExtraMenuId"
-
-        /**
-         * Creates a new SimpleFragment
-         * @param layoutId The id of the layout to use. (0 means no layout is shown)
-         */
-        fun new(layoutId: Int): SimpleSamaFragment = new(layoutId, 0)
-
-        /**
-         * Creates a new SimpleFragment
-         * @param layoutId The id of the layout to use. (0 means no layout is shown)
-         * @param menuId The id of the menu to load. (0 means no menu is shown)
-         */
-        fun new(layoutId: Int, menuId: Int): SimpleSamaFragment {
-
-            val fragment = SimpleSamaFragment()
-            val bundle = Bundle()
-            bundle.putInt(ExtraLayoutId, layoutId)
-            bundle.putInt(ExtraMenuId, menuId)
-            fragment.arguments = bundle
-            return fragment
-        }
-
-    }
-
     /**
      * Sets the data to work with data binding
      * Calling this method multiple times will associate the id to the last data passed.
@@ -164,5 +136,33 @@ open class SimpleSamaFragment: SamaFragment() {
         bindingPairs.clear()
         menuFunctions.clear()
         onOptionMenuCreated = null
+    }
+
+    companion object {
+
+        private const val ExtraLayoutId = "ExtraLayoutId"
+        private const val ExtraMenuId = "ExtraMenuId"
+
+        /**
+         * Creates a new SimpleFragment
+         * @param layoutId The id of the layout to use. (0 means no layout is shown)
+         */
+        fun new(layoutId: Int): SimpleSamaFragment = new(layoutId, 0)
+
+        /**
+         * Creates a new SimpleFragment
+         * @param layoutId The id of the layout to use. (0 means no layout is shown)
+         * @param menuId The id of the menu to load. (0 means no menu is shown)
+         */
+        fun new(layoutId: Int, menuId: Int): SimpleSamaFragment {
+
+            val fragment = SimpleSamaFragment()
+            val bundle = Bundle()
+            bundle.putInt(ExtraLayoutId, layoutId)
+            bundle.putInt(ExtraMenuId, menuId)
+            fragment.arguments = bundle
+            return fragment
+        }
+
     }
 }

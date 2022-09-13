@@ -53,13 +53,18 @@ open class SamaSearchView : SearchView, CoroutineScope {
                 if(millis > 0) {
                     requeryJob = launch {
                         delay(millis)
-                        if(isActive)
-                            synchronized(listeners) { listeners.forEach { it.onQueryTextChange(newText) } }
+                        if(isActive) {
+                            synchronized(listeners) {
+                                listeners.forEach { it.onQueryTextChange(newText) }
+                            }
+                        }
                     }
                 }
-                else
-                    synchronized(listeners) { listeners.forEach { it.onQueryTextChange(newText) } }
-
+                else {
+                    synchronized(listeners) {
+                        listeners.forEach { it.onQueryTextChange(newText) }
+                    }
+                }
                 return true
             }
         })

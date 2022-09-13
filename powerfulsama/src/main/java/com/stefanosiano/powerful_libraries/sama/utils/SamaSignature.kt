@@ -20,12 +20,14 @@ object SamaSignature {
     fun readSignatures(): Array<Signature> {
         val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             val signingInfo = pm.getPackageInfo(pkgName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
-            if (signingInfo.hasMultipleSigners())
+            if (signingInfo.hasMultipleSigners()) {
                 signingInfo.apkContentsSigners
-            else
+            } else {
                 signingInfo.signingCertificateHistory
+            }
+        } else {
+            pm.getPackageInfo(pkgName, PackageManager.GET_SIGNATURES).signatures
         }
-        else pm.getPackageInfo(pkgName, PackageManager.GET_SIGNATURES).signatures
 
         return signatures
     }
@@ -38,12 +40,14 @@ object SamaSignature {
     inline fun readSignatures(crossinline f: (Array<Signature>) -> Unit) {
         val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             val signingInfo = pm.getPackageInfo(pkgName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
-            if (signingInfo.hasMultipleSigners())
+            if (signingInfo.hasMultipleSigners()) {
                 signingInfo.apkContentsSigners
-            else
+            } else {
                 signingInfo.signingCertificateHistory
+            }
+        } else {
+            pm.getPackageInfo(pkgName, PackageManager.GET_SIGNATURES).signatures
         }
-        else pm.getPackageInfo(pkgName, PackageManager.GET_SIGNATURES).signatures
         f(signatures)
     }
 
@@ -65,13 +69,15 @@ object SamaSignature {
     inline fun checkSignatures() {
         onSignatureFailed?.let { f ->
             val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                val signingInfo =
-                    pm.getPackageInfo(pkgName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
-                if (signingInfo.hasMultipleSigners())
+                val signingInfo = pm.getPackageInfo(pkgName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
+                if (signingInfo.hasMultipleSigners()) {
                     signingInfo.apkContentsSigners
-                else
+                } else {
                     signingInfo.signingCertificateHistory
-            } else pm.getPackageInfo(pkgName, PackageManager.GET_SIGNATURES).signatures
+                }
+            } else {
+                pm.getPackageInfo(pkgName, PackageManager.GET_SIGNATURES).signatures
+            }
 
             if(onCheckSignature?.invoke(signatures) == false) {
                 f(signatures)

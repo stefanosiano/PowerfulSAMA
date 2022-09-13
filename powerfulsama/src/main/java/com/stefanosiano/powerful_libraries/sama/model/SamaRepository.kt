@@ -24,8 +24,10 @@ abstract class SamaRepository {
             withContext(Dispatchers.Main) { lastLiveData?.also { mediatorLiveData.removeSource(it) } }
             lastLiveData = f()
             withContext(Dispatchers.Main) {
-                if (lastLiveData != null) mediatorLiveData.addSource(lastLiveData!!) {
-                    mediatorLiveData.postValue(it)
+                if (lastLiveData != null) {
+                    mediatorLiveData.addSource(lastLiveData!!) {
+                        mediatorLiveData.postValue(it)
+                    }
                 }
             }
         }

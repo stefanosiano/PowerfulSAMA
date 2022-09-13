@@ -42,7 +42,7 @@ class BigDecimalEditText : AppCompatEditText {
     }
 
     fun init(attrs: AttributeSet?, defStyleAttr: Int) {
-        inputType = (inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
+        inputType = inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
 
         val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.BigDecimalEditText, defStyleAttr, 0)
         val maxFractionDigits = attrSet.getInt(R.styleable.BigDecimalEditText_bdetMaxFractionDigits, 5)
@@ -81,7 +81,7 @@ class BigDecimalTextInputEditText : TextInputEditText {
     }
 
     fun init(attrs: AttributeSet?, defStyleAttr: Int) {
-        inputType = (inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
+        inputType = inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
 
         val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.BigDecimalEditText, defStyleAttr, 0)
         val maxFractionDigits = attrSet.getInt(R.styleable.BigDecimalEditText_bdetMaxFractionDigits, 5)
@@ -120,7 +120,7 @@ class BigDecimalTextView : AppCompatTextView {
     }
 
     fun init(attrs: AttributeSet?, defStyleAttr: Int) {
-        inputType = (inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL)
+        inputType = inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
 
         val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.BigDecimalTextView, defStyleAttr, 0)
         val maxFractionDigits = attrSet.getInt(R.styleable.BigDecimalTextView_bdtvMaxFractionDigits, 5)
@@ -155,9 +155,10 @@ private fun <T: TextView> setTextBd(v: T, oldValue: BigDecimal, newValue: BigDec
     if(oldValue.toDouble() != newValue?.toDouble() || v.text.isEmpty()) {
         val cursorPosition = v.selectionEnd
         val toSet = formatter.format(newValue ?: BigDecimal.ZERO)
-        v.setText(toSet)
-        if(v is EditText)
-            v.setSelection(cursorPosition.coerceAtMost(toSet.length).coerceAtLeast(0))
+        v.text = toSet
+        if(v is EditText) {
+            v.setSelection(cursorPosition.coerceIn(0, toSet.length))
+        }
     }
 }
 
@@ -187,18 +188,20 @@ private class BigDecimalTextWatcher<T: TextView> (
                 else -> v.selectionEnd
             }
 
-            v.setText(toSet)
-            if(v is EditText)
-                v.setSelection(cursorPosition.coerceAtMost(toSet.length).coerceAtLeast(0))
+            v.text = toSet
+            if(v is EditText) {
+                v.setSelection(cursorPosition.coerceIn(0, toSet.length))
+            }
         }
 
         //remove all decimal separators after first, if there are any
         val separatorCount = clearText.count { it == decimalSeparator }
         if(separatorCount > 1) {
-            val cursorPosition = (v.selectionEnd - separatorCount + 1)
-            v.setText(clearText.replaceAfterFirst(decimalSeparator.toString(), ""))
-            if(v is EditText)
+            val cursorPosition = v.selectionEnd - separatorCount + 1
+            v.text = clearText.replaceAfterFirst(decimalSeparator.toString(), "")
+            if(v is EditText) {
                 v.setSelection(cursorPosition)
+            }
             return
         }
 
@@ -206,9 +209,10 @@ private class BigDecimalTextWatcher<T: TextView> (
         if(clearText.substringAfter(decimalSeparator.toString(), "").length > formatter.maximumFractionDigits) {
             val decimalText =
                 clearText.substringAfter(decimalSeparator.toString()).substring(0, formatter.maximumFractionDigits)
-            v.setText("${clearText.substringBefore(decimalSeparator.toString())}$decimalSeparator$decimalText")
-            if(v is EditText)
+            v.text = "${clearText.substringBefore(decimalSeparator.toString())}$decimalSeparator$decimalText"
+            if(v is EditText) {
                 v.setSelection(v.text.toString().length)
+            }
             return
         }
 

@@ -26,7 +26,6 @@ import com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
 import java.math.BigDecimal
 
-
 class SamaDataBindingAdapters
 
 /** Puts the [bitmap] into the [imageView]. */
@@ -107,8 +106,11 @@ fun setImageViewTint(imageView: ImageView, color: Int) {
 /** Sets the layoutManager of the [recyclerView] based on the [columns]. */
 @BindingAdapter("columns")
 fun setLayoutManager(recyclerView: RecyclerView, columns: Int) {
-    recyclerView.layoutManager = if (columns <= 1) LinearLayoutManager(recyclerView.context)
-    else GridLayoutManager(recyclerView.context, columns)
+    recyclerView.layoutManager = if (columns <= 1) {
+        LinearLayoutManager(recyclerView.context)
+    } else {
+        GridLayoutManager(recyclerView.context, columns)
+    }
 }
 
 /** Sets the hasFixedSize of the [recyclerView]. */
@@ -120,8 +122,11 @@ fun bindRecyclerViewItems(recyclerView: RecyclerView, hasFixedSize: Boolean) {
 /** Sets the stroke effect to the [textView]. */
 @BindingAdapter("strikethrough")
 fun setShapeBackgroundColor(textView: TextView, strikethrough: Boolean) {
-    textView.paintFlags = if (strikethrough) textView.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
-    else textView.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+    textView.paintFlags = if (strikethrough) {
+        textView.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+    } else {
+        textView.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+    }
 }
 
 /** Sets the error id to the TextInputLayout. */

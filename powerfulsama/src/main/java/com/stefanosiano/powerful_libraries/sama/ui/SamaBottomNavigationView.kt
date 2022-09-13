@@ -15,20 +15,11 @@ import java.lang.ref.WeakReference
 /** Class that provides easy Bottom Navigation. */
 open class SamaBottomNavigationView: BottomNavigationView {
 
-    companion object {
-        val cacheSelectedId = SparseIntArray()
-    }
-
     private var containerId = 0
     private var pairs: Array<WeakPair<Int, out Fragment>>? = null
     private var activityReference: WeakReference<AppCompatActivity>? = null
     private var active: WeakReference<Fragment>? = null
     private val itemSelectedListeners = ArrayList<(Int) -> Unit>()
-
-    constructor(context: Context) : this(context, null)
-    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
-
 
     init {
 
@@ -56,6 +47,10 @@ open class SamaBottomNavigationView: BottomNavigationView {
             return@setOnItemSelectedListener true
         }
     }
+
+    constructor(context: Context) : this(context, null)
+    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
     fun addItemSelectedListener(listener: (Int) -> Unit) = itemSelectedListeners.add(listener)
 
@@ -125,5 +120,9 @@ open class SamaBottomNavigationView: BottomNavigationView {
     override fun onRestoreInstanceState(state: Parcelable?) {
         super.onRestoreInstanceState(state)
         cacheSelectedId.delete(containerId)
+    }
+
+    companion object {
+        val cacheSelectedId = SparseIntArray()
     }
 }

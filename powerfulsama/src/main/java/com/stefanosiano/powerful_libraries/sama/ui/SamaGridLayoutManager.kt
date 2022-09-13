@@ -30,7 +30,6 @@ open class SamaGridLayoutManager : GridLayoutManager {
     }
 
     override fun supportsPredictiveItemAnimations(): Boolean {
-        return if(disablePredictiveAnimation) false
-        else super.supportsPredictiveItemAnimations()
+        return !disablePredictiveAnimation && super.supportsPredictiveItemAnimations()
     }
 }

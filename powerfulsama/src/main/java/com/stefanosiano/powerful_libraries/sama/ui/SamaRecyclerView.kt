@@ -108,10 +108,12 @@ open class SamaRecyclerView: RecyclerView {
      * Otherwise it calls [scrollToPosition].
      */
     fun scrollToPositionWithOffset(position: Int, offset: Int = 0) {
-        if(layoutManager is LinearLayoutManager)
+        if(layoutManager is LinearLayoutManager) {
             (layoutManager as LinearLayoutManager).scrollToPositionWithOffset(position, offset)
-        else
+        }
+        else {
             scrollToPosition(position)
+        }
     }
 
     /**

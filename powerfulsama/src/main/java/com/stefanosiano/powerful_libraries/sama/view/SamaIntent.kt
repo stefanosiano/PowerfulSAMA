@@ -12,22 +12,6 @@ import java.util.concurrent.atomic.AtomicLong
  */
 class SamaIntent : Intent {
 
-    internal companion object {
-        private const val extra = "com.stefanosiano.powerful_libraries.sama.view.SamaIntent.uid"
-        private val uids = AtomicLong(0)
-        private val variables = HashMap<String, Any>()
-        private fun store(key: String, variable: Any?) = variable?.let { variables.put(key, it) }
-
-        @Suppress("UNCHECKED_CAST")
-        private fun <T> retrieve(key: String): T? = variables[key] as? T
-        private fun removeExtra(key: String) {
-            variables.remove(key)
-        }
-
-        private fun hasExtra(key: String) = variables.containsKey(key)
-        internal fun clear(key: String) = variables.removeWhen { it.key.startsWith(key) }
-    }
-
     internal val uid: Long
 
     constructor() : super() {
@@ -74,4 +58,20 @@ class SamaIntent : Intent {
     /** Check if a static variable associated to [key] exists. */
     fun hasExtraStatic(key: String): Boolean = SamaIntent.hasExtra("$uid $key")
 
+
+    internal companion object {
+        private const val extra = "com.stefanosiano.powerful_libraries.sama.view.SamaIntent.uid"
+        private val uids = AtomicLong(0)
+        private val variables = HashMap<String, Any>()
+        private fun store(key: String, variable: Any?) = variable?.let { variables.put(key, it) }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun <T> retrieve(key: String): T? = variables[key] as? T
+        private fun removeExtra(key: String) {
+            variables.remove(key)
+        }
+
+        private fun hasExtra(key: String) = variables.containsKey(key)
+        internal fun clear(key: String) = variables.removeWhen { it.key.startsWith(key) }
+    }
 }

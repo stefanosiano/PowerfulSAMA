@@ -24,11 +24,19 @@ open class WeakPair<T, R>(first: T, second: R) {
  * Supports [BigDecimal], too.
  */
 class ObservableF<T>(value: T, onlyWhen: ((old: T, new: T) -> Boolean)? = null) : ObservableField<T>(value) {
-    private val setOnlyWhen: (old: T, new: T) -> Boolean = onlyWhen ?: { old: T, new: T -> when {
-        new is BigDecimal -> (old as BigDecimal).toDouble() != new.toDouble()
-        else -> old != new
-    } }
+    private val setOnlyWhen: (old: T, new: T) -> Boolean = onlyWhen ?: { old: T, new: T ->
+        if (new is BigDecimal) {
+            (old as BigDecimal).toDouble() != new.toDouble()
+        }
+        else {
+            old != new
+        }
+    }
 
     override fun get(): T = super.get()!!
-    override fun set(value: T) { if(setOnlyWhen(get(), value)) super.set(value) }
+    override fun set(value: T) {
+        if(setOnlyWhen(get(), value)) {
+            super.set(value)
+        }
+    }
 }

@@ -298,12 +298,12 @@ object Perms {
                 }
                 .forEach {
                     // Permission is not granted. Should we show an explanation?
-                    if (ActivityCompat.shouldShowRequestPermissionRationale(
-                            activity,
-                            it
-                        )
-                    ) permissionsToRationale.add(it)
-                    else permissionsToAsk.add(it)// No explanation needed; request the permission
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(activity, it)) {
+                        permissionsToRationale.add(it)
+                    } else {
+                        // No explanation needed; request the permission
+                        permissionsToAsk.add(it)
+                    }
                 }
 
             if (permissionsToRationale.isNotEmpty()) {
@@ -344,11 +344,10 @@ object Perms {
                     // If permission is optional and (!showRationale) -> user CHECKED "never ask again"
                     // But permission is optional, so function can be called anyway
 
-                    // If permission is needed
-                    if (!optionalPermissions.contains(permission)) {
-                        // User CHECKED "never ask again": open another dialog explaining again the permission and send
-                        // to the app setting
-                        if (!showRationale) deniedPermissions.add(permission)
+                    // If permission is needed and user CHECKED "never ask again":
+                    // open another dialog explaining again the permission and send to the app settings
+                    if (!optionalPermissions.contains(permission) && !showRationale) {
+                        deniedPermissions.add(permission)
                     }
                 }
             }

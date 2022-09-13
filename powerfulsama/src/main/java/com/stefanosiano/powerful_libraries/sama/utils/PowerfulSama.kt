@@ -62,8 +62,9 @@ object PowerfulSama {
         Msg.defaultNo = defaultNolabel
         PowerfulSama.logger = logger
 
-        if(checkSignatureFunction != null && onSignatureChackFailed != null)
+        if(checkSignatureFunction != null && onSignatureChackFailed != null) {
             SamaSignature.init(checkSignatureFunction, onSignatureChackFailed)
+        }
     }
 
     /** Clears the intent used to start an activity. */

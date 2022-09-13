@@ -71,6 +71,10 @@ protected constructor() : ViewModel(), CoroutineScope {
     internal var isInitialized = AtomicBoolean(false)
 
 
+    init {
+        samaObserver.initObserver(this)
+    }
+
     /** Clears the LiveData of the response to avoid the observer receives it over and over on configuration changes. */
     @Deprecated("blocking actions should me managed differently ([startVmActions] and [stopVmActions])")
     fun clearVmResponse() = liveResponse.postValue(null)
@@ -86,10 +90,6 @@ protected constructor() : ViewModel(), CoroutineScope {
     /** Sends the action to the active observer. */
     protected fun sendAction(action: A) = liveAction.postValue(action)
 
-    init {
-        samaObserver.initObserver(this)
-    }
-
     /** Clear the liveData observer (if any). */
     override fun onCleared() {
         super.onCleared()
@@ -97,7 +97,6 @@ protected constructor() : ViewModel(), CoroutineScope {
         samaObserver.destroyObserver()
         coroutineContext.cancel()
     }
-
 
     /** Clear the liveData observer (if any). */
     internal fun stopObserving() {
@@ -133,15 +132,11 @@ protected constructor() : ViewModel(), CoroutineScope {
                     return@observe
                 }
 
-
                 // If the lastSentAction is different from the action of this response,
                 // it means the user pressed on 2 buttons together, so I block it
-                if (lastSentAction != null &&
-                    (
-                        (lastSentAction != it.action && !allowConcurrentActions)
-                            || (lastSentAction == it.action && !allowConcurrentSameActions)
-                    )
-                ) {
+                val isLastActionAllowed = lastSentAction != it.action && !allowConcurrentActions
+                val isLastSameActionAllowed = lastSentAction == it.action && !allowConcurrentSameActions
+                if (lastSentAction != null && (isLastActionAllowed || isLastSameActionAllowed)) {
                     logError("VmResponse blocked! Should clear previous response: " +
                             "${lastSentAction.toString()} \nbefore sending: $it")
                     return@observe
@@ -151,8 +146,9 @@ protected constructor() : ViewModel(), CoroutineScope {
                 logVerbose("Sending to activity: $it")
 
                 launch {
-                    if (tryOrPrint(true) { observer?.invoke(it.action, it.data) != false })
+                    if (tryOrPrint(true) { observer?.invoke(it.action, it.data) != false }) {
                         liveResponse.postValue(null)
+                    }
                 }
 
             }
@@ -171,8 +167,9 @@ protected constructor() : ViewModel(), CoroutineScope {
             }
             logVerbose("Sending to activity: $it")
             tryOrPrint { observer(it) }
-            if (it is VmAction.VmActionSticky)
+            if (it is VmAction.VmActionSticky) {
                 lastStickyAction = it
+            }
             liveAction.postValue(null)
         }
         lastStickyAction?.let { observer(it) }

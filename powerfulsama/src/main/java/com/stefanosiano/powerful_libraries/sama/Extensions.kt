@@ -38,6 +38,7 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.lang.ref.WeakReference
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 internal val mainThreadHandler by lazy { Handler(Looper.getMainLooper()) }
@@ -150,7 +151,12 @@ fun <T> runOnUiAndWait(f: () -> T): T? {
     if(Looper.myLooper() == mainThreadHandler.looper) return f.invoke()
     var ret: T? = null
     var finished = false
-    runBlocking { runOnUi { if(isActive) ret = f(); finished = true }; while (isActive && !finished) delay(10) }
+    runBlocking {
+        runOnUi { if(isActive) ret = f(); finished = true }
+        while (isActive && !finished) {
+            delay(10)
+        }
+    }
     return ret
 }
 
@@ -357,13 +363,19 @@ inline fun <T> tryOrPrint(default: T, toTry: () -> T): T {
 
 /** Try to execute [toTry] in a try catch block, prints the exception and returns [null] if an exception occurs. */
 inline fun <T> tryOrPrint(toTry: () -> T): T? {
-    return try { toTry() } catch (e: Exception) { e.printStackTrace(); null }
+    return try {
+        toTry()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
 }
 
 /** Run a function for each element in this SparseArray. */
 fun <T> SparseArray<T>.forEach(f: ((T) -> Unit)?) {
-    for (i in 0 until size())
+    for (i in 0 until size()) {
         f?.invoke(valueAt(i))
+    }
 }
 
 /** Gets an enum from a string through enumValueOf<T>(). Useful to use in [string?.toEnum<>() ?: default]. */
@@ -374,19 +386,16 @@ inline fun <reified T : Enum<T>> String.toEnum(default: T) : T =
 fun InputStream.into(output: OutputStream) = use { inp -> output.use { outp -> inp.copyTo(outp) } }
 
 /** Transforms passed [secs] into milliseconds. */
-fun secsToMillis(secs : Long) :Long = secs * 1000
+fun secsToMillis(secs : Long) :Long = TimeUnit.SECONDS.toMillis(secs)
 
 /** Transforms passed [mins] into milliseconds. */
-fun minsToMillis(mins : Long) :Long = mins * 60_000
+fun minsToMillis(mins : Long) :Long = TimeUnit.MINUTES.toMillis(mins)
 
 /** Transforms passed [hours] into milliseconds. */
-fun hoursToMillis(hours : Long) :Long = hours * 3_600_000
+fun hoursToMillis(hours : Long) :Long = TimeUnit.HOURS.toMillis(hours)
 
 /** Transforms passed [days] into milliseconds. */
-fun daysToMillis(days : Long) :Long = days * 86_400_000
-
-/** Transforms passed [weeks] into milliseconds. */
-fun weeksToMillis(weeks : Long) :Long = weeks * 7 * 86_400_000
+fun daysToMillis(days : Long) :Long = TimeUnit.DAYS.toMillis(days)
 
 /** Returns `true` if all of [elements] are found in the array. */
 fun <T> Array<out T>.contains(elements: Collection<T>): Boolean =
@@ -395,14 +404,22 @@ fun <T> Array<out T>.contains(elements: Collection<T>): Boolean =
 
 /** Replace all occurrences except the first one of [old] with [new].
  * Return [missingDelimeter] (which defaults to the string itself) if [old] is not present. */
-fun String.replaceAfterFirst(old: String, new: String, missingDelimeter: String = this): String =
-    if(contains(old)) "${substringBefore(old)}$old${substringAfter(old, "").replace(old, new)}"
-    else missingDelimeter
+fun String.replaceAfterFirst(old: String, new: String, missingDelimeter: String = this): String {
+    return if (contains(old)) {
+        "${substringBefore(old)}$old${substringAfter(old, "").replace(old, new)}"
+    } else {
+        missingDelimeter
+    }
+}
 
 /** Returns a list containing only elements matching the given [predicate]. */
 suspend fun <T> Iterable<T>.filterK(predicate: suspend (T) -> Boolean): List<T> {
     val filtered = ArrayList<T>()
-    this.runAndWait { if (predicate(it)) filtered.add(it) }
+    this.runAndWait {
+        if (predicate(it)) {
+            filtered.add(it)
+        }
+    }
     return filtered
 }
 

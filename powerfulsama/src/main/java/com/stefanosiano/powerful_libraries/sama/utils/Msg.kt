@@ -139,148 +139,6 @@ class Msg private constructor(
     /** Flag to know if the caller should wait for the message to dismiss to continue its work. */
     private var waitForDismiss = false
 
-
-
-    /**
-     * Class that manages common messages in the app, like ProgressDialogs, AlertDialog, Snackbar, etc.
-     *
-     * Default values for every message (if not overwritten by "as..." methods:
-     *
-     *      title = null
-     *      message = ""
-     *      positive = R.string.lbl_yes
-     *      negative = R.string.lbl_no
-     *      neutral = null
-     *      okRunnable = null
-     *      noRunnable = null
-     *      cancelRunnable = null
-     *      indeterminate = true
-     *      cancelable = false
-     */
-    companion object : CoroutineScope {
-
-        const val LENGHT_SHORT = -1
-        const val LENGHT_LONG = -2
-        const val LENGHT_INDEFINITE = -3
-
-        override val coroutineContext = coroutineSamaHandler(SupervisorJob())
-
-        /** Shared unique id used to check equality with other messages. */
-        private val uniqueId: AtomicLong = AtomicLong(0)
-
-        /** Default "Yes" string id. */
-        internal var defaultYes : Int = android.R.string.yes
-
-        /** Default "No" string id. */
-        internal var defaultNo : Int = android.R.string.no
-
-        /** Default theme used by messages. */
-        internal var defaultTheme : Int? = null
-
-        /** Default customization function. Note: It will be called on UI thread. */
-        internal var defaultCustomization : ((Any) -> Unit)? = null
-
-        /**
-         * Creates an alertDialog with one button, with an optional [theme].
-         *
-         *  NOTE: it dismisses when clicking on the button.
-         *
-         * Default values:
-         *
-         *      positive = R.string.lbl_ok
-         *      cancelable = false
-         *      messageImpl = MessageImpl.AlertDialogOneButton
-         */
-        fun alertDialogOneButton(theme: Int? = null) = Msg(
-            theme = theme ?: defaultTheme,
-            iPositive = android.R.string.ok,
-            cancelable = false,
-            messageImpl = MessageImpl.AlertDialogOneButton,
-            customize = defaultCustomization)
-
-        /** Alias for [alertDialogOneButton] with specified [messageId]. */
-        fun adob(messageId: Int) = alertDialogOneButton().message(messageId)
-
-        /** Alias for [alertDialogOneButton] with specified [message]. */
-        fun adob(message: String) = alertDialogOneButton().message(message)
-
-        /**
-         * Creates a ProgressDialog with specified options, with an optional [theme].
-         *
-         * Default values:
-         *
-         *      messageImpl = MessageImpl.ProgressDialog
-         */
-        fun progressDialog(theme: Int? = null) = Msg(
-            theme = theme ?: defaultTheme, 
-            messageImpl = MessageImpl.ProgressDialog, 
-            customize = defaultCustomization
-        )
-
-        /** Alias for [progressDialog] with specified [messageId]. */
-        fun pd(messageId: Int) = progressDialog().message(messageId)
-
-        /** Alias for [progressDialog] with specified [message]. */
-        fun pd(message: String) = progressDialog().message(message)
-
-        /**
-         * Creates an alertDialog with specified options, with an optional [theme].
-         * Default values:
-         *
-         *      messageImpl = MessageImpl.AlertDialog
-         */
-        fun alertDialog(theme: Int? = null) = Msg(
-            theme = theme ?: defaultTheme,
-            messageImpl = MessageImpl.AlertDialog,
-            customize = defaultCustomization
-        )
-
-        /** Alias for [alertDialog] with specified [messageId]. */
-        fun ad(messageId: Int) = alertDialog().message(messageId)
-
-        /** Alias for [alertDialog] with specified [message]. */
-        fun ad(message: String) = alertDialog().message(message)
-
-        /**
-         * Creates a Toast with specified message.
-         *
-         * Default values:
-         *
-         *      messageImpl = MessageImpl.Toast
-         */
-        fun toast() = Msg(messageImpl = MessageImpl.Toast, customize = defaultCustomization)
-
-        /** Alias for [toast] with specified [messageId]. */
-        fun ts(messageId: Int) = toast().message(messageId)
-
-        /** Alias for [toast] with specified [message]. */
-        fun ts(message: String) = toast().message(message)
-
-
-        /**
-         * Creates a Snackbar with specified title and okRunnable.
-         *
-         * Default values:
-         *
-         *      messageImpl = MessageImpl.Snackbar
-         */
-        fun snackbar(view: View) = Msg(
-            messageImpl = MessageImpl.Snackbar,
-            snackbarView = view, 
-            customize = defaultCustomization
-        )
-
-        /** Alias for [snackbar] with specified [messageId]. */
-        fun sb(view: View, messageId: Int) = snackbar(view).message(messageId)
-
-        /** Alias for [snackbar] with specified [message]. */
-        fun sb(view: View, message: String) = snackbar(view).message(message)
-    }
-
-
-
-
-
     /** Sets the title. Default is null.
      * Method that takes the text id overrides the one with string, if both are specified.
      */
@@ -497,7 +355,9 @@ class Msg private constructor(
                 logError("a2")
                 finished = true
             }
-            while (isActive && !finished) delay(10)
+            while (isActive && !finished) {
+                delay(10)
+            }
         }
         return this
     }
@@ -774,4 +634,142 @@ class Msg private constructor(
         return (uid xor uid.ushr(32)).toInt()
     }
 
+
+
+
+    /**
+     * Class that manages common messages in the app, like ProgressDialogs, AlertDialog, Snackbar, etc.
+     *
+     * Default values for every message (if not overwritten by "as..." methods:
+     *
+     *      title = null
+     *      message = ""
+     *      positive = R.string.lbl_yes
+     *      negative = R.string.lbl_no
+     *      neutral = null
+     *      okRunnable = null
+     *      noRunnable = null
+     *      cancelRunnable = null
+     *      indeterminate = true
+     *      cancelable = false
+     */
+    companion object : CoroutineScope {
+
+        const val LENGHT_SHORT = -1
+        const val LENGHT_LONG = -2
+        const val LENGHT_INDEFINITE = -3
+
+        override val coroutineContext = coroutineSamaHandler(SupervisorJob())
+
+        /** Shared unique id used to check equality with other messages. */
+        private val uniqueId: AtomicLong = AtomicLong(0)
+
+        /** Default "Yes" string id. */
+        internal var defaultYes : Int = android.R.string.yes
+
+        /** Default "No" string id. */
+        internal var defaultNo : Int = android.R.string.no
+
+        /** Default theme used by messages. */
+        internal var defaultTheme : Int? = null
+
+        /** Default customization function. Note: It will be called on UI thread. */
+        internal var defaultCustomization : ((Any) -> Unit)? = null
+
+        /**
+         * Creates an alertDialog with one button, with an optional [theme].
+         *
+         *  NOTE: it dismisses when clicking on the button.
+         *
+         * Default values:
+         *
+         *      positive = R.string.lbl_ok
+         *      cancelable = false
+         *      messageImpl = MessageImpl.AlertDialogOneButton
+         */
+        fun alertDialogOneButton(theme: Int? = null) = Msg(
+            theme = theme ?: defaultTheme,
+            iPositive = android.R.string.ok,
+            cancelable = false,
+            messageImpl = MessageImpl.AlertDialogOneButton,
+            customize = defaultCustomization)
+
+        /** Alias for [alertDialogOneButton] with specified [messageId]. */
+        fun adob(messageId: Int) = alertDialogOneButton().message(messageId)
+
+        /** Alias for [alertDialogOneButton] with specified [message]. */
+        fun adob(message: String) = alertDialogOneButton().message(message)
+
+        /**
+         * Creates a ProgressDialog with specified options, with an optional [theme].
+         *
+         * Default values:
+         *
+         *      messageImpl = MessageImpl.ProgressDialog
+         */
+        fun progressDialog(theme: Int? = null) = Msg(
+            theme = theme ?: defaultTheme,
+            messageImpl = MessageImpl.ProgressDialog,
+            customize = defaultCustomization
+        )
+
+        /** Alias for [progressDialog] with specified [messageId]. */
+        fun pd(messageId: Int) = progressDialog().message(messageId)
+
+        /** Alias for [progressDialog] with specified [message]. */
+        fun pd(message: String) = progressDialog().message(message)
+
+        /**
+         * Creates an alertDialog with specified options, with an optional [theme].
+         * Default values:
+         *
+         *      messageImpl = MessageImpl.AlertDialog
+         */
+        fun alertDialog(theme: Int? = null) = Msg(
+            theme = theme ?: defaultTheme,
+            messageImpl = MessageImpl.AlertDialog,
+            customize = defaultCustomization
+        )
+
+        /** Alias for [alertDialog] with specified [messageId]. */
+        fun ad(messageId: Int) = alertDialog().message(messageId)
+
+        /** Alias for [alertDialog] with specified [message]. */
+        fun ad(message: String) = alertDialog().message(message)
+
+        /**
+         * Creates a Toast with specified message.
+         *
+         * Default values:
+         *
+         *      messageImpl = MessageImpl.Toast
+         */
+        fun toast() = Msg(messageImpl = MessageImpl.Toast, customize = defaultCustomization)
+
+        /** Alias for [toast] with specified [messageId]. */
+        fun ts(messageId: Int) = toast().message(messageId)
+
+        /** Alias for [toast] with specified [message]. */
+        fun ts(message: String) = toast().message(message)
+
+
+        /**
+         * Creates a Snackbar with specified title and okRunnable.
+         *
+         * Default values:
+         *
+         *      messageImpl = MessageImpl.Snackbar
+         */
+        fun snackbar(view: View) = Msg(
+            messageImpl = MessageImpl.Snackbar,
+            snackbarView = view,
+            customize = defaultCustomization
+        )
+
+        /** Alias for [snackbar] with specified [messageId]. */
+        fun sb(view: View, messageId: Int) = snackbar(view).message(messageId)
+
+        /** Alias for [snackbar] with specified [message]. */
+        fun sb(view: View, message: String) = snackbar(view).message(message)
+    }
 }

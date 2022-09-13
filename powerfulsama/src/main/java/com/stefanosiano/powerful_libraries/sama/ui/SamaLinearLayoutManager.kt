@@ -30,7 +30,6 @@ open class SamaLinearLayoutManager : LinearLayoutManager {
     }
 
     override fun supportsPredictiveItemAnimations(): Boolean {
-        return if(disablePredictiveAnimation) false
-        else super.supportsPredictiveItemAnimations()
+        return !disablePredictiveAnimation && super.supportsPredictiveItemAnimations()
     }
 }
