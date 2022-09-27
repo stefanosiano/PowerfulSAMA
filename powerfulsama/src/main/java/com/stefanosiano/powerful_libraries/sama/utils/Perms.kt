@@ -3,13 +3,14 @@ package com.stefanosiano.powerful_libraries.sama.utils
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.net.Uri.fromParts
 import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
 import android.util.SparseArray
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.stefanosiano.powerful_libraries.sama.contains
-import com.stefanosiano.powerful_libraries.sama.logError
+import com.stefanosiano.powerful_libraries.sama.extensions.contains
+import com.stefanosiano.powerful_libraries.sama.extensions.logError
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.applicationContext
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 
@@ -36,8 +37,10 @@ object Perms {
         permissions: Array<out String>,
         grantResults: IntArray
     ): Boolean {
-        val permHelper = permHelperMap[requestCode] ?: return false
-        if (!permHelper.isCallingResult) return false
+        val permHelper = permHelperMap[requestCode]
+        if (permHelper == null || !permHelper.isCallingResult) {
+            return false
+        }
         permHelperMap.remove(requestCode)
         return permHelper.onRequestPermissionsResult(activity, permissions, grantResults)
     }
@@ -94,7 +97,7 @@ object Perms {
 
         val reqCode = SamaActivity.samaRequestCodes.incrementAndGet()
         val permHelper =
-            PermHelper(reqCode, optionalPerms.minus(perms).distinct(), onShowRationale, onPermanentlyDenied, f)
+            PermHelper(reqCode, optionalPerms.minus(perms.toSet()).distinct(), onShowRationale, onPermanentlyDenied, f)
         permHelperMap.put(reqCode, permHelper)
         val shouldAsk = permHelper.askPermissions(perms.distinct())
         if (shouldAsk) return
@@ -291,10 +294,7 @@ object Perms {
 
             permissions.plus(optionalPermissions)
                 .filter {
-                    ContextCompat.checkSelfPermission(
-                        activity.applicationContext,
-                        it
-                    ) != PackageManager.PERMISSION_GRANTED
+                    ContextCompat.checkSelfPermission(activity.applicationContext, it) != PERMISSION_GRANTED
                 }
                 .forEach {
                     // Permission is not granted. Should we show an explanation?
@@ -306,24 +306,25 @@ object Perms {
                     }
                 }
 
-            if (permissionsToRationale.isNotEmpty()) {
-                isCallingResult = true
-                permissionsToRationale.addAll(permissionsToAsk)
-                onShowRationale(permissionsToRationale.toTypedArray(), activity, requestCode)
-                return true
+            return when {
+                permissionsToRationale.isNotEmpty() -> {
+                    isCallingResult = true
+                    permissionsToRationale.addAll(permissionsToAsk)
+                    onShowRationale(permissionsToRationale.toTypedArray(), activity, requestCode)
+                    true
+                }
+                permissionsToAsk.isNotEmpty() -> {
+                    isCallingResult = true
+                    ActivityCompat.requestPermissions(activity, permissionsToAsk.toTypedArray(), requestCode)
+                    true
+                }
+                else ->
+                    false
             }
-
-            if (permissionsToAsk.isNotEmpty()) {
-                isCallingResult = true
-                ActivityCompat.requestPermissions(activity, permissionsToAsk.toTypedArray(), requestCode)
-                return true
-            }
-
-            return false
         }
 
 
-        internal fun onRequestPermissionsResult(
+        fun onRequestPermissionsResult(
             activity: Activity,
             permissions: Array<out String>,
             grantResults: IntArray
@@ -352,31 +353,28 @@ object Perms {
                 }
             }
 
-            // If at least 1 needed permission was permanently denied, I need to ask for it
-            if (deniedPermissions.isNotEmpty()) {
-                onPermanentlyDenied(
-                    deniedPermissions.toTypedArray(),
-                    rationalePermissions.toTypedArray(),
-                    activity,
-                    requestCode
-                )
-                return true
+            when {
+                // If at least 1 needed permission was permanently denied, I need to ask for it
+                deniedPermissions.isNotEmpty() ->
+                    onPermanentlyDenied(
+                        deniedPermissions.toTypedArray(),
+                        rationalePermissions.toTypedArray(),
+                        activity,
+                        requestCode
+                    )
+                //if at least 1 permission needs rationale, I must show it!
+                rationalePermissions.isNotEmpty() ->
+                    onShowRationale(rationalePermissions.toTypedArray(), activity, requestCode)
+                else ->
+                    onGranted()
             }
-
-            //if at least 1 permission needs rationale, I must show it!
-            if (rationalePermissions.isNotEmpty()) {
-                onShowRationale(rationalePermissions.toTypedArray(), activity, requestCode)
-                return true
-            }
-
-            onGranted()
             return true
         }
     }
 }
 
 /** Abstract class that contains info about permissions to run a specific function. Used through [Perms.call]. */
-@Suppress("UnnecessaryAbstractClass")
+@Suppress("UnnecessaryAbstractClass", "UnusedPrivateMember")
 abstract class PermissionContainer(
     /** Required permissions needed for the function that will be asked for (if not already granted). */
     val perms: List<String>,
@@ -397,7 +395,7 @@ abstract class PermissionContainer(
     val permanentlyDeniedId: Int? = null
 ) {
     /** Called in case one or more of [perms] or [optionalPerms] were denied and the app should show a rationale. */
-    fun onShowRationale(perms: Array<String>, activity: Activity, requestCode: Int) {}
+    fun onShowRationale(perms: Array<String>, activity: Activity, requestCode: Int) = Unit
 
     /**
      * Called if "Don't ask again" was checked when denying a permission,
@@ -409,6 +407,5 @@ abstract class PermissionContainer(
         showRationalePerms: Array<String>,
         activity: Activity,
         requestCode: Int
-    ) {
-    }
+    ) = Unit
 }

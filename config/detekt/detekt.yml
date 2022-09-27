@@ -16,6 +16,8 @@ complexity:
 style:
   WildcardImport:
     active: true
+  UnusedImports:
+    active: true
   NewLineAtEndOfFile:
     active: true
   MaxLineLength:
@@ -40,16 +42,36 @@ style:
     active: true
   SpacingBetweenPackageAndImports:
     active: true
+  TrailingWhitespace:
+    active: true
+  OptionalWhenBraces:
+    active: true
+  UnderscoresInNumericLiterals:
+    active: true
+  EqualsOnSignatureLine:
+    active: true
+  RedundantVisibilityModifierRule:
+    active: true
+  UseDataClass:
+    active: false
+  OptionalUnit:
+    active: false
   # Numbers are used for default view attributes values, decimal formatter and delays
   MagicNumber:
     ignoreNumbers: ['-1', '0', '1', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0.1',
       # numbers for delay
-                    '10', '50', '100']
+                    '10', '50', '100',
+      # numbers for annotation processors
+      '60']
 
 empty-blocks:
   EmptyFunctionBlock:
     active: true
     ignoreOverridden: true
+
+potential-bugs:
+  LateinitUsage:
+    active: false
 
 comments:
   CommentOverPrivateProperty:
@@ -82,6 +104,8 @@ naming:
     active: true
   FunctionMaxLength:
     active: true
+  FunctionMinLength:
+    minimumFunctionNameLength: 2
 
 formatting:
   # We already have MaxLineLength from detekt, which is suppressed in few cases. This rule cannot be suppressed with annotations

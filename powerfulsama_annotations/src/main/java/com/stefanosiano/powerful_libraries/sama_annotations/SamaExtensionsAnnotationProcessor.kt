@@ -1,18 +1,23 @@
 package com.stefanosiano.powerful_libraries.sama_annotations
 
 import androidx.room.Ignore
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterSpec
 import java.io.File
 import javax.annotation.processing.RoundEnvironment
-import javax.lang.model.element.*
-import javax.lang.model.util.ElementFilter
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.jvm.jvmWildcard
+import javax.lang.model.element.ElementKind
+import javax.lang.model.element.Modifier
+import javax.lang.model.element.TypeElement
+import javax.lang.model.element.VariableElement
 
+/** Annotation processor that generates extension functions for classes extending some sama classes. */
 class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
 
     private val imports = ArrayList<Pair<String, String>>()
-    override fun getSupportedAnnotationTypes(): Set<String> = setOf(SamaExtensions::class.java.name, JvmField::class.java.name)
+    override fun getSupportedAnnotationTypes(): Set<String> =
+        setOf(SamaExtensions::class.java.name, JvmField::class.java.name)
 
     override fun process(set: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
 
@@ -40,24 +45,37 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
     }
 
 
-
     /** Add SamaListItems default contentEquals() implementations as extension functions. */
     private fun addDefaultContentEquals(roundEnv: RoundEnvironment): ArrayList<FunSpec> {
         val functions = ArrayList<FunSpec>()
 
-        val samaListItemType = processingEnv.elementUtils.getTypeElement("com.stefanosiano.powerful_libraries.sama.view.SamaListItem")
-        roundEnv.rootElements.filter { it.kind == ElementKind.CLASS && it.isAssignable(samaListItemType.asType()) && !it.modifiers.contains(Modifier.ABSTRACT) }.forEach { cls ->
-            if (cls !is TypeElement) return@forEach
+        val samaListItemType =
+            processingEnv.elementUtils.getTypeElement("com.stefanosiano.powerful_libraries.sama.view.SamaListItem")
+        val samaListItems = getAllClassesExtending(roundEnv, samaListItemType)
+        samaListItems.forEach { cls ->
 
             val function = FunSpec.builder("defaultContentEquals").receiver(getKotlinType(cls.qualifiedName.toString()))
+                .addModifiers(
+                    KModifier.INTERNAL
+                )
 
             function.addParameter(ParameterSpec.builder("other", samaListItemType.asType().toKotlinType()).build())
-                .addKdoc(" %S ", "This function compares all fields in this class (excluding inherited fields) not annotated with room's Ignore annotation")
+                .addKdoc(
+                    " %S ",
+                    "This function compares all fields in this class (excluding inherited fields) " +
+                        "not annotated with room's Ignore annotation"
+                )
                 .returns(Boolean::class)
                 .addStatement("val ret = when {")
                 .addStatement("\tother !is ${cls.qualifiedName} -> false")
 
-            cls.enclosedElements.filter { it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && it.getAnnotation(IgnoreField::class.java) == null  && !it.modifiers.contains(Modifier.STATIC) }.map { it as VariableElement }.forEach { v ->
+            cls.enclosedElements.filter {
+                it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && it.getAnnotation(
+                    IgnoreField::class.java
+                ) == null && !it.modifiers.contains(
+                    Modifier.STATIC
+                )
+            }.map { it as VariableElement }.forEach { v ->
                 function.addStatement("\tthis.${v.simpleName} != other.${v.simpleName} -> false")
             }
 
@@ -70,36 +88,44 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
         return functions
     }
 
-
-    /** Add SamaListItems default contentEquals() implementations as extension functions. */
+    /** Add SamaDialogFragment default defaultRestore() implementations as extension functions. */
     private fun addDefaultRestore(roundEnv: RoundEnvironment): ArrayList<FunSpec> {
         val functions = ArrayList<FunSpec>()
 
-        val dialogFragmentType = processingEnv.elementUtils.getTypeElement("com.stefanosiano.powerful_libraries.sama.view.SamaDialogFragment")
-        roundEnv.rootElements.filter { it.kind == ElementKind.CLASS && it.isAssignable(dialogFragmentType.asType()) && !it.modifiers.contains(Modifier.ABSTRACT) }.forEach { cls ->
-            if (cls !is TypeElement) return@forEach
+        val dialogFragmentType =
+            processingEnv
+                .elementUtils
+                .getTypeElement("com.stefanosiano.powerful_libraries.sama.view.SamaDialogFragment")
+        val dialogFragments = getAllClassesExtending(roundEnv, dialogFragmentType)
+        dialogFragments.forEach { cls ->
 
             val function = FunSpec.builder("defaultRestore").receiver(getKotlinType(cls.qualifiedName.toString()))
+                .addModifiers(KModifier.INTERNAL)
 
-            function.addParameter(ParameterSpec.builder("oldDialog", dialogFragmentType.asType().toKotlinType()).build())
-                .addKdoc(" %S ", "Restore previous data from events like device rotating when a dialog is shown. The [dialogFragment] in [oldDialog] is null")
+            function
+                .addParameter(ParameterSpec.builder("oldDialog", dialogFragmentType.asType().toKotlinType()).build())
+                .addKdoc(
+                    " %S ",
+                    "Restore previous data from events like device rotating when a dialog is shown. " +
+                        "The [dialogFragment] in [oldDialog] is null"
+                )
             function.addStatement("\tif(oldDialog !is ${cls.simpleName}) return")
 
-            cls.enclosedElements.filter { it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && it.getAnnotation(IgnoreField::class.java) == null && !it.modifiers.contains(Modifier.STATIC) }.map { it as VariableElement }.forEach { v ->
+            cls.enclosedElements.filter {
+                it is VariableElement
+                    && it.getAnnotation(Ignore::class.java) == null
+                    && it.getAnnotation(IgnoreField::class.java) == null
+                    && !it.modifiers.contains(Modifier.STATIC)
+            }.map { it as VariableElement }.forEach { v ->
                 when {
                     v.simpleName.toString().contains("$") -> {}
-                    v.isAssignable("androidx.databinding.ObservableInt") ||
-                    v.isAssignable("androidx.databinding.ObservableShort") ||
-                    v.isAssignable("androidx.databinding.ObservableLong") ||
-                    v.isAssignable("androidx.databinding.ObservableFloat") ||
-                    v.isAssignable("androidx.databinding.ObservableDouble") ||
-                    v.isAssignable("androidx.databinding.ObservableBoolean") ||
-                    v.isAssignable("androidx.databinding.ObservableByte") ||
-                    v.isAssignable("androidx.databinding.ObservableField", 1) ->
+                    isDataBindingObservable(v) ->
                         function.addStatement("\tthis.${v.simpleName}.set(oldDialog.${v.simpleName}.get())")
 
                     v.modifiers.contains(Modifier.FINAL) ->
-                        function.addStatement("\t//this.${v.simpleName} = oldDialog.${v.simpleName} --> Commented due to val field")
+                        function.addStatement(
+                            "\t//this.${v.simpleName} = oldDialog.${v.simpleName} --> Commented due to val field"
+                        )
                     else -> function.addStatement("\tthis.${v.simpleName} = oldDialog.${v.simpleName}")
                 }
             }
@@ -109,15 +135,25 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
         return functions
     }
 
+    private fun getAllClassesExtending(roundEnv: RoundEnvironment, typeElement: TypeElement): List<TypeElement> {
+        return roundEnv
+            .rootElements
+            .filter {
+                it.kind == ElementKind.CLASS
+                        && it.isAssignable(typeElement.asType())
+                        && !it.modifiers.contains(Modifier.ABSTRACT)
+                        && it is TypeElement
+            }
+            .map { it as TypeElement }
+    }
 
-/*
-
-/** Observes a sharedPreference until the ViewModel is destroyed, using a custom live data, and transforms it into an observable field. Does not update the observable if the value of the preference is null. */
-fun <T> SamaViewModel<*>.observeAsOf(preference: PowerfulPreference<T>): ObservableField<T> {
-	val observable = ObservableField<T>()
-	observe(preference.asLiveData()) { observable.set(it ?: return@observe) }
-	observable.set(preference.get() ?: return observable)
-	return observable
-}
-*/
+    private fun isDataBindingObservable(v: VariableElement) =
+        v.isAssignable("androidx.databinding.ObservableInt") ||
+                v.isAssignable("androidx.databinding.ObservableShort") ||
+                v.isAssignable("androidx.databinding.ObservableLong") ||
+                v.isAssignable("androidx.databinding.ObservableFloat") ||
+                v.isAssignable("androidx.databinding.ObservableDouble") ||
+                v.isAssignable("androidx.databinding.ObservableBoolean") ||
+                v.isAssignable("androidx.databinding.ObservableByte") ||
+                v.isAssignable("androidx.databinding.ObservableField", 1)
 }

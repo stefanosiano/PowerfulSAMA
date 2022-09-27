@@ -11,12 +11,12 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.snackbar.Snackbar
-import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
-import com.stefanosiano.powerful_libraries.sama.delayUntil
-import com.stefanosiano.powerful_libraries.sama.logError
-import com.stefanosiano.powerful_libraries.sama.logVerbose
-import com.stefanosiano.powerful_libraries.sama.logWarning
-import com.stefanosiano.powerful_libraries.sama.runOnUi
+import com.stefanosiano.powerful_libraries.sama.extensions.coroutineSamaHandler
+import com.stefanosiano.powerful_libraries.sama.extensions.delayUntil
+import com.stefanosiano.powerful_libraries.sama.extensions.logError
+import com.stefanosiano.powerful_libraries.sama.extensions.logVerbose
+import com.stefanosiano.powerful_libraries.sama.extensions.logWarning
+import com.stefanosiano.powerful_libraries.sama.extensions.runOnUi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -47,6 +47,7 @@ import java.util.concurrent.atomic.AtomicLong
  *      autoDismissDelay = 0 (doesn't dismiss)
  *      duration = LENGHT_SHORT
  */
+@Suppress("TooManyFunctions", "LongParameterList")
 class Msg private constructor(
 
     /** Theme of the message (if available). */
@@ -145,32 +146,32 @@ class Msg private constructor(
     fun title(id: Int): Msg { this.iTitle = id; this.title = null; return this }
 
     /** Sets the title. Default is null.
-     * Method that takes the text id overrides the one with string, if both are specified. 
+     * Method that takes the text id overrides the one with string, if both are specified.
      */
     fun title(title: String): Msg { this.title = title; this.iTitle = 0; return this }
 
     /** Sets the positive button label. Default is R.string.lbl_yes.
-     * Method that takes the text id overrides the one with string, if both are specified. 
+     * Method that takes the text id overrides the one with string, if both are specified.
      */
     fun positive(id: Int): Msg { this.iPositive = id; this.positive = null; return this }
 
     /** Sets the positive button label. Default is R.string.lbl_yes.
-     * Method that takes the text id overrides the one with string, if both are specified. 
+     * Method that takes the text id overrides the one with string, if both are specified.
      */
     fun positive(positive: String): Msg { this.positive = positive; this.iPositive = 0; return this }
 
     /** Sets the negative button label. Default is R.string.lbl_no.
-     * Method that takes the text id overrides the one with string, if both are specified. 
+     * Method that takes the text id overrides the one with string, if both are specified.
      */
     fun negative(id: Int): Msg { this.iNegative = id; this.negative = null; return this }
 
     /** Sets the negative button label. Default is R.string.lbl_no.
-     * Method that takes the text id overrides the one with string, if both are specified. 
+     * Method that takes the text id overrides the one with string, if both are specified.
      */
     fun negative(negative: String): Msg { this.negative = negative; this.iNegative = 0; return this }
 
     /** Sets the neutral button label. Default is null. If set, the neutral button is added to the AlertDialog.
-     * Method that takes the text id overrides the one with string, if both are specified. 
+     * Method that takes the text id overrides the one with string, if both are specified.
      */
     fun neutral(id: Int): Msg { this.iNeutral = id; this.neutral = null; return this }
 
@@ -286,7 +287,7 @@ class Msg private constructor(
      * If [showMessage] is true, then the message will be shown, otherwise [onOk] will be called.
      */
     @Deprecated("Use 'kotlin.run { show() }' instead: it's more readable")
-    fun showOff(context: Context? = null, showMessage: Boolean = true): Unit {
+    fun showOff(context: Context? = null, showMessage: Boolean = true) {
         if(showMessage) showMessage(context) else { onOk?.invoke(null) }
     }
 
@@ -296,8 +297,8 @@ class Msg private constructor(
      * If [showMessage] is met (true by default), then the message will be shown, otherwise [onOk] will be called.
      */
     @Suppress("UNCHECKED_CAST")
-    fun <T> showAs(context: Context? = null, f: ((T?) -> Unit)? = null, showMessage: Boolean = true): Msg?
-            = build(context).also { f?.invoke(it.implementation?.get() as? T?) }.show(context, showMessage)
+    fun <T> showAs(context: Context? = null, f: ((T?) -> Unit)? = null, showMessage: Boolean = true): Msg? =
+        build(context).also { f?.invoke(it.implementation?.get() as? T?) }.show(context, showMessage)
 
     /**
      * Shows the message and returns its implementation (e.g. AlertDialog).
@@ -319,40 +320,24 @@ class Msg private constructor(
     fun build(ctx: Context?): Msg {
 
         logVerbose("Building message")
-        val context = ctx ?: PowerfulSama.getCurrentActivity() ?: PowerfulSama.applicationContext
+        val context = retrieveContext(ctx)
         initStrings(context.applicationContext)
 
         var finished = false
+        val activity = getActivityFromCtx(context)
         runBlocking {
             runOnUi {
-                logError("a1")
-                when (messageImpl) {
-                    MessageImpl.ProgressDialog -> getActivityFromCtx(context)?.let { buildAsProgressDialog(context) }
-                        ?: buildAsToast(context)
-                    MessageImpl.AlertDialogOneButton -> getActivityFromCtx(context)?.let {
-                        buildAsAlertDialogOneButton(
-                            it
-                        )
-                    } ?: buildAsToast(context)
-                    MessageImpl.AlertDialog -> getActivityFromCtx(context)?.let { buildAsAlertDialog(it) }
-                        ?: buildAsToast(context)
-                    MessageImpl.Toast -> buildAsToast(context)
-                    MessageImpl.Snackbar -> {
-                        snackbarView?.let { buildAsSnackbar(it) } ?: run {
-                            (
-                                getActivityFromCtx(context)
-                                    ?.window
-                                    ?.decorView
-                                    ?.findViewById(android.R.id.content)
-                                        as? View?
-                            )?.let {
-                                buildAsSnackbar(it)
-                            } ?: buildAsToast(context)
-                        }
+                when {
+                    messageImpl == MessageImpl.Toast || activity == null -> buildAsToast(context)
+                    messageImpl == MessageImpl.ProgressDialog -> buildAsProgressDialog(activity)
+                    messageImpl == MessageImpl.AlertDialogOneButton -> buildAsAlertDialogOneButton(activity)
+                    messageImpl == MessageImpl.AlertDialog -> buildAsAlertDialog(activity)
+                    messageImpl == MessageImpl.Snackbar -> {
+                        val view = snackbarView ?: activity.findViewById(android.R.id.content)
+                        view?.let { buildAsSnackbar(it) } ?: buildAsToast(context)
                     }
-                    else -> logError("Cannot understand the implementation type of the message. Skipping show")
+                    else -> logError("Cannot understand the implementation type of the message. Skipping build")
                 }
-                logError("a2")
                 finished = true
             }
             while (isActive && !finished) {
@@ -366,45 +351,30 @@ class Msg private constructor(
     private suspend fun build2(ctx: Context?): Msg {
 
         logVerbose("Building message")
-        val context = ctx ?: PowerfulSama.getCurrentActivity() ?: PowerfulSama.applicationContext
+        val context = retrieveContext(ctx)
         initStrings(context.applicationContext)
+        val activity = getActivityFromCtx(context)
         withContext(Dispatchers.Main) {
-//            logError("a1")
-            when (messageImpl) {
-                MessageImpl.ProgressDialog -> getActivityFromCtx(context)?.let { buildAsProgressDialog(context) }
-                    ?: buildAsToast(context)
-                MessageImpl.AlertDialogOneButton -> getActivityFromCtx(context)?.let { buildAsAlertDialogOneButton(it) }
-                    ?: buildAsToast(context)
-                MessageImpl.AlertDialog -> getActivityFromCtx(context)?.let { buildAsAlertDialog(it) } ?: buildAsToast(
-                    context
-                )
-                MessageImpl.Toast -> buildAsToast(context)
-                MessageImpl.Snackbar -> {
-                    snackbarView?.let { buildAsSnackbar(it) } ?: run {
-                        (
-                            getActivityFromCtx(context)
-                                ?.window
-                                ?.decorView
-                                ?.findViewById(android.R.id.content)
-                                    as? View?
-                                )?.let {
-                                    buildAsSnackbar(it)
-                                } ?: buildAsToast(context)
-                    }
+            when {
+                messageImpl == MessageImpl.Toast || activity == null -> buildAsToast(context)
+                messageImpl == MessageImpl.ProgressDialog -> buildAsProgressDialog(activity)
+                messageImpl == MessageImpl.AlertDialogOneButton -> buildAsAlertDialogOneButton(activity)
+                messageImpl == MessageImpl.AlertDialog -> buildAsAlertDialog(activity)
+                messageImpl == MessageImpl.Snackbar -> {
+                    val view = snackbarView ?: activity.findViewById(android.R.id.content)
+                    view?.let { buildAsSnackbar(it) } ?: buildAsToast(context)
                 }
-                else -> logError("Cannot understand the implementation type of the message. Skipping show")
+                else -> logError("Cannot understand the implementation type of the message. Skipping build")
             }
-//            logError("a2")
         }
         return this
     }
-
 
     @Suppress("DEPRECATION")
     private fun showMessage(ctx: Context?): Msg {
 
         logVerbose("Showing message")
-        val context = ctx ?: PowerfulSama.getCurrentActivity() ?: PowerfulSama.applicationContext
+        val context = retrieveContext(ctx)
         initStrings(context.applicationContext)
 
         autoDismissJob?.cancel()
@@ -418,86 +388,84 @@ class Msg private constructor(
         }
 
         launch (Dispatchers.Main) {
-//                logError("b1")
-            if (!isBuilt) build2(context)
-//                logError("b2")
+            if (!isBuilt) {
+                build2(context)
+            }
             when (messageImpl) {
                 MessageImpl.ProgressDialog -> {
                     onShow?.invoke(this@Msg)
                     if (lockOrientation) lockOrientation(context)
-                    (implementation?.get() as ProgressDialog?)?.show()
-                        ?: logError("No activity found to show this progress dialog. Skipping show")
+                    withImplementationAs<ProgressDialog> {
+                        it.show()
+                    } ?: logError("No activity found to show this progress dialog. Skipping show")
                 }
-                MessageImpl.AlertDialogOneButton -> {
+                MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> {
                     onShow?.invoke(this@Msg)
                     if (lockOrientation) lockOrientation(context)
-                    (implementation?.get() as? AlertDialog?)?.show()
-                        ?: (implementation?.get() as? Toast?)?.show()
-                }
-                MessageImpl.AlertDialog -> {
-                    onShow?.invoke(this@Msg)
-                    if (lockOrientation) lockOrientation(context)
-                    (implementation?.get() as? AlertDialog?)?.show()
-                        ?: (implementation?.get() as? Toast?)?.show()
+                    withImplementationAs<AlertDialog> { it.show() }
+                        ?: withImplementationAs<Toast> { it.show() }
                 }
                 MessageImpl.Toast -> {
                     onShow?.invoke(this@Msg)
-                    (implementation?.get() as? Toast?)?.show()
+                    withImplementationAs<Toast> { it.show() }
                 }
                 MessageImpl.Snackbar -> {
                     onShow?.invoke(this@Msg)
                     if (lockOrientation) lockOrientation(context)
-                    (implementation?.get() as? Snackbar?)?.show()
-                        ?: (implementation?.get() as? Toast?)?.show()
+                    withImplementationAs<Snackbar> { it.show() }
+                        ?: withImplementationAs<Toast> { it.show() }
                 }
-                else -> {
+                else ->
                     logError("Cannot understand the implementation type of the message. Skipping show")
-                }
             }
-            implementation?.get()?.let { customize?.invoke(it) }
+            withImplementationAs<Any> { customize?.invoke(it) }
         }
 
         return this
     }
 
+    @Suppress("UNCHECKED_CAST")
+    private fun <T: Any> withImplementationAs(f: (T) -> Unit): T? = (implementation?.get() as? T?)?.also { f(it) }
+
+    private fun retrieveContext(context: Context?) =
+        context ?: PowerfulSama.getCurrentActivity() ?: PowerfulSama.applicationContext
+
     private fun lockOrientation(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2)
-            (getActivityFromCtx(context) ?: PowerfulSama.getCurrentActivity())?.requestedOrientation =
-                ActivityInfo.SCREEN_ORIENTATION_LOCKED
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            val c = getActivityFromCtx(context) ?: PowerfulSama.getCurrentActivity()
+            c?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+        }
     }
 
     private fun unlockOrientation(context: Context) {
-        (getActivityFromCtx(context) ?: PowerfulSama.getCurrentActivity())?.requestedOrientation =
-            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        val c = getActivityFromCtx(context) ?: PowerfulSama.getCurrentActivity()
+        c?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 
+    /** Dismisses the message. */
     @Suppress("DEPRECATION")
-            /** Dismisses the message. */
     fun dismiss() {
-
         logVerbose("Dismiss message")
         launch(Dispatchers.Main) {
             when (messageImpl) {
-                MessageImpl.ProgressDialog -> {
-                    (implementation?.get() as? ProgressDialog?)?.let {
+                MessageImpl.ProgressDialog ->
+                    withImplementationAs<ProgressDialog> {
                         if (lockOrientation) unlockOrientation(it.context)
                         if (it.isShowing) it.dismiss()
                     }
-                }
-                MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> {
-                    (implementation?.get() as? AlertDialog?)?.let {
+                MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog ->
+                    withImplementationAs<AlertDialog> {
                         if (lockOrientation) unlockOrientation(it.context)
                         if (it.isShowing) it.dismiss()
                     }
-                }
                 MessageImpl.Toast -> {
                     onDismiss?.invoke(this@Msg)
-                    (implementation?.get() as? Toast?)?.cancel()
+                    withImplementationAs<Toast> { it.cancel() }
                     waitForDismiss = false
                 }
                 MessageImpl.Snackbar -> {
                     onDismiss?.invoke(this@Msg)
-                    (implementation?.get() as? Snackbar?)?.let {
+                    withImplementationAs<Snackbar> {
                         if (lockOrientation) unlockOrientation(it.context)
                         if (it.isShown) it.dismiss()
                         waitForDismiss = false
@@ -562,8 +530,11 @@ class Msg private constructor(
         mAlert.setNegativeButton(negative) { dialog, _ -> onNo?.invoke(this); dialog.dismiss() }
         mAlert.setOnDismissListener { onDismiss?.invoke(this); waitForDismiss = false }
 
-        if (!TextUtils.isEmpty(neutral))
-            mAlert.setNeutralButton(neutral) { dialog, _ -> onCancel?.invoke(this); dialog.dismiss() }
+        if (!TextUtils.isEmpty(neutral)) {
+            mAlert.setNeutralButton(neutral) { dialog, _ ->
+                onCancel?.invoke(this); dialog.dismiss()
+            }
+        }
 
 
         implementation = WeakReference(mAlert.create())
@@ -627,14 +598,10 @@ class Msg private constructor(
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || javaClass != other.javaClass) return false
-        return uid == (other as Msg?)?.uid
+        return uid == (other as? Msg)?.uid
     }
 
-    override fun hashCode(): Int {
-        return (uid xor uid.ushr(32)).toInt()
-    }
-
-
+    override fun hashCode(): Int = (uid xor uid.ushr(32)).toInt()
 
 
     /**
@@ -653,10 +620,14 @@ class Msg private constructor(
      *      indeterminate = true
      *      cancelable = false
      */
+    @Suppress("TooManyFunctions")
     companion object : CoroutineScope {
 
+        /** Alias for [Toast.LENGHT_SHORT] or [Snackbar.LENGTH_SHORT]. */
         const val LENGHT_SHORT = -1
+        /** Alias for [Toast.LENGTH_LONG] or [Snackbar.LENGTH_LONG]. */
         const val LENGHT_LONG = -2
+        /** Alias for [Snackbar.LENGTH_INDEFINITE]. */
         const val LENGHT_INDEFINITE = -3
 
         override val coroutineContext = coroutineSamaHandler(SupervisorJob())

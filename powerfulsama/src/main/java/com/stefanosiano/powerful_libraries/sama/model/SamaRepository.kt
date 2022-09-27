@@ -3,7 +3,7 @@ package com.stefanosiano.powerful_libraries.sama.model
 import androidx.databinding.BaseObservable
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
-import com.stefanosiano.powerful_libraries.sama.onChange
+import com.stefanosiano.powerful_libraries.sama.extensions.onChange
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -12,6 +12,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 @Suppress("UnnecessaryAbstractClass")
+@Deprecated("[SamaObserver.observeAndReloadLiveData] already provides necessary functionality.")
+/** Class originally created to help with data repository abstraction. */
 abstract class SamaRepository {
 
     @Deprecated("Use [SamaObserver.observeAndReloadLiveData]", ReplaceWith("SamaObserver.observeAndReloadLiveData"))
@@ -37,7 +39,12 @@ abstract class SamaRepository {
         obs.forEach {
             it.onChange {
                 lastJob.cancel()
-                lastJob = runBlocking { launch { delay(50); if (!isActive) return@launch; onChanged() } }
+                lastJob = runBlocking {
+                    launch {
+                        delay(50)
+                        if (isActive) onChanged()
+                    }
+                }
             }
         }
 
@@ -56,7 +63,12 @@ abstract class SamaRepository {
         obs.forEach {
             it.onChange {
                 lastJob.cancel()
-                lastJob = runBlocking { launch { delay(50); if (!isActive) return@launch; onChanged() } }
+                lastJob = runBlocking {
+                    launch {
+                        delay(50)
+                        if (isActive) onChanged()
+                    }
+                }
             }
         }
 

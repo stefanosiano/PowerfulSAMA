@@ -3,6 +3,7 @@ package com.stefanosiano.powerful_libraries.sama.utils
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import java.util.concurrent.atomic.AtomicLong
 
+@Suppress("LongParameterList")
 internal class SamaActivityCallback(
     private val onCreate: ((activity: SamaActivity) -> Unit)? = null,
     private val onStart: ((activity: SamaActivity) -> Unit)? = null,
@@ -32,9 +33,7 @@ internal class SamaActivityCallback(
         return true
     }
 
-    override fun hashCode(): Int {
-        return uid.hashCode()
-    }
+    override fun hashCode(): Int = uid.hashCode()
 
     companion object {
         val id = AtomicLong()

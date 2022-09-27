@@ -1,5 +1,6 @@
 package com.stefanosiano.powerful_libraries.sama.utils
 
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -7,7 +8,7 @@ import android.os.Build
 import android.util.SparseArray
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.stefanosiano.powerful_libraries.sama.logError
+import com.stefanosiano.powerful_libraries.sama.extensions.logError
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.applicationContext
 
 /** Utility class to manage the notifications. */
@@ -36,11 +37,10 @@ object Notifs {
     /** Create a notification to be pushed in the channel [channelId] and show it with a [notifId].
      * You can customize the notification builder before notification is shown through [f]. */
     fun create(channelId: String, notifId: Int, f: (NotificationCompat.Builder) -> NotificationCompat.Builder) {
-        var notification = NotificationCompat.Builder(applicationContext, channelId)
+        var notification = create(channelId)
         notification = f(notification)
         notificationBuilders.put(notifId, notification)
 
-        channels.get(channelId)?.let { createChannel(it) } ?: logError("Notification Channel $channelId not found!")
         // notificationId is a unique int for each notification that you must define
         with(NotificationManagerCompat.from(applicationContext)) {
             notify(notifId, notification.build())
@@ -53,7 +53,7 @@ object Notifs {
     /** Create a notification builder to be pushed in the channel [channelId] without showing it and returns it. */
     fun create(channelId: String): NotificationCompat.Builder {
         val notification = NotificationCompat.Builder(applicationContext, channelId)
-        channels.get(channelId)?.let { createChannel(it) } ?: logError("Notification Channel $channelId not found!")
+        channels[channelId]?.let { createChannel(it) } ?: logError("Notification Channel $channelId not found!")
         return notification
     }
 
@@ -71,7 +71,7 @@ object Notifs {
         var notif = notificationBuilders.get(notifId) ?: NotificationCompat.Builder(applicationContext, channelId)
         notificationBuilders.put(notifId, notif)
         notif = f(notif)
-        channels.get(channelId)?.let { createChannel(it) } ?: logError("Notification Channel $channelId not found!")
+        channels[channelId]?.let { createChannel(it) } ?: logError("Notification Channel $channelId not found!")
         with(NotificationManagerCompat.from(applicationContext)) { notify(notifId, notif.build()) }
     }
 
@@ -82,6 +82,7 @@ object Notifs {
     }
 
     /** Create the channel. */
+    @SuppressLint("WrongConstant")
     private fun createChannel(c: SamaNotifChannel) {
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
@@ -106,7 +107,12 @@ interface SamaNotifChannel {
     fun getChannelId(): String
     /** The channel name string id. */
     fun getChannelNameId(): Int
-    /** The channel importance. Defaults to [NotificationManagerCompat.IMPORTANCE_DEFAULT]. */
+    /**
+     * The channel importance. Defaults to [NotificationManagerCompat.IMPORTANCE_DEFAULT].
+     * Must be one of: [NotificationManager.IMPORTANCE_UNSPECIFIED], [NotificationManager.IMPORTANCE_NONE],
+     *  [NotificationManager.IMPORTANCE_MIN], [NotificationManager.IMPORTANCE_LOW],
+     *  [NotificationManager.IMPORTANCE_DEFAULT], [NotificationManager.IMPORTANCE_HIGH]
+     */
     fun getChannelImportance(): Int = NotificationManagerCompat.IMPORTANCE_DEFAULT
     /** The channel description string id. Defaults to [getChannelNameId]. */
     fun getChannelDescriptionId(): Int = getChannelNameId()
@@ -114,5 +120,5 @@ interface SamaNotifChannel {
      * Function used to customize the channel before instantiate it.
      * Do not rely on it being called multiple times, as it should be called only once.
      */
-    fun customize(channel: NotificationChannel): NotificationChannel { return channel }
+    fun customize(channel: NotificationChannel): NotificationChannel = channel
 }

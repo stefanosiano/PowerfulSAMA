@@ -18,11 +18,11 @@ ext {
 }
 
 android {
-    compileSdk = 32
+    compileSdk = 33
 
     defaultConfig {
         minSdk = 16
-        targetSdk = 32
+        targetSdk = 33
         consumerProguardFiles("sama-proguard-rules.pro")
     }
 
@@ -64,8 +64,8 @@ apply("${rootProject.projectDir}/sonatype-publish.gradle")
 
 detekt {
     toolVersion = Deps.detektPluginVersion
-    config = files("${rootDir}/config/detekt/detekt.yml")
-//    allRules = true
-    buildUponDefaultConfig = true
+//    config = files("${rootDir}/config/detekt/detekt.yml")
+    allRules = true
+//    buildUponDefaultConfig = true
     autoCorrect = false
 }

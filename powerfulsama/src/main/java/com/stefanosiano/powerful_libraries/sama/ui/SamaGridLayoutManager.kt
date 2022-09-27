@@ -4,7 +4,7 @@ import android.content.Context
 import android.util.AttributeSet
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.stefanosiano.powerful_libraries.sama.logExceptionWorkarounded
+import com.stefanosiano.powerful_libraries.sama.extensions.logExceptionWorkarounded
 
 /**
  * Simple [GridLayoutManager] that catches the [IndexOutOfBoundsException] occurring with inconsistency detected.
@@ -24,12 +24,13 @@ open class SamaGridLayoutManager : GridLayoutManager {
     constructor(context: Context?, spanCount: Int, orientation: Int, reverseLayout: Boolean) :
             super(context, spanCount, orientation, reverseLayout)
 
+    @Suppress("TooGenericExceptionCaught")
     override fun onLayoutChildren(recycler: RecyclerView.Recycler?, state: RecyclerView.State) {
         try { super.onLayoutChildren(recycler, state) }
         catch (e: IndexOutOfBoundsException) { logExceptionWorkarounded(e) }
     }
 
-    override fun supportsPredictiveItemAnimations(): Boolean {
-        return !disablePredictiveAnimation && super.supportsPredictiveItemAnimations()
-    }
+    @Suppress("FunctionMaxLength")
+    override fun supportsPredictiveItemAnimations(): Boolean =
+        !disablePredictiveAnimation && super.supportsPredictiveItemAnimations()
 }

@@ -1,4 +1,4 @@
-package com.stefanosiano.powerful_libraries.sama_sample
+package com.stefanosiano.powerful_libraries.samasample
 
 import android.app.Application
 import android.util.Log
@@ -24,6 +24,7 @@ internal class SampleApplication : Application() {
                 override fun logInfo(clazz: Class<*>, message: String) { Log.i(clazz.simpleName, message) }
                 override fun logVerbose(clazz: Class<*>, message: String) { Log.v(clazz.simpleName, message) }
                 override fun logWarning(clazz: Class<*>, message: String) { Log.w(clazz.simpleName, message) }
-            })
+            }
+        )
     }
 }

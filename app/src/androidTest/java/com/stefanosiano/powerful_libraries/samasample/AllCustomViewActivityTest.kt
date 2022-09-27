@@ -1,28 +1,17 @@
-package com.stefanosiano.powerful_libraries.samasample_androidtest
+package com.stefanosiano.powerful_libraries.samasample
 
 import androidx.databinding.*
 import androidx.lifecycle.MutableLiveData
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.action.ViewActions
-import androidx.test.espresso.assertion.ViewAssertions
-import androidx.test.espresso.matcher.RootMatchers
-import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
-import com.stefanosiano.powerful_libraries.sama.utils.SamaObserver
-import com.stefanosiano.powerful_libraries.sama.utils.SamaObserverImpl
-import com.stefanosiano.powerful_libraries.sama_sample.AllCustomViewsTestActivity
-import com.stefanosiano.powerful_libraries.sama_sample.AllCustomViewsTestVM
-import com.stefanosiano.powerful_libraries.sama_sample.R
-import com.stefanosiano.powerful_libraries.sama_sample.TestListItem
-import com.stefanosiano.powerful_libraries.samasample_androidtest.extensions.RecyclerViewItemCountAssertion.Companion.withItemCount
-import com.stefanosiano.powerful_libraries.samasample_androidtest.extensions.SearchViewActionExtension.Companion.typeTextSearchView
-import com.stefanosiano.powerful_libraries.samasample_androidtest.extensions.SearchViewAssertion
-import com.stefanosiano.powerful_libraries.samasample_androidtest.extensions.SpinnerActionExtension
-import com.stefanosiano.powerful_libraries.samasample_androidtest.extensions.SpinnerAssertion
+import com.stefanosiano.powerful_libraries.samasample.extensions.RecyclerViewItemCountAssertion.Companion.withItemCount
+import com.stefanosiano.powerful_libraries.samasample.extensions.SearchViewActionExtension.Companion.typeTextSearchView
+import com.stefanosiano.powerful_libraries.samasample.extensions.SearchViewAssertion
+import com.stefanosiano.powerful_libraries.samasample.extensions.SpinnerAssertion
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import org.hamcrest.Matchers
@@ -37,9 +26,9 @@ class AllCustomViewActivityTest {
 
 
     /** Create and launch the activity under test before each test, and close it after each test. */
-    @get:Rule var activityScenarioRule = ActivityScenarioRule(AllCustomViewsTestActivity::class.java)
+    @get:Rule internal var activityScenarioRule = ActivityScenarioRule(AllCustomViewsTestActivity::class.java)
 
-    lateinit var testVm : AllCustomViewsTestVM
+    private lateinit var testVm : AllCustomViewsTestVM
 
     @Before
     fun init() {

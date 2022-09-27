@@ -1,6 +1,6 @@
 object Deps {
-    private const val agpVersion = "7.2.1"
-    private const val kotlinVersion = "1.6.10"
+    private const val agpVersion = "7.3.0"
+    private const val kotlinVersion = "1.7.10"
     private const val coroutinesVersion = "1.5.1"
     private const val espressoVersion = "3.4.0"
     const val detektPluginVersion = "1.19.0"

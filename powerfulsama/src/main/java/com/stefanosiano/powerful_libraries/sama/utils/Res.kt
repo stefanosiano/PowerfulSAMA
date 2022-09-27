@@ -6,12 +6,13 @@ import android.graphics.drawable.Drawable
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.databinding.ObservableInt
-import com.stefanosiano.powerful_libraries.sama.tryOrNull
+import com.stefanosiano.powerful_libraries.sama.extensions.tryOrNull
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
 
 /** Class that retrieves resources using current activity context or application context if no activity is available. */
+@Suppress("TooManyFunctions")
 object Res {
 
     /** Application context. */

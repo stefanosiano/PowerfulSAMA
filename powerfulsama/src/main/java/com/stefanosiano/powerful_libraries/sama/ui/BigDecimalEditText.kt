@@ -12,8 +12,8 @@ import androidx.appcompat.widget.AppCompatEditText
 import androidx.appcompat.widget.AppCompatTextView
 import com.google.android.material.textfield.TextInputEditText
 import com.stefanosiano.powerful_libraries.sama.R
-import com.stefanosiano.powerful_libraries.sama.replaceAfterFirst
-import com.stefanosiano.powerful_libraries.sama.tryOr
+import com.stefanosiano.powerful_libraries.sama.extensions.replaceAfterFirst
+import com.stefanosiano.powerful_libraries.sama.extensions.tryOr
 import java.math.BigDecimal
 import java.text.NumberFormat
 import java.util.Locale
@@ -22,6 +22,7 @@ import java.util.Locale
  * Custom AppCompatEditText that writes a [BigDecimal] formatted in selected locale,
  * and with convenient methods to set and get the number written.
  */
+@Suppress("StringLiteralDuplication")
 class BigDecimalEditText : AppCompatEditText {
 
     private var formatter = NumberFormat.getNumberInstance(Locale.getDefault())
@@ -41,7 +42,7 @@ class BigDecimalEditText : AppCompatEditText {
         init(attrs, defStyleAttr)
     }
 
-    fun init(attrs: AttributeSet?, defStyleAttr: Int) {
+    private fun init(attrs: AttributeSet?, defStyleAttr: Int) {
         inputType = inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
 
         val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.BigDecimalEditText, defStyleAttr, 0)
@@ -57,7 +58,10 @@ class BigDecimalEditText : AppCompatEditText {
         setTextBd(getTextBd())
     }
 
+    /** Set [newValue] as text. */
     fun setTextBd(newValue: BigDecimal?) = setTextBd(this, currentDecimal, newValue, formatter)
+
+    /** Get the current text as [BigDecimal]. */
     fun getTextBd() : BigDecimal = currentDecimal
 }
 
@@ -80,7 +84,7 @@ class BigDecimalTextInputEditText : TextInputEditText {
         init(attrs, defStyleAttr)
     }
 
-    fun init(attrs: AttributeSet?, defStyleAttr: Int) {
+    private fun init(attrs: AttributeSet?, defStyleAttr: Int) {
         inputType = inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
 
         val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.BigDecimalEditText, defStyleAttr, 0)
@@ -96,7 +100,10 @@ class BigDecimalTextInputEditText : TextInputEditText {
         setTextBd(getTextBd())
     }
 
+    /** Set [newValue] as text. */
     fun setTextBd(newValue: BigDecimal?) = setTextBd(this, currentDecimal, newValue, formatter)
+
+    /** Get the current text as [BigDecimal]. */
     fun getTextBd() : BigDecimal = currentDecimal
 }
 
@@ -119,7 +126,7 @@ class BigDecimalTextView : AppCompatTextView {
         init(attrs, defStyleAttr)
     }
 
-    fun init(attrs: AttributeSet?, defStyleAttr: Int) {
+    private fun init(attrs: AttributeSet?, defStyleAttr: Int) {
         inputType = inputType or InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL
 
         val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.BigDecimalTextView, defStyleAttr, 0)
@@ -135,7 +142,10 @@ class BigDecimalTextView : AppCompatTextView {
         setTextBd(getTextBd())
     }
 
+    /** Set [newValue] as text. */
     fun setTextBd(newValue: BigDecimal?) = setTextBd(this, currentDecimal, newValue, formatter)
+
+    /** Get the current text as [BigDecimal]. */
     fun getTextBd() : BigDecimal = currentDecimal
 }
 

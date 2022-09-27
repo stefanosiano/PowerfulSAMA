@@ -2,22 +2,11 @@ package com.stefanosiano.powerful_libraries.sama.view
 
 import android.util.SparseArray
 import android.view.View
-import androidx.databinding.Observable
-import androidx.databinding.ObservableBoolean
-import androidx.databinding.ObservableByte
-import androidx.databinding.ObservableChar
-import androidx.databinding.ObservableDouble
-import androidx.databinding.ObservableField
-import androidx.databinding.ObservableFloat
-import androidx.databinding.ObservableInt
-import androidx.databinding.ObservableList
-import androidx.databinding.ObservableLong
 import androidx.databinding.ViewDataBinding
-import androidx.lifecycle.LiveData
 import androidx.recyclerview.widget.RecyclerView
 import androidx.room.Ignore
-import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
-import com.stefanosiano.powerful_libraries.sama.forEach
+import com.stefanosiano.powerful_libraries.sama.extensions.coroutineSamaHandler
+import com.stefanosiano.powerful_libraries.sama.extensions.forEach
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserver
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserverImpl
 import kotlinx.coroutines.CoroutineScope
@@ -25,22 +14,19 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-abstract class SamaListItem : CoroutineScope {
+/** Class that represents a list item. Used in conjunction with [SamaRvAdapter]. */
+@Suppress("TooManyFunctions")
+abstract class SamaListItem : CoroutineScope, SamaObserver by SamaObserverImpl() {
     @Ignore
     private val coroutineJob: Job = SupervisorJob()
     @Ignore
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
-
-    /** Object that takes care of observing liveData and observableFields. */
-    @Ignore
-    private val samaObserver: SamaObserver = SamaObserverImpl()
 
     @Deprecated("Use sendAction")
     @Ignore
@@ -114,14 +100,14 @@ abstract class SamaListItem : CoroutineScope {
 
     /** Functions to call after a delay (to avoid doing too many things when users scroll too fast). */
     @Ignore
-    protected val launchableFunctions = SparseArray<LaunchableFunction>()
+    internal val launchableFunctions = SparseArray<LaunchableFunction>()
 
     /** Ids used by [launchableFunctions]. */
     @Ignore
     private val launchableFunctionsUid = AtomicInteger(0)
 
     init {
-        samaObserver.initObserver(this)
+        initObserver(this)
     }
 
     /** Get the adapter this item is in (may be null). */
@@ -201,13 +187,14 @@ abstract class SamaListItem : CoroutineScope {
      * It gets automatically called in [onStart] if not already executed and if [onBind] is not called.
      */
     fun launchAfter(millis: Long, f: suspend () -> Unit) {
-        val lf = LaunchableFunction(millis, f, launchableFunctionsUid.incrementAndGet())
+        val lf = LaunchableFunction(millis, f)
         synchronized(launchableFunctions) { launchableFunctions.put(lf.id, lf) }
         launch {
             delay(millis)
-            if (!isStarted.get()) return@launch
-            f()
-            synchronized(launchableFunctions) { launchableFunctions.remove(lf.id) }
+            if (isStarted.get()) {
+                f()
+                synchronized(launchableFunctions) { launchableFunctions.remove(lf.id) }
+            }
         }
     }
 
@@ -227,14 +214,15 @@ abstract class SamaListItem : CoroutineScope {
      */
     open fun onStart() {
         if (isStarted.getAndSet(true)) return
-        samaObserver.startObserver()
+        startObserver()
         synchronized(launchableFunctions) {
             launchableFunctions.forEach { lf ->
                 launch {
                     delay(lf.millis)
-                    if (!isStarted.get()) return@launch
-                    lf.f()
-                    synchronized(launchableFunctions) { launchableFunctions.remove(lf.id) }
+                    if (isStarted.get()) {
+                        lf.f()
+                        synchronized(launchableFunctions) { launchableFunctions.remove(lf.id) }
+                    }
                 }
             }
         }
@@ -246,7 +234,7 @@ abstract class SamaListItem : CoroutineScope {
      */
     open fun onStop() {
         if (!isStarted.getAndSet(false)) return
-        samaObserver.stopObserver()
+        stopObserver()
     }
 
     /**
@@ -257,7 +245,7 @@ abstract class SamaListItem : CoroutineScope {
      */
     open fun onDestroy() {
         onStop()
-        samaObserver.destroyObserver()
+        destroyObserver()
         synchronized(launchableFunctions) { launchableFunctions.clear() }
         coroutineContext.cancelChildren()
     }
@@ -266,143 +254,8 @@ abstract class SamaListItem : CoroutineScope {
     /** Interface that indicates the action of the ListItem sent. */
     interface SamaListItemAction
 
-
-    /**
-     * Observes a liveData until this object is destroyed into an observable field.
-     * Does not update the observable if the value of the liveData is null.
-     */
-    protected fun <T> observeAsOf(liveData: LiveData<T>): ObservableField<T> = samaObserver.observeAsOf(liveData)
-
-    /** Observes a liveData until this object is destroyed, using a custom observer. */
-    protected fun <T> observe(
-        liveData: LiveData<T>,
-        vararg obs: Observable,
-        observerFunction: (data: T) -> Unit
-    ): LiveData<T> = samaObserver.observe(liveData, *obs) { observerFunction(it) }
-
-    /**
-     * Observes [o] until this object is destroyed and calls [obFun] in the background,
-     *  now and whenever [o] or any of [obs] change, with the current value of [o].
-     * Does nothing if [o] is null or already changed.
-     */
-    protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit): Unit =
-        samaObserver.observe(o, *obs) { obFun(it) }
-
-    /**
-     * Observes [o] until this object is destroyed and calls [obFun] in the background,
-     *  now and whenever [o] or any of [obs] change, with the current value of [o].
-     * Does nothing if [o] is null or already changed.
-     * Returns an [ObservableField] with initial value of null.
-     */
-    protected fun <R> observe(o: ObservableInt, vararg obs: Observable, obFun: (data: Int) -> R): ObservableField<R> =
-        samaObserver.observe(o, *obs) { obFun(it) }
-
-
-    /**
-     * Observes [o] until this object is destroyed and calls [obFun] in the background,
-     *  now and whenever [o] or any of [obs] change, with the current value of [o].
-     * Does nothing if [o] is null or already changed.
-     * Returns an [ObservableField] with initial value of null.
-     */
-    protected fun <R> observe(o: ObservableLong, vararg obs: Observable, obFun: (data: Long) -> R): ObservableField<R> =
-        samaObserver.observe(o, *obs) { obFun(it) }
-
-
-    /**
-     * Observes [o] until this object is destroyed and calls [obFun] in the background,
-     *  now and whenever [o] or any of [obs] change, with the current value of [o].
-     * Does nothing if [o] is null or already changed.
-     * Returns an [ObservableField] with initial value of null.
-     */
-    protected fun <R> observe(o: ObservableByte, vararg obs: Observable, obFun: (data: Byte) -> R): ObservableField<R> =
-        samaObserver.observe(o, *obs) { obFun(it) }
-
-
-    /**
-     * Observes [o] until this object is destroyed and calls [obFun] in the background,
-     *  now and whenever [o] or any of [obs] change, with the current value of [o].
-     * Does nothing if [o] is null or already changed.
-     * Returns an [ObservableField] with initial value of null.
-     */
-    protected fun <R> observe(o: ObservableChar, vararg obs: Observable, obFun: (data: Char) -> R): ObservableField<R> =
-        samaObserver.observe(o, *obs) { obFun(it) }
-
-
-    /**
-     * Observes [o] until this object is destroyed and calls [obFun] in the background,
-     *  now and whenever [o] or any of [obs] change, with the current value of [o].
-     * Does nothing if [o] is null or already changed.
-     * Returns an [ObservableField] with initial value of null.
-     */
-    protected fun <R> observe(
-        o: ObservableBoolean,
-        vararg obs: Observable,
-        obFun: (data: Boolean) -> R
-    ): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
-
-
-    /**
-     * Observes [o] until this object is destroyed and calls [obFun] in the background,
-     *  now and whenever [o] or any of [obs] change, with the current value of [o].
-     * Does nothing if [o] is null or already changed.
-     * Returns an [ObservableField] with initial value of null.
-     */
-    protected fun <R> observe(
-        o: ObservableFloat,
-        vararg obs: Observable,
-        obFun: (data: Float) -> R
-    ): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
-
-
-    /**
-     * Observes [o] until this object is destroyed and calls [obFun] in the background,
-     *  now and whenever [o] or any of [obs] change, with the current value of [o].
-     * Does nothing if [o] is null or already changed.
-     * Returns an [ObservableField] with initial value of null.
-     */
-    protected fun <R> observe(
-        o: ObservableDouble,
-        vararg obs: Observable,
-        obFun: (data: Double) -> R
-    ): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
-
-
-    /**
-     * Observes [o] until this object is destroyed and calls [obFun] in the background,
-     *  now and whenever [o] or any of [obs] change, with the current value of [o].
-     * Does nothing if [o] is null or already changed.
-     * Returns an [ObservableField] with initial value of null.
-     */
-    protected fun <R, T> observe(
-        o: ObservableField<T>,
-        vararg obs: Observable,
-        obFun: (data: T) -> R
-    ): ObservableField<R> = samaObserver.observe(o, *obs) { obFun(it) }
-
-
-    /**
-     * Observes the flow [f] until this object is destroyed and calls [obFun] in the background,
-     *  now and whenever [f] or any of [obs] change, with the current value of [f].
-     * Does nothing if [f] is null or already changed.
-     * Returns an [ObservableField] with initial value of null.
-     */
-    protected fun <R, T> observe(f: Flow<T>, vararg obs: Observable, obFun: (data: T) -> R): ObservableField<R> =
-        samaObserver.observe(f, *obs) { obFun(it) }
-
-    /**
-     * Run [f] to get a [LiveData] every time any of [o] or [obs] changes, removing the old one.
-     * It return a [LiveData] of the same type as [f].
-     */
-    protected fun <T> observeAndReloadLiveData(
-        o: ObservableField<*>,
-        vararg obs: Observable,
-        f: () -> LiveData<T>?
-    ): LiveData<T> = samaObserver.observeAndReloadLiveData(o, *obs) { f() }
-
-
-    inner class LaunchableFunction(
-        val millis: Long,
-        val f: suspend () -> Unit,
-        val id: Int
-    )
+    internal inner class LaunchableFunction(val millis: Long, val f: suspend () -> Unit) {
+        /** Id of the function. */
+        val id: Int = launchableFunctionsUid.incrementAndGet()
+    }
 }

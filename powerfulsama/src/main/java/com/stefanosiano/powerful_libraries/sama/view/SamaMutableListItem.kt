@@ -3,6 +3,10 @@ package com.stefanosiano.powerful_libraries.sama.view
 import androidx.room.Ignore
 import kotlinx.coroutines.launch
 
+/**
+ * Class that represents a list item. Used in conjunction with [SamaRvAdapter].
+ * The difference with [SamaListItem] lies in an object kept in memory by the adapter that is associated with this item.
+ */
 abstract class SamaMutableListItem<T: Any> : SamaListItem() {
 
     /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind]. */

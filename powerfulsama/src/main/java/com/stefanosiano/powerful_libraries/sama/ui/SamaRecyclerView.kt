@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.R
-import com.stefanosiano.powerful_libraries.sama.findActivity
+import com.stefanosiano.powerful_libraries.sama.extensions.findActivity
 import com.stefanosiano.powerful_libraries.sama.utils.SamaActivityCallback
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaRvAdapter
@@ -85,19 +85,30 @@ open class SamaRecyclerView: RecyclerView {
         super.onDetachedFromWindow()
     }
 
+    /**
+     * Sets the number of [columns] of the recyclerView.
+     * If 1 a LinearLayoutManager is used, otherwise a GridLayoutManager is used.
+     */
     fun setSrvColumns(columns: Int) {
         this.columns = columns
         (adapter as? SamaRvAdapter?)?.recyclerViewColumnCount = columns
         resetLayoutManager()
     }
 
-    fun getColumnCount() = if(columns == 0) 0 else columns
+    /** Gets the number of [columns] of the recyclerView set through [setSrvColumns]. */
+    fun getColumnCount() = columns
 
+    /** Sets whether the recyclerView should put items horizontally (using a linearLayoutManager). */
     fun setSrvHorizontal(horizontal: Boolean) {
         this.horizontal = horizontal
         resetLayoutManager()
     }
 
+    /**
+     * Sets whether to use a workaround for the inconsistencyDetected: IndexOutOfBoundsException
+     * Works only when using [setSrvColumns]. For more info see
+     * https://stackoverflow.com/questions/31759171/recyclerview-and-java-lang-indexoutofboundsexception-inconsistency-detected-in/33822747#33822747
+     */
     fun setSrvInconsistencyWorkaround(inconsistencyWorkaround: Boolean) {
         this.inconsistencyWorkaround = inconsistencyWorkaround
         resetLayoutManager()
@@ -121,32 +132,27 @@ open class SamaRecyclerView: RecyclerView {
      * Useful when items are changed and take some time to reload the adapter.
      * Used only with srvInconsistencyWorkaround. Reduces (or removes) inconsistency exceptions.
      */
+    @Suppress("FunctionMaxLength")
     fun setSrvDisablePredictiveAnimation(srvDisablePredictiveAnimation: Boolean) {
         this.disablePredictiveAnimation = srvDisablePredictiveAnimation
-        updateDisablePredictiveAnimationInManager()
+        (layoutManager as? SamaLinearLayoutManager)?.disablePredictiveAnimation = disablePredictiveAnimation
+        (layoutManager as? SamaGridLayoutManager)?.disablePredictiveAnimation = disablePredictiveAnimation
     }
 
     private fun resetLayoutManager() {
         val position = (layoutManager as? LinearLayoutManager?)?.findFirstVisibleItemPosition()
         recycledViewPool.clear()
-        if(columns > 0 || horizontal) {
-            when {
-                columns == 1 && inconsistencyWorkaround -> layoutManager = SamaLinearLayoutManager(context)
-                columns == 1 && !inconsistencyWorkaround -> layoutManager = LinearLayoutManager(context)
-                columns > 1 && inconsistencyWorkaround -> layoutManager = SamaGridLayoutManager(context, columns)
-                columns > 1 && !inconsistencyWorkaround -> layoutManager = GridLayoutManager(context, columns)
-                horizontal && inconsistencyWorkaround -> layoutManager =
-                    SamaLinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-                horizontal && !inconsistencyWorkaround -> layoutManager =
-                    LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-            }
+        when {
+            columns == 1 && inconsistencyWorkaround -> layoutManager = SamaLinearLayoutManager(context)
+            columns == 1 && !inconsistencyWorkaround -> layoutManager = LinearLayoutManager(context)
+            columns > 1 && inconsistencyWorkaround -> layoutManager = SamaGridLayoutManager(context, columns)
+            columns > 1 && !inconsistencyWorkaround -> layoutManager = GridLayoutManager(context, columns)
+            horizontal && inconsistencyWorkaround -> layoutManager =
+                SamaLinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            horizontal && !inconsistencyWorkaround -> layoutManager =
+                LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         }
         (layoutManager as? LinearLayoutManager?)?.scrollToPosition(position ?: 0)
-    }
-
-    private fun updateDisablePredictiveAnimationInManager() {
-        (layoutManager as? SamaLinearLayoutManager)?.disablePredictiveAnimation = disablePredictiveAnimation
-        (layoutManager as? SamaGridLayoutManager)?.disablePredictiveAnimation = disablePredictiveAnimation
     }
 
 }

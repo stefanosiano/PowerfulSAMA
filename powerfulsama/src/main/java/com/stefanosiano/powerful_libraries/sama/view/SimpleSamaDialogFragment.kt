@@ -10,9 +10,10 @@ import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
-import com.stefanosiano.powerful_libraries.sama.logVerbose
+import com.stefanosiano.powerful_libraries.sama.extensions.logVerbose
 
 /** Abstract DialogFragment for all DialogFragments to extend. */
+@Suppress("TooManyFunctions")
 open class SimpleSamaDialogFragment: DialogFragment() {
 
     private var layoutId: Int = 0
@@ -31,20 +32,22 @@ open class SimpleSamaDialogFragment: DialogFragment() {
      * @param bindingData the data to bind to the id
      */
     fun with(dataBindingId: Int, bindingData: Any): SimpleSamaDialogFragment {
-        if (!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId))
+        if (!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId)) {
             this.bindingPairs.add(Pair(dataBindingId, bindingData))
+        }
         return this
     }
 
 
     /**
-     * Sets the dialog as data to work with data binding
+     * Sets the dialog as data to work with data binding.
      *
      * @param dataBindingId the id of the dialog variable in the layout
      */
     fun setDialogAsVariable(dataBindingId: Int): SimpleSamaDialogFragment {
-        if (!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId))
+        if (!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId)) {
             this.bindingPairs.add(Pair(dataBindingId, this))
+        }
         return this
     }
 
@@ -62,7 +65,7 @@ open class SimpleSamaDialogFragment: DialogFragment() {
 
 
     /**
-     * Sets a function to be called when the activity is created (the dialog is fully shown and attached to its parent)
+     * Sets a function to be called when the activity is created (the dialog is fully shown and attached to its parent).
      *
      * @param onActivityCreated function to call when the view is created
      */
@@ -118,8 +121,9 @@ open class SimpleSamaDialogFragment: DialogFragment() {
 
         if (bindingPairs.isNotEmpty()) {
             val binding: ViewDataBinding = DataBindingUtil.inflate(inflater, layoutId, container, false)
-            for (pair in bindingPairs)
+            for (pair in bindingPairs) {
                 binding.setVariable(pair.first, pair.second)
+            }
             return binding.root
         }
 
@@ -150,7 +154,7 @@ open class SimpleSamaDialogFragment: DialogFragment() {
         private const val ExtraFullHeight = "ExtraFullHeight"
 
         /**
-         * Creates a new SimpleSamaDialogFragment
+         * Creates a new SimpleSamaDialogFragment.
          * @param layoutId The id of the layout to use. (0 means no layout is shown)
          * @param fullScreen Forces the dialog to be in full width mode
          * @param fullHeight Forces the dialog to be in full height mode

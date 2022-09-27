@@ -6,9 +6,9 @@ import android.view.View
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.AppCompatSpinner
-import com.stefanosiano.powerful_libraries.sama.getKey
-import com.stefanosiano.powerful_libraries.sama.logDebug
-import com.stefanosiano.powerful_libraries.sama.logVerbose
+import com.stefanosiano.powerful_libraries.sama.extensions.getKey
+import com.stefanosiano.powerful_libraries.sama.extensions.logDebug
+import com.stefanosiano.powerful_libraries.sama.extensions.logVerbose
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner.SamaSpinnerItem
 
 /**
@@ -23,7 +23,7 @@ open class SamaSpinner : AppCompatSpinner {
     /** Key to use after setting items (if Key was selected before items were available). */
     private var toSelectKey: String? = null
 
-    /** Key to use after setting items (if Key was selected before items were available). */
+    /** Listeners called on item selected. */
     private val listeners = ArrayList<(key: String, value: String) -> Unit>()
 
     /** Common initialization of the spinner. */
@@ -63,6 +63,7 @@ open class SamaSpinner : AppCompatSpinner {
         }
     }
 
+    /** Add a listener to be called when an item has been selected. */
     fun addListener(l: (key: String, value: String) -> Unit) { listeners.add(l) }
 
     /** Sets [items] as the array of [SamaSpinnerItem] to show in the spinner. */
@@ -119,21 +120,22 @@ open class SamaSpinner : AppCompatSpinner {
         }
     }
 
-
     /** Gets the value associated to the currently shown item. */
     fun getSpnValue(): String? = selectedItem as? String
 
     /** Gets the key associated to the currently shown item. */
     fun getSpnKey(): String? = (selectedItem as? String).let { itemMap.getKey(it) }
 
-
-
-
-
-
     /** Simple class representing a pair key/value. */
-    open class SamaSpinnerItem(open val key: String?, open val value: String?) {
+    open class SamaSpinnerItem(
+        /** Key of the spinner item. */
+        open val key: String?,
+        /** Value of the spinner item. */
+        open val value: String?
+    ) {
+        /** Return the [value] of the spinner item. */
         open fun value() = value ?: ""
+        /** Return the [key] of the spinner item. */
         open fun key() = key ?: ""
     }
 }

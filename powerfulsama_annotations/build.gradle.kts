@@ -16,7 +16,7 @@ ext {
 }
 
 dependencies {
-    implementation ("com.squareup:kotlinpoet:1.6.0")
+    implementation ("com.squareup:kotlinpoet:1.12.0")
     implementation(kotlin("reflect"))
     implementation(Deps.kotlinStdLib)
     implementation(Deps.kotlinCoroutinesCore)
@@ -27,8 +27,8 @@ apply("${rootProject.projectDir}/sonatype-publish.gradle")
 
 detekt {
     toolVersion = Deps.detektPluginVersion
-    config = files("${rootDir}/config/detekt/detekt.yml")
-//    allRules = true
-    buildUponDefaultConfig = true
+//    config = files("${rootDir}/config/detekt/detekt.yml")
+    allRules = true
+//    buildUponDefaultConfig = true
     autoCorrect = false
 }

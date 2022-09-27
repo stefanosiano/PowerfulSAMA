@@ -1,4 +1,4 @@
-package com.stefanosiano.powerful_libraries.samasample_androidtest.extensions
+package com.stefanosiano.powerful_libraries.samasample.extensions
 
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView

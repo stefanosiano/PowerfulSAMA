@@ -1,19 +1,15 @@
-package com.stefanosiano.powerful_libraries.samasample_androidtest.extensions
+package com.stefanosiano.powerful_libraries.samasample.extensions
 
-import android.content.res.Resources
 import android.view.View
 import androidx.appcompat.widget.SearchView
-import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.NoMatchingViewException
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.ViewAssertion
-import androidx.test.espresso.matcher.BoundedMatcher
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import org.hamcrest.CoreMatchers
-import org.hamcrest.Description
 import org.hamcrest.Matcher
 import org.hamcrest.core.AllOf
 

@@ -1,4 +1,4 @@
-package com.stefanosiano.powerful_libraries.sama_sample
+package com.stefanosiano.powerful_libraries.samasample
 
 import android.app.Activity
 import android.content.Intent
@@ -22,47 +22,29 @@ internal class Activity1 : SamaActivity() {
 
         val ob = ObservableField("aaa")
         observe(ob) { Log.e("AAAA", it) }
-        val perms = arrayListOf(android.Manifest.permission.READ_EXTERNAL_STORAGE, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        val m = Msg.adob("asd").show()//.dismiss()
-//        m.dismiss()
+        val m = Msg.adob("asd").show()
         launch {
-            delay(3000)
+            delay(100)
             m.dismiss()
-            ob.set("231")
+            ob.set("10")
         }
-
-//        Perms.call(perms, R.string.app_name, R.string.app_name2) {
-//            Uri.fromFile(File("")).toFileFromProviders(this, "a")
-//            println("asd")
-//        }
-//        launch {
-//            delay(2000)
-//            withContext(Dispatchers.Main) {
-//                SampleDF(R.layout.sample_df, BR.dialog).show(this@Activity1)
-//            }
-//        }
-//        startActivity2ForResult(true, 1, null)
     }
 }
 
 internal class Activity2 : Activity() {
 
+    fun function() {
+        val a = SampleDF(0, 0, 0)
+        a.id
+    }
+
     companion object {
         private const val ExtraSync = "sync"
-        private const val ExtraIsTempPassword = "isTempPassword"
 
         fun getIntent2(context: Activity, sync: Boolean): Intent =
             Intent(context, Activity2::class.java).apply {
                 putExtra(ExtraSync, sync)
             }
-
-
-    }
-
-    fun a() {
-        val a = SampleDF(0,0,0)
-        a.id
-//        startActivityForResult()
     }
 }
 
@@ -73,12 +55,11 @@ internal class SampleDF(
     private val fullWidth: Boolean = true,
     private val fullHeight: Boolean = false,
     private val uid: Int = -1
-): SamaDialogFragment(layoutId, dataBindingId, bindingData, fullWidth, fullHeight, uid){
+) : SamaDialogFragment(layoutId, dataBindingId, bindingData, fullWidth, fullHeight, uid) {
 
     val id = 0
     var asd = false
     var sss = ObservableF(0)
 
     override fun restore(oldDialog: SamaDialogFragment) = defaultRestore(oldDialog)
-
 }

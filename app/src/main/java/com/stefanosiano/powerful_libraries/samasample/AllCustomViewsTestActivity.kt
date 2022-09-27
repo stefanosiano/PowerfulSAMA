@@ -1,8 +1,11 @@
-package com.stefanosiano.powerful_libraries.sama_sample
+package com.stefanosiano.powerful_libraries.samasample
 
 import android.os.Bundle
 import androidx.activity.viewModels
-import androidx.databinding.*
+import androidx.databinding.DataBindingUtil
+import androidx.databinding.ObservableField
+import androidx.databinding.ObservableInt
+import androidx.databinding.ObservableList
 import androidx.lifecycle.LiveData
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
@@ -10,7 +13,7 @@ import com.stefanosiano.powerful_libraries.sama.view.SamaListItem
 import com.stefanosiano.powerful_libraries.sama.view.SamaRvAdapter
 import com.stefanosiano.powerful_libraries.sama.viewModel.SamaViewModel
 import com.stefanosiano.powerful_libraries.sama.viewModel.VmAction
-import com.stefanosiano.powerful_libraries.sama_sample.databinding.ActivityAllCustomViewsBinding
+import com.stefanosiano.powerful_libraries.samasample.databinding.ActivityAllCustomViewsBinding
 import kotlinx.coroutines.flow.Flow
 
 internal class AllCustomViewsTestActivity : SamaActivity() {
@@ -18,13 +21,10 @@ internal class AllCustomViewsTestActivity : SamaActivity() {
     val testVm by viewModels<AllCustomViewsTestVM>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding: ActivityAllCustomViewsBinding = DataBindingUtil.setContentView(this, R.layout.activity_all_custom_views)
+        val binding: ActivityAllCustomViewsBinding =
+            DataBindingUtil.setContentView(this, R.layout.activity_all_custom_views)
         binding.testVm = testVm
-        onVmAction(testVm, ::handleVmResponse)
     }
-
-    fun handleVmResponse(action: AlcvTestAction) { when(action) {
-    } }
 }
 
 internal class AllCustomViewsTestVM : SamaViewModel<AlcvTestAction>() {
@@ -32,7 +32,7 @@ internal class AllCustomViewsTestVM : SamaViewModel<AlcvTestAction>() {
     val searchTerm = ObservableField("")
     val spnKey = ObservableField("")
     val spnValue = ObservableField("")
-    val spnItems = ObservableField( emptyList<SamaSpinner.SamaSpinnerItem>() )
+    val spnItems = ObservableField(emptyList<SamaSpinner.SamaSpinnerItem>())
     val rvAdapter = SamaRvAdapter(R.layout.list_item_test, BR.item)
 
     fun setSearchMillis(millis: Int) { searchMillis.set(millis) }
@@ -44,8 +44,8 @@ internal class AllCustomViewsTestVM : SamaViewModel<AlcvTestAction>() {
     fun bindTestItems(items: List<TestListItem>) { rvAdapter.bindItems(items) }
 }
 
-internal sealed class AlcvTestAction : VmAction {}
+internal sealed class AlcvTestAction : VmAction
 
-internal class TestListItem (val title: String, val subtitle: String): SamaListItem() {
+internal class TestListItem(val title: String, val subtitle: String) : SamaListItem() {
     override fun getStableIdString(): String = title
 }

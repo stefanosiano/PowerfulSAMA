@@ -2,9 +2,9 @@ package com.stefanosiano.powerful_libraries.sama.view
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
-import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
-import com.stefanosiano.powerful_libraries.sama.logVerbose
-import com.stefanosiano.powerful_libraries.sama.tryOrNull
+import com.stefanosiano.powerful_libraries.sama.extensions.coroutineSamaHandler
+import com.stefanosiano.powerful_libraries.sama.extensions.logVerbose
+import com.stefanosiano.powerful_libraries.sama.extensions.tryOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob

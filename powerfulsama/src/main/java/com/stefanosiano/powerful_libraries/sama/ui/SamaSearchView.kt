@@ -5,8 +5,8 @@ import android.util.AttributeSet
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.SearchView
 import com.stefanosiano.powerful_libraries.sama.R
-import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
-import com.stefanosiano.powerful_libraries.sama.logVerbose
+import com.stefanosiano.powerful_libraries.sama.extensions.coroutineSamaHandler
+import com.stefanosiano.powerful_libraries.sama.extensions.logVerbose
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -87,25 +87,34 @@ open class SamaSearchView : SearchView, CoroutineScope {
         synchronized(listeners) { listeners.add(listener) }
     }
 
+    /** Add a [listener] to be called when the query changes or is set. */
     fun addOnQueryTextListener(listener: OnQueryTextListener?) {
         listener ?: return
         synchronized(listeners) { listeners.add(listener) }
     }
 
+    /** Set the [millis] to wait before calling the listener when the query changes. */
     fun setSsvMillis(millis: Int?) { this.millis = (millis?:0).toLong() }
+
+    /** Get the millis to wait before calling the listener when the query changes. */
     fun getSsvMillis() = millis.toInt()
 
+    /** Set the current [query]. */
     fun setSsvQuery(query: String?) { if(query != getSsvQuery()) setQuery(query, true) }
+
+    /** Get the current query. */
     fun getSsvQuery() = query.toString()
 
+    /** Set the layout to use in the suggestions dropdown. */
     fun setSsvSuggestionLayout(suggestionLayoutId: Int?) {
         this.mSuggestionLayout = suggestionLayoutId ?: android.R.layout.simple_spinner_dropdown_item
         updateSuggestionsAdapter()
     }
 
+    /** Get the layout used in the suggestions dropdown. */
     fun getSsvSuggestionLayout() = mSuggestionLayout
 
-    /** Sets the [suggestions] to show when writing. When the user clicks on a suggestion, [f] will be called. */
+    /** Set the [suggestions] to show when writing. When the user clicks on a suggestion, [f] will be called. */
     fun setSsvSuggestions(suggestions: List<String>?, f: (String) -> Unit){
         mSuggestionsAdapter = mSuggestionsAdapter ?: ArrayAdapter(context, mSuggestionLayout)
         mSuggestionsAdapter?.clear()
@@ -118,7 +127,7 @@ open class SamaSearchView : SearchView, CoroutineScope {
         post { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
     }
 
-    /** Gets the suggestions shown when writing. */
+    /** Get the suggestions shown when writing. */
     fun getSsvSuggestions(): List<String> =
         (0 until (mSuggestionsAdapter?.count ?:0)).mapNotNull { mSuggestionsAdapter?.getItem(it) }
 

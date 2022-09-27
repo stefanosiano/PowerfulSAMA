@@ -9,6 +9,7 @@ import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaIntent
 import java.lang.ref.WeakReference
 
+/** Object that initializes the library and all of its components. */
 object PowerfulSama {
     internal var logger: PowerfulSamaLogger? = null
     internal var isAppDebug: Boolean = false
@@ -30,6 +31,7 @@ object PowerfulSama {
      * [onSignatureChackFailed] Function to run if the signatures of the app are NOT correct
      *  (will be run by [SamaSignature.checkSignatures])
      */
+    @Suppress("LongParameterList")
     fun init(
         application: Application,
         isDebug: Boolean,
@@ -82,12 +84,20 @@ object PowerfulSama {
     fun getCurrentActivity(): Activity? = currentActivity?.get()
 }
 
+/** Logger class called by inner library methods. */
 interface PowerfulSamaLogger {
+    /** Log a messages marked as verbose. */
     fun logVerbose(clazz: Class<*>, message: String)
+    /** Log a messages marked as debug. */
     fun logDebug(clazz: Class<*>, message: String)
+    /** Log a messages marked as info. */
     fun logInfo(clazz: Class<*>, message: String)
+    /** Log a messages marked as warning. */
     fun logWarning(clazz: Class<*>, message: String)
+    /** Log a messages marked as error. */
     fun logError(clazz: Class<*>, message: String)
+    /** Log an exception occurred. */
     fun logException(clazz: Class<*>, t: Throwable)
+    /** Log not fatal exceptions already handled by the library. */
     fun logExceptionWorkarounded(clazz: Class<*>, t: Throwable)
 }

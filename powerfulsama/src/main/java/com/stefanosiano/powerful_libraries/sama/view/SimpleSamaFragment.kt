@@ -10,9 +10,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
-import com.stefanosiano.powerful_libraries.sama.logVerbose
+import com.stefanosiano.powerful_libraries.sama.extensions.logVerbose
 
 /** Base Class that provides easy way to use data binding with a fragment without the need of other classes. */
+@Suppress("TooManyFunctions")
 open class SimpleSamaFragment: SamaFragment() {
 
     private var layoutId: Int = 0
@@ -33,8 +34,9 @@ open class SimpleSamaFragment: SamaFragment() {
      * @param bindingData the data to bind to the id
      */
     fun with(dataBindingId: Int, bindingData: Any): SimpleSamaFragment {
-        if(!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId))
+        if(!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId)) {
             this.bindingPairs.add(Pair(dataBindingId, bindingData))
+        }
         return this
     }
 
@@ -57,7 +59,7 @@ open class SimpleSamaFragment: SamaFragment() {
     }
 
     /**
-     * Executes [function] when [menuId] is clicked
+     * Executes [function] when [menuId] is clicked.
      *
      * @param menuId
      * @param function
@@ -87,8 +89,9 @@ open class SimpleSamaFragment: SamaFragment() {
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        if(menuId != 0)
+        if(menuId != 0) {
             inflater.inflate(menuId, menu)
+        }
         onOptionMenuCreated?.invoke(menu)
         super.onCreateOptionsMenu(menu, inflater)
     }
@@ -127,8 +130,11 @@ open class SimpleSamaFragment: SamaFragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        if(title.isNotEmpty()) activity?.title = title
-        else if (defaultTitle.isNotEmpty()) activity?.title = defaultTitle
+        if(title.isNotEmpty()) {
+            activity?.title = title
+        } else if (defaultTitle.isNotEmpty()) {
+            activity?.title = defaultTitle
+        }
     }
 
     /** Clear references of dataBinding, searchView observable and menu functions. */
@@ -144,13 +150,13 @@ open class SimpleSamaFragment: SamaFragment() {
         private const val ExtraMenuId = "ExtraMenuId"
 
         /**
-         * Creates a new SimpleFragment
+         * Creates a new SimpleFragment.
          * @param layoutId The id of the layout to use. (0 means no layout is shown)
          */
         fun new(layoutId: Int): SimpleSamaFragment = new(layoutId, 0)
 
         /**
-         * Creates a new SimpleFragment
+         * Creates a new SimpleFragment.
          * @param layoutId The id of the layout to use. (0 means no layout is shown)
          * @param menuId The id of the menu to load. (0 means no menu is shown)
          */
