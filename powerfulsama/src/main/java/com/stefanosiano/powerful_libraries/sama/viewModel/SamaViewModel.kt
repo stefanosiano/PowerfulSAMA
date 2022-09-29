@@ -4,7 +4,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
 import com.stefanosiano.powerful_libraries.sama.extensions.coroutineSamaHandler
-import com.stefanosiano.powerful_libraries.sama.extensions.logError
 import com.stefanosiano.powerful_libraries.sama.extensions.logVerbose
 import com.stefanosiano.powerful_libraries.sama.extensions.tryOrPrint
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserver
@@ -14,7 +13,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -31,27 +29,11 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
     /** Flag to check if actions were stopped and should not be sent to the activity. */
     private var actionsStopped = false
 
-    /** Last action sent to the activity. Used to avoid sending multiple actions together (e.g. press on 2 buttons). */
-    @Deprecated("blocking actions should be managed differently ([startVmActions] and [stopVmActions])")
-    private var lastSentAction: A? = null
-
     /** Last [VmAction.VmActionSticky] sent to the activity. */
     private var lastStickyAction: A? = null
 
-    @Deprecated("Use liveAction")
-    /** LiveData of the response the ViewModel sends to the observer (activity/fragment). */
-    private var liveResponse: MediatorLiveData<VmResponse<A>> = MediatorLiveData()
-
     /** LiveData of the response the ViewModel sends to the observer (activity/fragment). */
     private var liveAction: MediatorLiveData<A> = MediatorLiveData()
-
-    /** Whether multiple actions can be pushed at once (e.g. multiple buttons clicked at the same time). */
-    @Deprecated("blocking actions should be managed differently ([startVmActions] and [stopVmActions])")
-    private var allowConcurrentActions = true
-
-    /** Whether multiple same actions can be sent at once (e.g. same button clicked multiple times at the same time). */
-    @Deprecated("blocking actions should be managed differently ([startVmActions] and [stopVmActions])")
-    private var allowConcurrentSameActions = true
 
     /** Whether this is already initialized. Used to check if [onFirstTime] should be called. */
     internal var isInitialized = AtomicBoolean(false)
@@ -60,18 +42,6 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
     init {
         initObserver(this)
     }
-
-    /** Clears the LiveData of the response to avoid the observer receives it over and over on configuration changes. */
-    @Deprecated("blocking actions should be managed differently ([startVmActions] and [stopVmActions])")
-    fun clearVmResponse() = liveResponse.postValue(null)
-
-    @Deprecated("Use sendAction")
-    /** Sends the [actionId] to the active observer with a nullable [data]. */
-    protected fun postAction(actionId: A, data: Any? = null) = postAction(VmResponse(actionId, data))
-
-    @Deprecated("Use sendAction")
-    /** Sends the action to the active observer. */
-    protected fun postAction(vmResponse: VmResponse<A>) = liveResponse.postValue(vmResponse)
 
     /** Sends the action to the active observer. */
     protected fun sendAction(action: A) = liveAction.postValue(action)
@@ -89,7 +59,6 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
         logVerbose("stopObserving")
         stopVmActions()
         stopObserver()
-        liveResponse.postValue(null)
         liveAction.postValue(null)
     }
 
@@ -99,46 +68,6 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
         logVerbose("restartObserving")
         startVmActions()
         startObserver()
-    }
-
-
-    @Deprecated("Use onVmAction")
-    /** Observes the action of the ViewModel. Call it on Ui thread. */
-    fun observeVmResponse(owner: LifecycleOwner, observer: (suspend (vmAction: A, vmData: Any?) -> Boolean)? = null) {
-        liveResponse.observe(owner) {
-            synchronized(this) {
-                when {
-                    !isActive || actionsStopped -> {}
-                    // If i clear the response, I clear the lastSentAction, too
-                    it == null -> lastSentAction = null
-                    else -> {
-                        // If the lastSentAction is different from the action of this response,
-                        // it means the user pressed on 2 buttons together, so I block it
-                        val isLastActionAllowed = lastSentAction != it.action && !allowConcurrentActions
-                        val isLastSameActionAllowed = lastSentAction == it.action && !allowConcurrentSameActions
-
-                        if (lastSentAction != null && (isLastActionAllowed || isLastSameActionAllowed)) {
-                            logError(
-                                "VmResponse blocked! Should clear previous response: " +
-                                        "${lastSentAction.toString()} \nbefore sending: $it"
-                            )
-                        } else {
-                            lastSentAction = it.action
-                            logVerbose("Sending to activity: $it")
-
-                            launch {
-                                val invoked = tryOrPrint(true) {
-                                    observer?.invoke(it.action, it.data) != false
-                                }
-                                if (invoked) {
-                                    liveResponse.postValue(null)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
 
@@ -161,17 +90,6 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
             }
         }
     }
-
-    /**
-     * Allow sending multiple same actions at once (e.g. same button clicked multiple times at the same time).
-     * Defaults to true.
-     */
-    @Deprecated("blocking actions should be managed differently ([startVmActions] and [stopVmActions])")
-    fun allowConcurrentSameActions(allow: Boolean) { allowConcurrentSameActions = allow }
-
-    /** Allow pushing multiple actions at once (e.g. multiple buttons clicked at the same time). Defaults to true. */
-    @Deprecated("blocking actions should be managed differently ([startVmActions] and [stopVmActions])")
-    fun allowConcurrentActions(allow: Boolean) { allowConcurrentActions = allow }
 
     /** Stop actions from being sent to the observing activity. To resume them call [startVmActions]. */
     fun stopVmActions() { actionsStopped = true }

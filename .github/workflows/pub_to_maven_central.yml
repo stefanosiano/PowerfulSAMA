@@ -28,13 +28,12 @@ jobs:
           echo "${{secrets.SONATYPE_GPG_CONTENT}}" | base64 -d > /home/runner/private.pgp
 
       - name: Build
-        run: |
-          ./gradlew :powerfulimageview:build
-          ./gradlew :powerfulimageview_rs:build
+        run:
+          make assembleLibrary
 
       - name: Publish
         run:
-          ./gradlew publish
+          make publish
         env:
           SONATYPE_USER: '${{secrets.SONATYPE_USER}}'
           SONATYPE_PWD: '${{secrets.SONATYPE_PWD}}'

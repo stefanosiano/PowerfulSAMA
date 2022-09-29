@@ -282,16 +282,6 @@ class Msg private constructor(
     }
 
     /**
-     * Shows the message and returns a [Unit].
-     * Useful for "return Msg.showOff()".
-     * If [showMessage] is true, then the message will be shown, otherwise [onOk] will be called.
-     */
-    @Deprecated("Use 'kotlin.run { show() }' instead: it's more readable")
-    fun showOff(context: Context? = null, showMessage: Boolean = true) {
-        if(showMessage) showMessage(context) else { onOk?.invoke(null) }
-    }
-
-    /**
      * Shows the message and returns its implementation (e.g. AlertDialog).
      * Optionally calls [f] right after building the message and before showing it.
      * If [showMessage] is met (true by default), then the message will be shown, otherwise [onOk] will be called.
@@ -636,10 +626,10 @@ class Msg private constructor(
         private val uniqueId: AtomicLong = AtomicLong(0)
 
         /** Default "Yes" string id. */
-        internal var defaultYes : Int = android.R.string.yes
+        internal var defaultYes : Int = android.R.string.ok
 
         /** Default "No" string id. */
-        internal var defaultNo : Int = android.R.string.no
+        internal var defaultNo : Int = android.R.string.cancel
 
         /** Default theme used by messages. */
         internal var defaultTheme : Int? = null

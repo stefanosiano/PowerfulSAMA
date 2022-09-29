@@ -4,6 +4,8 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.SparseArray
 import android.view.MenuItem
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.stefanosiano.powerful_libraries.sama.extensions.coroutineSamaHandler
 import com.stefanosiano.powerful_libraries.sama.extensions.forEach
@@ -33,6 +35,10 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope, SamaObserver 
 
     private val managedDialog = SparseArray<SamaDialogFragment>()
 
+    private lateinit var safResultLauncher: ActivityResultLauncher<Intent>
+
+    private val safRequestCode = samaRequestCodes.incrementAndGet()
+
     /** Returns the intent that started this activity as [SamaIntent] allowing use of [SamaIntent.getExtraStatic]. */
     val samaIntent
         get() = SamaIntent(super.getIntent())
@@ -42,6 +48,11 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope, SamaObserver 
         logVerbose("onCreate")
         initObserver(this)
         synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onCreate(this) } }
+
+
+        safResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            Saf.onRequestSafResult(this, safRequestCode, result.resultCode, result.data)
+        }
     }
 
     override fun onResume() {
@@ -57,6 +68,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope, SamaObserver 
         startObserver()
         synchronized(registeredViewModels) { registeredViewModels.forEach { it.restartObserving() } }
         synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onStart(this) } }
+        Saf.registerCurrentActivity(safResultLauncher, safRequestCode)
     }
 
     override fun onPause() {
@@ -110,7 +122,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope, SamaObserver 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         logVerbose("Selected item ${item.title}")
         if (item.itemId == android.R.id.home) {
-            onBackPressed()
+            onBackPressedDispatcher.onBackPressed()
             return true
         }
         return super.onOptionsItemSelected(item)
@@ -120,23 +132,6 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope, SamaObserver 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         Perms.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-    }
-
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        Saf.onRequestSafResult(this, requestCode, resultCode, data)
-        super.onActivityResult(requestCode, resultCode, data)
-    }
-
-
-    @Deprecated("Use onVmAction")
-    /**
-     * Observes the vmResponse of the [vm].
-     * It's just a simpler way to call [SamaViewModel.observeVmResponse]. Call it on Ui thread.
-     */
-    protected fun <A : VmAction> observeVmResponse(vm: SamaViewModel<A>, f: suspend (A, Any?) -> Boolean) {
-        registeredViewModels.add(vm)
-        vm.observeVmResponse(this, f)
     }
 
     /**

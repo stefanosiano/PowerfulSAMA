@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.PackageManager.PERMISSION_GRANTED
+import android.content.pm.PackageManager.PackageInfoFlags
 import android.net.Uri.fromParts
+import android.os.Build
 import android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS
 import android.util.SparseArray
 import androidx.core.app.ActivityCompat
@@ -18,17 +20,22 @@ import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 object Perms {
 
     /** Permissions requested in the manifest of the app. */
-    private val requestedPermissions by lazy {
-        applicationContext.let {
-            it.packageManager.getPackageInfo(
-                it.packageName,
-                PackageManager.GET_PERMISSIONS
-            ).requestedPermissions
-        } ?: arrayOf<String>()
+    private val requestedPermissions: Array<String> by lazy {
+        getSelfPackageInfo(PackageManager.GET_PERMISSIONS).requestedPermissions ?: emptyArray()
     }
 
     /** Array of helpers for asking permissions. */
     private val permHelperMap = SparseArray<PermHelper>()
+
+    private fun getSelfPackageInfo(flag: Int) =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            applicationContext.packageManager.getPackageInfo(
+                applicationContext.packageName,
+                PackageInfoFlags.of(flag.toLong())
+            )
+        } else {
+            applicationContext.packageManager.getPackageInfo(applicationContext.packageName, flag)
+        }
 
     /** Manages the permissions request results. Activities extending [SamaActivity] already call it. */
     internal fun onRequestPermissionsResult(
@@ -216,7 +223,7 @@ object Perms {
         onShowRationale: (perms: Array<String>, activity: Activity, requestCode: Int) -> Unit,
         permanentlyDeniedId: Int, optionalPerms: List<String> = ArrayList(), f: () -> Unit
     ) {
-        call(perms, onShowRationale, { permanentlyDeniedPerms, showRationalePerms, activity, requestCode ->
+        call(perms, onShowRationale, { _, _, activity, requestCode ->
             Msg.alertDialog().message(permanentlyDeniedId).negative(android.R.string.cancel).onOk(android.R.string.ok) {
                 val intent = Intent(ACTION_APPLICATION_DETAILS_SETTINGS).setData(
                     fromParts(
@@ -255,7 +262,7 @@ object Perms {
                     .onOk(android.R.string.ok) { ActivityCompat.requestPermissions(activity, permissions, requestCode) }
                     .show(activity)
             },
-            { permanentlyDeniedPerms, showRationalePerms, activity, requestCode ->
+            { _, _, activity, requestCode ->
                 Msg.ad(permanentlyDeniedId).negative(android.R.string.cancel).onOk(android.R.string.ok) {
                     val intent = Intent(ACTION_APPLICATION_DETAILS_SETTINGS).setData(
                         fromParts(
@@ -371,41 +378,4 @@ object Perms {
             return true
         }
     }
-}
-
-/** Abstract class that contains info about permissions to run a specific function. Used through [Perms.call]. */
-@Suppress("UnnecessaryAbstractClass", "UnusedPrivateMember")
-abstract class PermissionContainer(
-    /** Required permissions needed for the function that will be asked for (if not already granted). */
-    val perms: List<String>,
-    /**
-     * Optional permissions for the function that will be asked for (if not already granted).
-     * If denied, the function will be called anyway.
-     */
-    val optionalPerms: List<String> = ArrayList(),
-    /**
-     * String for the rationale to show after denying required permissions, to show the user why permissions are needed.
-     * If null [onShowRationale] will be called.
-     */
-    val rationaleId: Int? = null,
-    /**
-     * String for the message to show when the user chooses "Don't ask again" when denying required permissions.
-     * If null, [onPermanentlyDenied] will be called.
-     */
-    val permanentlyDeniedId: Int? = null
-) {
-    /** Called in case one or more of [perms] or [optionalPerms] were denied and the app should show a rationale. */
-    fun onShowRationale(perms: Array<String>, activity: Activity, requestCode: Int) = Unit
-
-    /**
-     * Called if "Don't ask again" was checked when denying a permission,
-     *  with all permanently denied permissions and permissions needing the rationale to show.
-     * Permanently denied permissions will never include [optionalPerms].
-     */
-    fun onPermanentlyDenied(
-        permanentlyDeniedPerms: Array<String>,
-        showRationalePerms: Array<String>,
-        activity: Activity,
-        requestCode: Int
-    ) = Unit
 }

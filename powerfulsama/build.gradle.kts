@@ -18,11 +18,11 @@ ext {
 }
 
 android {
-    compileSdk = 33
+    compileSdk = Deps.sdkCompile
 
     defaultConfig {
-        minSdk = 16
-        targetSdk = 33
+        minSdk = Deps.sdkMin
+        targetSdk = Deps.sdkTarget
         consumerProguardFiles("sama-proguard-rules.pro")
     }
 

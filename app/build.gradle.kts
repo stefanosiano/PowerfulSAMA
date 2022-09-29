@@ -6,12 +6,12 @@ plugins {
 }
 
 android {
-    compileSdk = 33
+    compileSdk = Deps.sdkCompile
 
     defaultConfig {
         applicationId = "com.stefanosiano.powerfullibraries.sama_sample"
-        minSdk = 16
-        targetSdk = 33
+        minSdk = Deps.sdkMin
+        targetSdk = Deps.sdkTarget
         versionCode = 1
         versionName = "1.0"
 
@@ -45,9 +45,8 @@ dependencies {
     implementation(Deps.kotlinCoroutinesAndroid)
     detektPlugins(Deps.detektKtlintDependency)
 
-//    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlin_version")
-    implementation("io.github.stefanosiano.powerful_libraries:sharedpreferences:1.0.19")                 //PowerfulSharedPreferences
-    implementation("io.github.stefanosiano.powerful_libraries:sharedpreferences_livedata:1.0.6")           //PowerfulSharedPreferences
+    implementation(Deps.powerfulSharedPreferences)
+    implementation(Deps.powerfulSharedPreferencesLiveData)
 
     implementation(project(path = ":powerfulsama"))
     compileOnly(project(path = ":powerfulsama_annotations"))
@@ -59,18 +58,19 @@ dependencies {
     implementation(Deps.androidxRoomRuntime)
     implementation(Deps.androidxRoom)
     kapt(Deps.androidxRoomCompiler)
-    implementation("androidx.fragment:fragment-ktx:1.5.2")
+    implementation(Deps.androidxFragment)
 
     //TESTS
     testImplementation(Deps.androidxJunit) //'junit:junit:4.+'
     testImplementation(Deps.kotlinCoroutinesTest)
-    testImplementation("android.arch.core:core-testing:1.1.1")
-    testImplementation("androidx.room:room-testing:2.4.3")                                        //Test helpers for Room
-    androidTestImplementation("androidx.test.ext:junit:1.1.3")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.4.0")
-    androidTestImplementation("androidx.test:core:1.5.0-alpha02")
-    androidTestImplementation("androidx.test:runner:1.5.0-alpha04")
-    androidTestImplementation("androidx.test:rules:1.4.0")
+    testImplementation(Deps.kotlinTestJunit)
+    testImplementation(Deps.archCoreTesting)
+    testImplementation(Deps.roomTesting)
+    androidTestImplementation(Deps.androidxJunit)
+    androidTestImplementation(Deps.espressoCore)
+    androidTestImplementation(Deps.androidxCore) // "androidx.test:core:1.5.0-alpha02")
+    androidTestImplementation(Deps.androidxRunner) // "androidx.test:runner:1.5.0-alpha04")
+    androidTestImplementation(Deps.androidxTestRules)
 }
 
 detekt {

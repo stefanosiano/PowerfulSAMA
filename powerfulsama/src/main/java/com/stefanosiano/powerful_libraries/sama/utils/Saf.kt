@@ -6,8 +6,10 @@ import android.content.UriPermission
 import android.net.Uri
 import android.os.Build
 import android.util.SparseArray
+import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.RequiresApi
 import androidx.documentfile.provider.DocumentFile
+import com.stefanosiano.powerful_libraries.sama.extensions.logDebug
 import com.stefanosiano.powerful_libraries.sama.extensions.tryOrPrint
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -22,12 +24,16 @@ import java.io.InputStream
 import java.io.OutputStream
 
 /** Helper class to deal with Android Storage Access Framework. */
+@Suppress("TooManyFunctions")
 object Saf : CoroutineScope {
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineJob + CoroutineExceptionHandler { _, t -> t.printStackTrace() }
 
     /** Array of helpers for managing saf results. */
     private val safHelperMap = SparseArray<SafHelper>()
+
+    private var currentResultLauncher: ActivityResultLauncher<Intent>? = null
+    private var currentRequestCode: Int = -1
 
 
     /** Manages the Saf request results. Activities extending [SamaActivity] already call it. */
@@ -85,12 +91,16 @@ object Saf : CoroutineScope {
         }
     }
 
+    internal fun registerCurrentActivity(resultLauncher: ActivityResultLauncher<Intent>, requestCode: Int) {
+        currentResultLauncher = resultLauncher
+        currentRequestCode = requestCode
+    }
 
     /** Release persisted uris held by this app. Does nothing if version < Build.VERSION_CODES.KITKAT. */
     fun releasePersistedUri(uri: Uri) {
         if(Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) return
         val persisted = persistedUriPermissions().firstOrNull { it.uri == uri }
-            ?: let { "Provided uri $uri is not persisted by the app: ignoring release request"; return }
+            ?: let { logDebug("Provided uri $uri is not persisted by the app: ignoring release request"); return }
         var flags = 0
         if(persisted.isReadPermission) flags = flags.or(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         if(persisted.isWritePermission) flags = flags.or(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
@@ -131,13 +141,13 @@ object Saf : CoroutineScope {
             .setType(mimeType)
             .addCategory(Intent.CATEGORY_OPENABLE)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        if (persistableUriPermission) intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        if (persistableUriPermission) intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
 
-        val reqCode = SamaActivity.samaRequestCodes.incrementAndGet()
+        val reqCode = currentRequestCode
         val permHelper = SafHelper(reqCode, persistableUriPermission, true, true, f as (Closeable?) -> Unit, null)
         safHelperMap.put(reqCode, permHelper)
 
-        PowerfulSama.getCurrentActivity()?.startActivityForResult(intent, reqCode)
+        currentResultLauncher?.launch(intent)
     }
 
     /**
@@ -156,13 +166,13 @@ object Saf : CoroutineScope {
             .addCategory(Intent.CATEGORY_OPENABLE)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        if(persistableUriPermission) intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        if (persistableUriPermission) intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
 
-        val reqCode = SamaActivity.samaRequestCodes.incrementAndGet()
+        val reqCode = currentRequestCode
         val permHelper = SafHelper(reqCode, persistableUriPermission, true, true, null, f)
         safHelperMap.put(reqCode, permHelper)
 
-        PowerfulSama.getCurrentActivity()?.startActivityForResult(intent, reqCode)
+        currentResultLauncher?.launch(intent)
     }
 
     /**
@@ -181,13 +191,13 @@ object Saf : CoroutineScope {
             .addCategory(Intent.CATEGORY_OPENABLE)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        if(persistableUriPermission) intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        if(persistableUriPermission) intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
 
-        val reqCode = SamaActivity.samaRequestCodes.incrementAndGet()
+        val reqCode = currentRequestCode
         val permHelper = SafHelper(reqCode, persistableUriPermission, false, true, f as (Closeable?) -> Unit, null)
         safHelperMap.put(reqCode, permHelper)
 
-        PowerfulSama.getCurrentActivity()?.startActivityForResult(intent, reqCode)
+        currentResultLauncher?.launch(intent)
     }
 
     /**
@@ -202,13 +212,13 @@ object Saf : CoroutineScope {
             .addCategory(Intent.CATEGORY_OPENABLE)
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-        if(persistableUriPermission) intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        if(persistableUriPermission) intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
 
-        val reqCode = SamaActivity.samaRequestCodes.incrementAndGet()
+        val reqCode = currentRequestCode
         val permHelper = SafHelper(reqCode, persistableUriPermission, false, true, null, f)
         safHelperMap.put(reqCode, permHelper)
 
-        PowerfulSama.getCurrentActivity()?.startActivityForResult(intent, reqCode)
+        currentResultLauncher?.launch(intent)
     }
 
 
@@ -223,13 +233,13 @@ object Saf : CoroutineScope {
             .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
 //            .addCategory(Intent.CATEGORY_OPENABLE)
-        if(persistableUriPermission) intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        if(persistableUriPermission) intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
 
-        val reqCode = SamaActivity.samaRequestCodes.incrementAndGet()
+        val reqCode = currentRequestCode
         val permHelper = SafHelper(reqCode, persistableUriPermission, false, false, null, f)
         safHelperMap.put(reqCode, permHelper)
 
-        PowerfulSama.getCurrentActivity()?.startActivityForResult(intent, reqCode)
+        currentResultLauncher?.launch(intent)
     }
 
 

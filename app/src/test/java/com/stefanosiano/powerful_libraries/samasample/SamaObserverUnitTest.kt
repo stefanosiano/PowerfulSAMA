@@ -15,14 +15,17 @@ import com.stefanosiano.powerful_libraries.sama.utils.SamaObserver
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserverImpl
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.setMain
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
+import kotlin.test.BeforeTest
 
 class SamaObserverUnitTest : CoroutineScope {
 
@@ -31,6 +34,11 @@ class SamaObserverUnitTest : CoroutineScope {
 
     // Rule for Main Looper
     @get:Rule val taskExecutorRule = InstantTaskExecutorRule()
+
+    @BeforeTest
+    fun setup() {
+        Dispatchers.setMain(Dispatchers.Unconfined)
+    }
 
     /** Test if observing a variable calls the corresponding lambda functions on changes. */
     @Suppress("LongMethod")
@@ -243,7 +251,7 @@ class SamaObserverUnitTest : CoroutineScope {
     }
 
     /** Run each tests 10 times to be sure everything works. */
-//    @Test todo
+//    @Test
     fun observeTestAll() {
         for (i in 0 until 5) {
             println("Test N. $i")

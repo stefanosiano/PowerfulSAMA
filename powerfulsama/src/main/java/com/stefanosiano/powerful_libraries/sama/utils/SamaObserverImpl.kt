@@ -405,6 +405,7 @@ class SamaObserverImpl: SamaObserver {
 
     /** Clear all references to observed variables and methods, stopping and detaching them. */
     override fun destroyObserver() {
+        isPaused = true
         synchronized(observables) {
             observables.forEach { it.ob.removeOnPropertyChangedCallback(it.callback) }
             observables.clear()

@@ -16,7 +16,7 @@ ext {
 }
 
 dependencies {
-    implementation ("com.squareup:kotlinpoet:1.12.0")
+    implementation (Deps.kotlinPoet)
     implementation(kotlin("reflect"))
     implementation(Deps.kotlinStdLib)
     implementation(Deps.kotlinCoroutinesCore)

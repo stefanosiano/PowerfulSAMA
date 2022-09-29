@@ -3,12 +3,10 @@ package com.stefanosiano.powerful_libraries.sama.utils
 import android.content.pm.PackageManager
 import android.content.pm.Signature
 import android.os.Build
+import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama.applicationContext
 
 /** Helper class to validate the signature of the app. */
 object SamaSignature {
-
-    private val pkgName = PowerfulSama.applicationContext.packageName
-    private val pm = PowerfulSama.applicationContext.packageManager
 
     /** Function to be called in case a signature check fails. Used inside [checkSignatures] method. */
     var onSignatureFailed : ((Array<Signature>) -> Unit)? = null
@@ -22,18 +20,28 @@ object SamaSignature {
      */
     fun readSignatures(): Array<Signature> {
         val signatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            val signingInfo = pm.getPackageInfo(pkgName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
+            val signingInfo = getSelfPackageInfo(PackageManager.GET_SIGNING_CERTIFICATES).signingInfo
             if (signingInfo.hasMultipleSigners()) {
                 signingInfo.apkContentsSigners
             } else {
                 signingInfo.signingCertificateHistory
             }
         } else {
-            pm.getPackageInfo(pkgName, PackageManager.GET_SIGNATURES).signatures
+            getSelfPackageInfo(PackageManager.GET_SIGNATURES).signatures
         }
 
         return signatures
     }
+
+    private fun getSelfPackageInfo(flag: Int) =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            applicationContext.packageManager.getPackageInfo(
+                applicationContext.packageName,
+                PackageManager.PackageInfoFlags.of(flag.toLong())
+            )
+        } else {
+            applicationContext.packageManager.getPackageInfo(applicationContext.packageName, flag)
+        }
 
     /**
      * Reads the signatures of the app, through [PackageManager] apis, and run [f] passing all signatures found.
