@@ -9,25 +9,29 @@ import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaIntent
 import java.lang.ref.WeakReference
 
+/** Object that initializes the library and all of its components. */
 object PowerfulSama {
     internal var logger: PowerfulSamaLogger? = null
     internal var isAppDebug: Boolean = false
     internal lateinit var applicationContext: Context
 
-    /** Weak reference to the current activity */
+    /** Weak reference to the current activity. */
     private var currentActivity : WeakReference<Activity>? = null
 
     /** Initializes the SAMA library
      *
      * [application] needed to initialize the library
      * [defaultMessagesTheme] is used as theme for all messages
-     * [defaultMessageCustomization] is used as customization function called after the message has been shown. Note: It will be called on UI thread
+     * [defaultMessageCustomization] is used as customization function called after the message has been shown.
+     *  Note: It will be called on UI thread
      * [defaultYeslabel] Default "Yes" text
      * [defaultNolabel] Default "No" text
      * [logger] Logger used internally for base Sama classes
      * [checkSignatureFunction] Function to check whether the signatures of the app are correct
-     * [onSignatureChackFailed] Function to run if the signatures of the app are NOT correct (will be run by [SamaSignature.checkSignatures])
+     * [onSignatureChackFailed] Function to run if the signatures of the app are NOT correct
+     *  (will be run by [SamaSignature.checkSignatures])
      */
+    @Suppress("LongParameterList")
     fun init(
         application: Application,
         isDebug: Boolean,
@@ -48,7 +52,9 @@ object PowerfulSama {
             override fun onActivityDestroyed(activity: Activity) { clearIntent(activity) }
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
             override fun onActivityStopped(activity: Activity) {}
-            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) { setCurrentActivity(activity) }
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                setCurrentActivity(activity)
+            }
         })
 
         Res.setApplicationContext(application)
@@ -58,30 +64,40 @@ object PowerfulSama {
         Msg.defaultNo = defaultNolabel
         PowerfulSama.logger = logger
 
-        if(checkSignatureFunction != null && onSignatureChackFailed != null)
+        if(checkSignatureFunction != null && onSignatureChackFailed != null) {
             SamaSignature.init(checkSignatureFunction, onSignatureChackFailed)
+        }
     }
 
-    /** Clears the intent used to start an activity */
-    private fun clearIntent(activity: Activity?) = activity?.let { if(it is SamaActivity) SamaIntent.clear("${it.samaIntent.uid} ") }
+    /** Clears the intent used to start an activity. */
+    private fun clearIntent(activity: Activity?) =
+        activity?.let { if(it is SamaActivity) SamaIntent.clear("${it.samaIntent.uid} ") }
 
-    /** Sets the current activity on which to show the messages */
+    /** Sets the current activity on which to show the messages. */
     private fun setCurrentActivity(activity: Activity?) = activity?.let {
         currentActivity?.clear()
         currentActivity = WeakReference(activity)
     }
 
     /** Get the current activity as a weak reference. Can be null if no activities are running
-     * (e.g. in services, broadcast receivers, threads finishing after activity's onDestroy, etc.) */
+     * (e.g. in services, broadcast receivers, threads finishing after activity's onDestroy, etc.). */
     fun getCurrentActivity(): Activity? = currentActivity?.get()
 }
 
+/** Logger class called by inner library methods. */
 interface PowerfulSamaLogger {
+    /** Log a messages marked as verbose. */
     fun logVerbose(clazz: Class<*>, message: String)
+    /** Log a messages marked as debug. */
     fun logDebug(clazz: Class<*>, message: String)
+    /** Log a messages marked as info. */
     fun logInfo(clazz: Class<*>, message: String)
+    /** Log a messages marked as warning. */
     fun logWarning(clazz: Class<*>, message: String)
+    /** Log a messages marked as error. */
     fun logError(clazz: Class<*>, message: String)
+    /** Log an exception occurred. */
     fun logException(clazz: Class<*>, t: Throwable)
+    /** Log not fatal exceptions already handled by the library. */
     fun logExceptionWorkarounded(clazz: Class<*>, t: Throwable)
 }
