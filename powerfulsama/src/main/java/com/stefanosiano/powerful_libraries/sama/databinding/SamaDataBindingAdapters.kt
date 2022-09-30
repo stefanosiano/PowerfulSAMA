@@ -1,4 +1,4 @@
-package com.stefanosiano.powerful_libraries.sama.utils
+package com.stefanosiano.powerful_libraries.sama.databinding
 
 import android.graphics.Paint
 import android.text.TextUtils
