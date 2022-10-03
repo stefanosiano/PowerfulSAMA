@@ -8,9 +8,11 @@ publish: stop publishLibrary
 clean:
 	./gradlew clean
 
-# build and run tests
+# build and run tests. Cannot simply run ./gradlew build, due to databinding errors
 build:
-	./gradlew build
+	./gradlew :powerfulsama:build
+	./gradlew :powerfulsama_annotations:build
+	./gradlew :app:build
 
 # We stop gradle to make sure there are no locked files
 stop:
@@ -19,7 +21,7 @@ stop:
 # Assemble release of the library modules to publish
 assembleLibraryModules:
 	./gradlew :powerfulsama:assembleRelease
-	./gradlew :powerfulsama_annotations:assembleRelease
+	./gradlew :powerfulsama_annotations:build
 
 # Publish library to Sonatype
 publishLibrary:

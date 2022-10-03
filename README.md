@@ -14,3 +14,15 @@ Utilities include management of:
 - resources (strings, colors, etc.)
 - notifications
 - messages
+
+Gradle
+------
+  
+```
+dependencies {
+    implementation 'io.github.stefanosiano.powerful_libraries:sama:0.4.23' // Put this line into module's build.gradle
+    compileOnly 'io.github.stefanosiano.powerful_libraries:sama_annotations:0.4.23' // Put this line for extended funcionalities
+    kapt 'io.github.stefanosiano.powerful_libraries:sama_annotations:0.4.23' // Put this line for extended funcionalities
+}
+```
+  
