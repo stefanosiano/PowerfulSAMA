@@ -22,7 +22,7 @@
                 app:ssvMillis="@{testVm.searchMillis}"
                 app:ssvQuery="@={testVm.searchTerm}"
                 tools:ssvQuery="{testVm.searchTerm}"/>
-
+<!-- ssvQuery - spnKey - spnValue - visible -->
         <com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
                 android:id="@+id/testSpinner"
                 android:layout_width="match_parent"

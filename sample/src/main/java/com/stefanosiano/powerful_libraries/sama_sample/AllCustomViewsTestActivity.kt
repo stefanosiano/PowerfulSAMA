@@ -23,8 +23,9 @@ class AllCustomViewsTestActivity : SamaActivity() {
         onVmAction(testVm, ::handleVmResponse)
     }
 
-    fun handleVmResponse(action: AlcvTestAction) { when(action) {
-    } }
+    fun handleVmResponse(action: AlcvTestAction) {
+//        when(action) {}
+    }
 }
 
 class AllCustomViewsTestVM : SamaViewModel<AlcvTestAction>() {
