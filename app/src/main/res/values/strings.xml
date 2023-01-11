@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">PowerfulSAMA Sample</string>
     <string name="app_name2">Sample</string>
+    <string name="ask_location">Ask location</string>
+    <string name="ask_location_rationale">This is the rationale to ask location</string>
+    <string name="ask_location_permanently_denied">This is the permanently denied message</string>
 </resources>
