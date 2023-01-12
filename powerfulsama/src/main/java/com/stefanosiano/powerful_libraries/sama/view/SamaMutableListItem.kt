@@ -8,10 +8,6 @@ abstract class SamaMutableListItem<T : Any> : SamaListItem() {
     /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind]. */
     @Ignore internal var mEditBoundItem: (T) -> Unit = {}
 
-    @Deprecated(
-        message = "Use method with bound object, since this is a mutableListItem",
-        replaceWith = ReplaceWith("onBind(bound, initObjects)")
-    )
     final override suspend fun onBind() = super.onBind()
 
     /** Called the first time the bound item needs to be created. */

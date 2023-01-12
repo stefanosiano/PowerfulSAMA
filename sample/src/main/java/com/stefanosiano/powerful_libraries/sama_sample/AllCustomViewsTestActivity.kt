@@ -2,6 +2,7 @@ package com.stefanosiano.powerful_libraries.sama_sample
 
 import android.os.Bundle
 import androidx.activity.viewModels
+import androidx.databinding.DataBindingUtil
 import androidx.databinding.ObservableField
 import androidx.databinding.ObservableInt
 import androidx.databinding.ObservableList

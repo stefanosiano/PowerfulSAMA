@@ -127,14 +127,7 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope, SamaObserver 
         super.onActivityResult(requestCode, resultCode, data)
     }
 
-    @Deprecated("Use onVmAction")
-    /** Observes the vmResponse of the [vm]. It's just a simpler way to call [SamaViewModel.observeVmResponse]. Call it on Ui thread. */
-    protected fun <A : VmAction> observeVmResponse(vm: SamaViewModel<A>, f: suspend (A, Any?) -> Boolean) {
-        registeredViewModels.add(vm)
-        vm.observeVmResponse(this, f)
-    }
-
-    /** Observes the vmResponse of the [vm]. It's just a simpler way to call [SamaViewModel.observeVmResponse]. Call it on Ui thread. */
+    /** Observes the vmResponse of the [vm]. Call it on Ui thread. */
     protected fun <A : VmAction> onVmAction(vm: SamaViewModel<A>, f: (A) -> Unit) {
         registeredViewModels.add(vm)
         vm.onVmAction(this, f)

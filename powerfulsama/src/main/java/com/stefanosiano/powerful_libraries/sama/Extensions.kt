@@ -133,19 +133,9 @@ fun <T> LiveData<List<T>>.getListDistinctBy(function: (T) -> Any): LiveData<List
     return distinctLiveData
 }
 
-/** Run [f] on ui thread, waits for its completion and return its value. */
-@Deprecated("Use corountines: launch(Dispatchers.Main) { ... }")
-fun <T> runOnUiAndWait(f: () -> T): T? {
-    if (Looper.myLooper() == mainThreadHandler.looper) return f.invoke()
-    var ret: T? = null
-    var finished = false
-    runBlocking { runOnUi { if (isActive) ret = f(); finished = true }; while (isActive && !finished) delay(10) }
-    return ret
-}
-
 /** Run [f] on ui thread. */
 @Deprecated("Use corountines: launch(Dispatchers.Main) { ... }")
-fun runOnUi(f: () -> Unit) { if (Looper.myLooper() == mainThreadHandler.looper) f.invoke() else mainThreadHandler.post { f.invoke() } }
+internal fun runOnUi(f: () -> Unit) { if (Looper.myLooper() == mainThreadHandler.looper) f.invoke() else mainThreadHandler.post { f.invoke() } }
 
 /** Return a copy of the file retrieved through the uri using Android providers into app internal cache directory, using [fileName]. */
 fun Uri.toFileFromProviders(context: Context, fileName: String): File? =
@@ -320,22 +310,6 @@ inline fun <reified T : Enum<T>> String.toEnum(default: T): T = try { enumValueO
 
 /** Copies content from this [InputStream] to [output], managing open and close stream. */
 fun InputStream.into(output: OutputStream) = use { inp -> output.use { outp -> inp.copyTo(outp) } }
-
-/** Transforms passed [secs] into milliseconds. */
-@Deprecated("Use TimeUnit directly.", ReplaceWith("TimeUnit.SECONDS.toMillis(secs)", "java.util.concurrent.TimeUnit"))
-fun secsToMillis(secs: Long): Long = TimeUnit.SECONDS.toMillis(secs)
-
-/** Transforms passed [mins] into milliseconds. */
-@Deprecated("Use TimeUnit directly.", ReplaceWith("TimeUnit.MINUTES.toMillis(mins)", "java.util.concurrent.TimeUnit"))
-fun minsToMillis(mins: Long): Long = TimeUnit.MINUTES.toMillis(mins)
-
-/** Transforms passed [hours] into milliseconds. */
-@Deprecated("Use TimeUnit directly.", ReplaceWith("TimeUnit.HOURS.toMillis(hours)", "java.util.concurrent.TimeUnit"))
-fun hoursToMillis(hours: Long): Long = TimeUnit.HOURS.toMillis(hours)
-
-/** Transforms passed [days] into milliseconds. */
-@Deprecated("Use TimeUnit directly.", ReplaceWith("TimeUnit.DAYS.toMillis(days)", "java.util.concurrent.TimeUnit"))
-fun daysToMillis(days: Long): Long = TimeUnit.DAYS.toMillis(days)
 
 /** Returns `true` if all of [elements] are found in the array. */
 fun <T> Array<out T>.contains(elements: Collection<T>): Boolean =

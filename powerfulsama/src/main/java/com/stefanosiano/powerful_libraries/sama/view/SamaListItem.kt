@@ -25,10 +25,6 @@ abstract class SamaListItem : CoroutineScope, SamaObserver by SamaObserverImpl()
 
     @Ignore override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
-    @Deprecated("Use sendAction")
-    @Ignore
-    internal var onPostAction: (suspend (SamaListItemAction?, SamaListItem, Any?) -> Unit)? = null
-
     @Ignore internal var onSendAction: ((SamaListItemAction) -> Unit)? = null
 
     /** Delay in milliseconds after which a function in "observe(ob, ob, ob...)" can be called again.
@@ -89,30 +85,10 @@ abstract class SamaListItem : CoroutineScope, SamaObserver by SamaObserverImpl()
     /** Get the recyclerview of the adapter this item is in (may be null). */
     fun getRecyclerView() = adapter?.get()?.recyclerView?.get()
 
-    @Deprecated("Use sendAction")
-    /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] after [millis] milliseconds, optionally passing an [action].
-     * If called again before [millis] milliseconds are passed, previous call is cancelled. */
-    protected fun <T> postAction(action: T? = null, millis: Long = 0, data: Any? = null) where T : SamaListItemAction, T : Enum<T> {
-        updateJobs[action?.name ?: ""]?.cancel()
-        updateJobs[action?.name ?: ""] = launch {
-            delay(millis); if (isActive) {
-                onPostAction?.invoke(
-                    action,
-                    this@SamaListItem,
-                    data
-                )
-            }
-        }
-    }
-
-    /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.observe] passing an [action]. */
+    /** Calls the listener set to the [SamaRvAdapter] through [SamaRvAdapter.onAction] passing an [action]. */
     protected fun <T : SamaListItemAction> sendAction(action: T) {
         onSendAction?.invoke(action)
     }
-
-    @Deprecated("Use sendAction")
-    /** Sets a listener through [SamaRvAdapter] to be called by the item. */
-    internal fun setPostActionListener(f: suspend (SamaListItemAction?, SamaListItem, Any?) -> Unit) { onPostAction = f }
 
     /** Sets a listener through [SamaRvAdapter] to be called by the item. */
     internal fun setSendActionListener(f: (SamaListItemAction) -> Unit) { onSendAction = f }

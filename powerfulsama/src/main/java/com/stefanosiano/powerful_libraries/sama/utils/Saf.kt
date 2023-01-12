@@ -9,6 +9,7 @@ import android.util.SparseArray
 import androidx.documentfile.provider.DocumentFile
 import com.stefanosiano.powerful_libraries.sama.tryOrPrint
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

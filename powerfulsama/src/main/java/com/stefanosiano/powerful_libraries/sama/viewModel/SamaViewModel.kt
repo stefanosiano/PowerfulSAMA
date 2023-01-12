@@ -30,30 +30,11 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
     /** Flag to check if actions were stopped and should not be sent to the activity. */
     private var actionsStopped = false
 
-    /** Last action sent to the activity. Used to avoid sending multiple actions together (like press on 2 buttons). */
-    @Deprecated("blocking actions should me managed differently ([startVmActions] and [stopVmActions])")
-    private var lastSentAction: A? = null
-
     /** Last [VmAction.VmActionSticky] sent to the activity. */
     private var lastStickyAction: A? = null
 
-    @Deprecated("Use liveAction")
-    /** LiveData of the response the ViewModel sends to the observer (activity/fragment). */
-    private var liveResponse: MediatorLiveData<VmResponse<A>> = MediatorLiveData()
-
     /** LiveData of the response the ViewModel sends to the observer (activity/fragment). */
     private var liveAction: MediatorLiveData<A> = MediatorLiveData()
-
-    /** Flag to know if multiple actions can be pushed at once (e.g. multiple buttons clicked at the same time). */
-    @Deprecated("blocking actions should me managed differently ([startVmActions] and [stopVmActions])")
-    private var allowConcurrentActions = true
-
-    /**
-     * Flag to know if multiple same actions can be pushed at once.
-     * (e.g. same button clicked multiple times at the same time).
-     */
-    @Deprecated("blocking actions should me managed differently ([startVmActions] and [stopVmActions])")
-    private var allowConcurrentSameActions = true
 
     /** Flag to know if this [SamaViewModel] is initialized. Used to check if [onFirtstTime] should be called. */
     internal var isInitialized = AtomicBoolean(false)
@@ -61,18 +42,6 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
     init {
         initObserver(this)
     }
-
-    /** Clears the LiveData of the response to avoid the observer receives it over and over on configuration changes. */
-    @Deprecated("blocking actions should me managed differently ([startVmActions] and [stopVmActions])")
-    fun clearVmResponse() = liveResponse.postValue(null)
-
-    @Deprecated("Use sendAction")
-    /** Sends the [actionId] to the active observer with a nullable [data]. */
-    protected fun postAction(actionId: A, data: Any? = null) = postAction(VmResponse(actionId, data))
-
-    @Deprecated("Use sendAction")
-    /** Sends the action to the active observer. */
-    protected fun postAction(vmResponse: VmResponse<A>) = liveResponse.postValue(vmResponse)
 
     /** Sends the action to the active observer. */
     protected fun sendAction(action: A) = liveAction.postValue(action)
@@ -90,7 +59,6 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
         logVerbose("stopObserving")
         stopVmActions()
         stopObserver()
-        liveResponse.postValue(null)
         liveAction.postValue(null)
     }
 
@@ -102,50 +70,8 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
     }
 
     /** Observes the action of the ViewModel. Call it on Ui thread. */
-    @Deprecated("Use onVmAction")
-    fun observeVmResponse(
-        lifecycleOwner: LifecycleOwner,
-        observer: (suspend (vmAction: A, vmData: Any?) -> Boolean)? = null
-    ) {
-        liveResponse.observe(lifecycleOwner, {
-            synchronized(this) {
-                if (!isActive) return@observe
-
-                if (actionsStopped) return@observe
-
-                // If i clear the response, I clear the lastSentAction, too
-                if (it == null) {
-                    lastSentAction = null
-                    return@observe
-                }
-
-                if (lastSentAction != null) {
-                    // If the lastSentAction is different from the action of this response,
-                    // it means the user pressed on 2 buttons together, so I block it
-                    if ((lastSentAction != it.action && !allowConcurrentActions) ||
-                        (lastSentAction == it.action && !allowConcurrentSameActions)) {
-                        logError(
-                            "VmResponse blocked! Should clear previous response: $lastSentAction \nbefore sending: $it"
-                        )
-                        return@observe
-                    }
-                }
-
-                lastSentAction = it.action
-                logVerbose("Sending to activity: $it")
-
-                launch {
-                    if (tryOrPrint(true) { observer?.invoke(it.action, it.data) != false }) {
-                        liveResponse.postValue(null)
-                    }
-                }
-            }
-        })
-    }
-
-    /** Observes the action of the ViewModel. Call it on Ui thread. */
     fun onVmAction(lifecycleOwner: LifecycleOwner, observer: (vmAction: A) -> Unit) {
-        liveAction.observe(lifecycleOwner, {
+        liveAction.observe(lifecycleOwner) {
             if (!isActive) return@observe
             if (actionsStopped) return@observe
             if (it == null) {
@@ -158,23 +84,9 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
                 lastStickyAction = it
             }
             liveAction.postValue(null)
-        })
+        }
         lastStickyAction?.let { observer(it) }
     }
-
-    /**
-     * Set if multiple same actions at once are allowed (e.g. same button clicked multiple times at the same time).
-     * Defaults to [true].
-     */
-    @Deprecated("blocking actions should me managed differently ([startVmActions] and [stopVmActions])")
-    fun allowConcurrentSameActions(allow: Boolean) { allowConcurrentSameActions = allow }
-
-    /**
-     * Set if multiple actions at once are allowed (e.g. multiple buttons clicked at the same time).
-     * Defaults to [true].
-     */
-    @Deprecated("blocking actions should me managed differently ([startVmActions] and [stopVmActions])")
-    fun allowConcurrentActions(allow: Boolean) { allowConcurrentActions = allow }
 
     /** Stop actions from being sent to the observing activity. To resume them call [startVmActions]. */
     fun stopVmActions() { actionsStopped = true }
