@@ -17,11 +17,11 @@ object Res {
     /** Application context. */
     private lateinit var appContext: Context
 
-    /** Set the application context, used as fallback for methods. */
-    internal fun setApplicationContext(application: Application) { appContext = application.applicationContext }
-
     /** [ObservableInt] containing an user defined id of the current theme in use. Call [changeTheme] to update its value. */
     val theme = ObservableInt()
+
+    /** Set the application context, used as fallback for methods. */
+    internal fun setApplicationContext(application: Application) { appContext = application.applicationContext }
 
     /** Updates the value of [theme] with [themeId], to allow to catch theme changes on non-context classes. */
     fun changeTheme(themeId: Int) { theme.set(themeId) }

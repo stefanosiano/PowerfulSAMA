@@ -26,10 +26,6 @@ open class SamaSpinner : AppCompatSpinner {
     /** Key to use after setting items (if Key was selected before items were available). */
     private val listeners = ArrayList<(key: String, value: String) -> Unit>()
 
-    constructor(context: Context) : super(context)
-    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
-
     /** Common initialization of the spinner. */
     init {
         onItemSelectedListener = object : OnItemSelectedListener {
@@ -47,6 +43,10 @@ open class SamaSpinner : AppCompatSpinner {
         arrayAdapter = ArrayAdapter(context, android.R.layout.simple_spinner_dropdown_item)
         super.setAdapter(arrayAdapter)
     }
+
+    constructor(context: Context) : super(context)
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
+    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
     /** Initializes the spinner, using [spinnerLayoutId] for the spinner items. */
     fun init(spinnerLayoutId: Int) {

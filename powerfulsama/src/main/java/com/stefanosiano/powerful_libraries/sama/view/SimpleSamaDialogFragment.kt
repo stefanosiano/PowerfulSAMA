@@ -23,29 +23,6 @@ open class SimpleSamaDialogFragment : DialogFragment() {
     private var onViewCreated: ((view: View) -> Unit)? = null
     private var onActivityCreated: (() -> Unit)? = null
 
-    companion object {
-
-        private const val ExtraLayoutId = "ExtraLayoutId"
-        private const val ExtraFullScreen = "ExtraFullScreen"
-        private const val ExtraFullHeight = "ExtraFullHeight"
-
-        /**
-         * Creates a new SimpleSamaDialogFragment
-         * @param layoutId The id of the layout to use. (0 means no layout is shown)
-         * @param fullScreen Forces the dialog to be in full width mode
-         * @param fullHeight Forces the dialog to be in full height mode
-         */
-        fun new(layoutId: Int, fullScreen: Boolean = false, fullHeight: Boolean = false): SimpleSamaDialogFragment {
-            val fragment = SimpleSamaDialogFragment()
-            val bundle = Bundle()
-            bundle.putInt(ExtraLayoutId, layoutId)
-            bundle.putBoolean(ExtraFullScreen, fullScreen)
-            bundle.putBoolean(ExtraFullHeight, fullHeight)
-            fragment.arguments = bundle
-            return fragment
-        }
-    }
-
     /**
      * Sets the data to work with data binding
      * Calling this method multiple times will associate the id to the last data passed.
@@ -163,4 +140,27 @@ open class SimpleSamaDialogFragment : DialogFragment() {
 
     /** Shows the dialog fragment, without using a tag. */
     fun show(manager: FragmentManager) = super.show(manager, tag)
+
+    companion object {
+
+        private const val ExtraLayoutId = "ExtraLayoutId"
+        private const val ExtraFullScreen = "ExtraFullScreen"
+        private const val ExtraFullHeight = "ExtraFullHeight"
+
+        /**
+         * Creates a new SimpleSamaDialogFragment
+         * @param layoutId The id of the layout to use. (0 means no layout is shown)
+         * @param fullScreen Forces the dialog to be in full width mode
+         * @param fullHeight Forces the dialog to be in full height mode
+         */
+        fun new(layoutId: Int, fullScreen: Boolean = false, fullHeight: Boolean = false): SimpleSamaDialogFragment {
+            val fragment = SimpleSamaDialogFragment()
+            val bundle = Bundle()
+            bundle.putInt(ExtraLayoutId, layoutId)
+            bundle.putBoolean(ExtraFullScreen, fullScreen)
+            bundle.putBoolean(ExtraFullHeight, fullHeight)
+            fragment.arguments = bundle
+            return fragment
+        }
+    }
 }

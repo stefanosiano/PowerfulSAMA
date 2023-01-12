@@ -2,24 +2,12 @@ package com.stefanosiano.powerful_libraries.sama.view
 
 import android.util.SparseArray
 import android.view.View
-import androidx.databinding.Observable
-import androidx.databinding.ObservableBoolean
-import androidx.databinding.ObservableByte
-import androidx.databinding.ObservableChar
-import androidx.databinding.ObservableDouble
-import androidx.databinding.ObservableField
-import androidx.databinding.ObservableFloat
-import androidx.databinding.ObservableInt
-import androidx.databinding.ObservableList
-import androidx.databinding.ObservableLong
-import androidx.lifecycle.LiveData
 import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserver
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserverImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.Flow
 import java.util.concurrent.atomic.AtomicInteger
 
 /** Abstract DialogFragment for all DialogFragments to extend. It includes a dialogFragment usable by subclasses
@@ -34,19 +22,11 @@ abstract class SamaDialogFragment(
     private val fullWidth: Boolean = true,
     private val fullHeight: Boolean = false,
     private var uid: Int = -1
-) : CoroutineScope {
-
-    companion object {
-        val map = SparseArray<SamaDialogFragment>()
-        val uidMap = HashMap<String, Int>()
-        val lastUid = AtomicInteger(10000)
-    }
+) : CoroutineScope, SamaObserver by SamaObserverImpl() {
 
     private val coroutineJob: Job = SupervisorJob()
-    override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
-    /** Object that takes care of observing liveData and observableFields. */
-    private val samaObserver: SamaObserver = SamaObserverImpl()
+    override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
     /** Actual dialog object. You may use it to customize the dialog. */
     protected var dialogFragment: SimpleSamaDialogFragment? = SimpleSamaDialogFragment.new(
@@ -58,14 +38,14 @@ abstract class SamaDialogFragment(
     /** Flag to know whether to automatically close the dialog when the activity is destroyed and to reopen when the activity restarts (if instantiated through [SamaActivity.manageDialog]. */
     protected var enableAutoManagement = true
 
-    internal fun getUidInternal() = uid
-
     init {
-        samaObserver.initObserver(this)
+        initObserver(this)
         if (uid == -1) {
             uid = uidMap.getOrPut(this::class.java.name) { lastUid.incrementAndGet() }
         }
     }
+
+    internal fun getUidInternal() = uid
 
     /** Restore previous data from events like device rotating when a dialog is shown. The [dialogFragment] in [oldDialog] is null. */
     abstract fun restore(oldDialog: SamaDialogFragment)
@@ -96,7 +76,7 @@ abstract class SamaDialogFragment(
     }
 
     internal fun onDestroy(activity: SamaActivity) {
-        samaObserver.destroyObserver()
+        destroyObserver()
         if (activity.isFinishing) {
             map.remove(uid)
         }
@@ -115,7 +95,7 @@ abstract class SamaDialogFragment(
         if (dialogFragment?.isAdded == true) return
         dialogFragment?.show(activity.supportFragmentManager)
         map.put(uid, this)
-        samaObserver.startObserver()
+        startObserver()
     }
 
     /** Dismiss the dialog through [dismissAllowingStateLoss]. */
@@ -123,7 +103,7 @@ abstract class SamaDialogFragment(
 
     /** Dismiss the dialog through [dismissAllowingStateLoss]. */
     fun dismiss() {
-        samaObserver.stopObserver()
+        stopObserver()
         map.remove(uid)
         onDismiss()
         if (dialogFragment?.isAdded == true) dialogFragment?.dismissAllowingStateLoss()
@@ -135,78 +115,9 @@ abstract class SamaDialogFragment(
     /** Dismiss the dialog through [dismissAllowingStateLoss]. */
     fun dismissDialog(v: View) { dismiss() }
 
-    /** Observes a liveData until this object is destroyed into an observable field. Does not update the observable if the value of the liveData is null. */
-    protected fun <T> observeAsOf(liveData: LiveData<T>): ObservableField<T> = samaObserver.observeAsOf(liveData)
-
-    /** Observes a liveData until this object is destroyed, using a custom observer. */
-    protected fun <T> observe(liveData: LiveData<T>, vararg obs: Observable, observerFunction: (data: T) -> Unit): LiveData<T> = samaObserver.observe(
-        liveData,
-        *obs
-    ) { observerFunction(it) }
-
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. */
-    protected fun <T> observe(o: ObservableList<T>, vararg obs: Observable, obFun: (data: List<T>) -> Unit): Unit = samaObserver.observe(
-        o,
-        *obs
-    ) { obFun(it) }
-
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableInt, vararg obs: Observable, obFun: (data: Int) -> R): ObservableField<R> = samaObserver.observe(
-        o,
-        *obs
-    ) { obFun(it) }
-
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableLong, vararg obs: Observable, obFun: (data: Long) -> R): ObservableField<R> = samaObserver.observe(
-        o,
-        *obs
-    ) { obFun(it) }
-
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableByte, vararg obs: Observable, obFun: (data: Byte) -> R): ObservableField<R> = samaObserver.observe(
-        o,
-        *obs
-    ) { obFun(it) }
-
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableChar, vararg obs: Observable, obFun: (data: Char) -> R): ObservableField<R> = samaObserver.observe(
-        o,
-        *obs
-    ) { obFun(it) }
-
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableBoolean, vararg obs: Observable, obFun: (data: Boolean) -> R): ObservableField<R> = samaObserver.observe(
-        o,
-        *obs
-    ) { obFun(it) }
-
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableFloat, vararg obs: Observable, obFun: (data: Float) -> R): ObservableField<R> = samaObserver.observe(
-        o,
-        *obs
-    ) { obFun(it) }
-
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R> observe(o: ObservableDouble, vararg obs: Observable, obFun: (data: Double) -> R): ObservableField<R> = samaObserver.observe(
-        o,
-        *obs
-    ) { obFun(it) }
-
-    /** Observes [o] until this object is destroyed and calls [obFun] in the background, now and whenever [o] or any of [obs] change, with the current value of [o]. Does nothing if [o] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R, T> observe(o: ObservableField<T>, vararg obs: Observable, obFun: (data: T) -> R): ObservableField<R> = samaObserver.observe(
-        o,
-        *obs
-    ) { obFun(it) }
-
-    /** Observes the flow [f] until this object is destroyed and calls [obFun] in the background, now and whenever [f] or any of [obs] change, with the current value of [f]. Does nothing if [f] is null or already changed. Returns an [ObservableField] with initial value of null. */
-    protected fun <R, T> observe(f: Flow<T>, vararg obs: Observable, obFun: (data: T) -> R): ObservableField<R> = samaObserver.observe(
-        f,
-        *obs
-    ) { obFun(it) }
-
-    /** Run [f] to get a [LiveData] every time any of [o] or [obs] changes, removing the old one. It return a [LiveData] of the same type as [f]. */
-    protected fun <T> observeAndReloadLiveData(o: ObservableField<*>, vararg obs: Observable, f: () -> LiveData<T>?): LiveData<T> = samaObserver.observeAndReloadLiveData(
-        o,
-        *obs
-    ) { f() }
+    companion object {
+        val map = SparseArray<SamaDialogFragment>()
+        val uidMap = HashMap<String, Int>()
+        val lastUid = AtomicInteger(10000)
+    }
 }

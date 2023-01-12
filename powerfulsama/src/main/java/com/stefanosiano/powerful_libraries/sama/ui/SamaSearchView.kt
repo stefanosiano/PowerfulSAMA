@@ -37,18 +37,6 @@ open class SamaSearchView : SearchView, CoroutineScope {
     /** Listeners to call when the query changes. */
     private val listeners = ArrayList<OnQueryTextListener>()
 
-    constructor(context: Context) : this(context, null)
-    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, R.attr.searchViewStyle)
-    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
-        val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.SamaSearchView, defStyleAttr, 0)
-        clearFocusOnSubmit = attrSet.getBoolean(R.styleable.SamaSearchView_ssvClearFocusOnSubmit, clearFocusOnSubmit)
-        millis = attrSet.getInt(R.styleable.SamaSearchView_ssvMillis, 0).toLong()
-        mSuggestionLayout = attrSet.getInt(R.styleable.SamaSearchView_ssvSuggestionLayout, -1)
-        val query = attrSet.getString(R.styleable.SamaSearchView_ssvQuery) ?: ""
-        attrSet.recycle()
-        setQuery(query, true)
-    }
-
     init {
         super.setOnQueryTextListener(object : OnQueryTextListener {
 
@@ -76,6 +64,18 @@ open class SamaSearchView : SearchView, CoroutineScope {
                 return true
             }
         })
+    }
+
+    constructor(context: Context) : this(context, null)
+    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, R.attr.searchViewStyle)
+    constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr) {
+        val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.SamaSearchView, defStyleAttr, 0)
+        clearFocusOnSubmit = attrSet.getBoolean(R.styleable.SamaSearchView_ssvClearFocusOnSubmit, clearFocusOnSubmit)
+        millis = attrSet.getInt(R.styleable.SamaSearchView_ssvMillis, 0).toLong()
+        mSuggestionLayout = attrSet.getInt(R.styleable.SamaSearchView_ssvSuggestionLayout, -1)
+        val query = attrSet.getString(R.styleable.SamaSearchView_ssvQuery) ?: ""
+        attrSet.recycle()
+        setQuery(query, true)
     }
 
     override fun setOnQueryTextListener(listener: OnQueryTextListener?) {

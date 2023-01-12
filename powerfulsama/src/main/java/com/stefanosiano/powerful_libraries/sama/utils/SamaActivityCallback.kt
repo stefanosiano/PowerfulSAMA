@@ -12,10 +12,6 @@ internal class SamaActivityCallback(
     private val onDestroy: ((activity: SamaActivity) -> Unit)? = null,
     private val onSaveInstanceState: ((activity: SamaActivity) -> Unit)? = null
 ) {
-
-    companion object {
-        val id = AtomicLong()
-    }
     val uid = id.incrementAndGet()
 
     fun onCreate(activity: SamaActivity) = onCreate?.invoke(activity)
@@ -37,5 +33,9 @@ internal class SamaActivityCallback(
 
     override fun hashCode(): Int {
         return uid.hashCode()
+    }
+
+    companion object {
+        val id = AtomicLong()
     }
 }
