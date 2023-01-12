@@ -4,7 +4,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
 import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
-import com.stefanosiano.powerful_libraries.sama.logError
 import com.stefanosiano.powerful_libraries.sama.logVerbose
 import com.stefanosiano.powerful_libraries.sama.tryOrPrint
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserver
@@ -14,7 +13,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**

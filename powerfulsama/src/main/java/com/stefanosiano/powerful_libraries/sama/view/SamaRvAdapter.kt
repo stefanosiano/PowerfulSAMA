@@ -13,7 +13,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.asLiveData
 import androidx.paging.AsyncPagingDataDiffer
-import androidx.paging.PagedList
 import androidx.paging.PagingData
 import androidx.recyclerview.widget.AdapterListUpdateCallback
 import androidx.recyclerview.widget.DiffUtil
@@ -21,7 +20,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
 import com.stefanosiano.powerful_libraries.sama.logDebug
-import com.stefanosiano.powerful_libraries.sama.transform
 import com.stefanosiano.powerful_libraries.sama.tryOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

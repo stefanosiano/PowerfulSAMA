@@ -38,7 +38,6 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.lang.ref.WeakReference
-import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 internal val mainThreadHandler by lazy { Handler(Looper.getMainLooper()) }
