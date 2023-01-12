@@ -38,6 +38,7 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.lang.ref.WeakReference
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
 
 internal val mainThreadHandler by lazy { Handler(Looper.getMainLooper()) }
@@ -321,19 +322,20 @@ inline fun <reified T : Enum<T>> String.toEnum(default: T): T = try { enumValueO
 fun InputStream.into(output: OutputStream) = use { inp -> output.use { outp -> inp.copyTo(outp) } }
 
 /** Transforms passed [secs] into milliseconds. */
-fun secsToMillis(secs: Long): Long = secs * 1000
+@Deprecated("Use TimeUnit directly.", ReplaceWith("TimeUnit.SECONDS.toMillis(secs)", "java.util.concurrent.TimeUnit"))
+fun secsToMillis(secs: Long): Long = TimeUnit.SECONDS.toMillis(secs)
 
 /** Transforms passed [mins] into milliseconds. */
-fun minsToMillis(mins: Long): Long = mins * 60_000
+@Deprecated("Use TimeUnit directly.", ReplaceWith("TimeUnit.MINUTES.toMillis(mins)", "java.util.concurrent.TimeUnit"))
+fun minsToMillis(mins: Long): Long = TimeUnit.MINUTES.toMillis(mins)
 
 /** Transforms passed [hours] into milliseconds. */
-fun hoursToMillis(hours: Long): Long = hours * 3_600_000
+@Deprecated("Use TimeUnit directly.", ReplaceWith("TimeUnit.HOURS.toMillis(hours)", "java.util.concurrent.TimeUnit"))
+fun hoursToMillis(hours: Long): Long = TimeUnit.HOURS.toMillis(hours)
 
 /** Transforms passed [days] into milliseconds. */
-fun daysToMillis(days: Long): Long = days * 86_400_000
-
-/** Transforms passed [weeks] into milliseconds. */
-fun weeksToMillis(weeks: Long): Long = weeks * 7 * 86_400_000
+@Deprecated("Use TimeUnit directly.", ReplaceWith("TimeUnit.DAYS.toMillis(days)", "java.util.concurrent.TimeUnit"))
+fun daysToMillis(days: Long): Long = TimeUnit.DAYS.toMillis(days)
 
 /** Returns `true` if all of [elements] are found in the array. */
 fun <T> Array<out T>.contains(elements: Collection<T>): Boolean =

@@ -57,12 +57,7 @@ open class SimpleSamaFragment : SamaFragment() {
         return this
     }
 
-    /**
-     * Executes [function] when [menuId] is clicked
-     *
-     * @param menuId
-     * @param function
-     */
+    /** Executes [function] when [menuId] is clicked. */
     fun onOption(menuId: Int, function: () -> Unit): SimpleSamaFragment {
         menuFunctions.add(Pair(menuId, function))
         return this
@@ -145,15 +140,15 @@ open class SimpleSamaFragment : SamaFragment() {
         private const val ExtraMenuId = "ExtraMenuId"
 
         /**
-         * Creates a new SimpleFragment
-         * @param layoutId The id of the layout to use. (0 means no layout is shown)
+         * Creates a new SimpleFragment.
+         * @param layoutId The id of the layout to use. (0 means no layout is shown).
          */
         fun new(layoutId: Int): SimpleSamaFragment = new(layoutId, 0)
 
         /**
-         * Creates a new SimpleFragment
-         * @param layoutId The id of the layout to use. (0 means no layout is shown)
-         * @param menuId The id of the menu to load. (0 means no menu is shown)
+         * Creates a new SimpleFragment.
+         * @param layoutId The id of the layout to use. (0 means no layout is shown).
+         * @param menuId The id of the menu to load. (0 means no menu is shown).
          */
         fun new(layoutId: Int, menuId: Int): SimpleSamaFragment {
             val fragment = SimpleSamaFragment()

@@ -262,7 +262,7 @@ open class SamaRvAdapter(
     }
 
     /**
-     * Binds the items of the adapter to the passed list
+     * Binds the items of the adapter to the passed list.
      *
      * @param list ObservableList that will be bound to the adapter.
      *              When it changes, the changes will be reflected to the adapter.

@@ -12,9 +12,7 @@ import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import java.lang.ref.WeakReference
 
-/**
- * Class that provides easy Bottom Navigation
- */
+/** Class that provides easy Bottom Navigation. */
 open class SamaBottomNavigationView : BottomNavigationView {
 
     private var containerId = 0
