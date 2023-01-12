@@ -1,13 +1,11 @@
-package com.stefanosiano.powerful_libraries.sama_annotations
+package com.stefanosiano.powerful_libraries.sama.annotations
 
 import java.io.IOException
 import java.util.concurrent.TimeUnit
-import javax.annotation.processing.*
-import javax.lang.model.SourceVersion
+import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
-
 
 class ShellCommandAnnotationProcessor : BaseAnnotationProcessor() {
 
@@ -27,18 +25,18 @@ class ShellCommandAnnotationProcessor : BaseAnnotationProcessor() {
             val params = it.params
             val result = runCommand(cmd, params)
 
-            if(result.trim().isNotEmpty()) {
+            if (result.trim().isNotEmpty()) {
                 messager.printMessage(Diagnostic.Kind.ERROR, result.trim())
                 return true
             }
         }
 
         annotation.scripts.forEach {
-            val cmd = if(it.value.startsWith("/")) it.value else "$moduleDir/${it.value}"
+            val cmd = if (it.value.startsWith("/")) it.value else "$moduleDir/${it.value}"
             val params = it.params
             val result = runCommand(cmd, params)
 
-            if(result.trim().isNotEmpty()) {
+            if (result.trim().isNotEmpty()) {
                 messager.printMessage(Diagnostic.Kind.ERROR, result.trim())
                 return true
             }
@@ -47,12 +45,10 @@ class ShellCommandAnnotationProcessor : BaseAnnotationProcessor() {
         return false
     }
 
-
     private fun runCommand(cmd: String, params: Array<String>): String {
-
         val result: String = try {
             var command = cmd
-            params.filter { it.trim().isNotEmpty() }.forEachIndexed { index, s ->  command = command.replace("\$${index+1}", s) }
+            params.filter { it.trim().isNotEmpty() }.forEachIndexed { index, s -> command = command.replace("\$${index + 1}", s) }
             command = command.replace("then ;", "then ").replace("else ;", "else ").trim()
 
             messager.printMessage(Diagnostic.Kind.WARNING, "running $command")
@@ -73,7 +69,7 @@ class ShellCommandAnnotationProcessor : BaseAnnotationProcessor() {
             val result = res.toMutableList()
             result.addAll(err)
             result.filter { it.trim().isNotEmpty() }.joinToString(" ; ")
-        } catch(e: IOException) {
+        } catch (e: IOException) {
             e.localizedMessage
         }
         return result

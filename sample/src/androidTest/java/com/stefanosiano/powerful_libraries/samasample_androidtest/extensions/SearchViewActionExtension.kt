@@ -1,19 +1,15 @@
 package com.stefanosiano.powerful_libraries.samasample_androidtest.extensions
 
-import android.content.res.Resources
 import android.view.View
 import androidx.appcompat.widget.SearchView
-import androidx.recyclerview.widget.RecyclerView
 import androidx.test.espresso.NoMatchingViewException
 import androidx.test.espresso.UiController
 import androidx.test.espresso.ViewAction
 import androidx.test.espresso.ViewAssertion
-import androidx.test.espresso.matcher.BoundedMatcher
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import org.hamcrest.CoreMatchers
-import org.hamcrest.Description
 import org.hamcrest.Matcher
 import org.hamcrest.core.AllOf
 
@@ -31,7 +27,7 @@ class SearchViewActionExtension {
                 }
 
                 override fun perform(uiController: UiController, view: View) {
-                    (view as SearchView).setQuery(text, true) //submit=true will fire search
+                    (view as SearchView).setQuery(text, true) // submit=true will fire search
                 }
             }
         }
@@ -50,7 +46,6 @@ class SearchViewActionExtension {
                 }
             }
         }
-
     }
 }
 
@@ -67,7 +62,5 @@ class SearchViewAssertion private constructor(private val matcher: Matcher<Strin
         fun withQuery(expectedQuery: String): SearchViewAssertion {
             return SearchViewAssertion(CoreMatchers.equalTo(expectedQuery))
         }
-
     }
-
 }

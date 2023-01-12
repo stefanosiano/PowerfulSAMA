@@ -9,7 +9,7 @@ android {
     compileSdk = Deps.sdkCompile
 
     defaultConfig {
-        applicationId = "com.stefanosiano.powerfullibraries.sama_sample"
+        applicationId = "com.stefanosiano.powerful_libraries.sama_sample"
         minSdk = Deps.sdkMin
         targetSdk = Deps.sdkTarget
         versionCode = 1
@@ -68,7 +68,7 @@ dependencies {
     implementation(Deps.roomKtx)
     detektPlugins(Deps.detektKtlintDependency)
 
-    //TESTS
+    // TESTS
     testImplementation(Deps.kotlinTestJunit)
     testImplementation(Deps.kotlinCoroutinesTest)
     testImplementation(Deps.archTesting)
@@ -85,7 +85,7 @@ dependencies {
 
 detekt {
     toolVersion = Deps.detektPluginVersion
-    config = files("${rootDir}/config/detekt/detekt.yml")
+    config = files("$rootDir/config/detekt/detekt.yml")
 //    allRules = true
     buildUponDefaultConfig = true
     autoCorrect = false

@@ -1,19 +1,13 @@
 package com.stefanosiano.powerful_libraries.samasample_androidtest
 
-import androidx.databinding.*
+import androidx.databinding.ObservableArrayList
 import androidx.lifecycle.MutableLiveData
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.action.ViewActions
-import androidx.test.espresso.assertion.ViewAssertions
-import androidx.test.espresso.matcher.RootMatchers
-import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
-import com.stefanosiano.powerful_libraries.sama.utils.SamaObserver
-import com.stefanosiano.powerful_libraries.sama.utils.SamaObserverImpl
 import com.stefanosiano.powerful_libraries.sama_sample.AllCustomViewsTestActivity
 import com.stefanosiano.powerful_libraries.sama_sample.AllCustomViewsTestVM
 import com.stefanosiano.powerful_libraries.sama_sample.R
@@ -21,10 +15,10 @@ import com.stefanosiano.powerful_libraries.sama_sample.TestListItem
 import com.stefanosiano.powerful_libraries.samasample_androidtest.extensions.RecyclerViewItemCountAssertion.Companion.withItemCount
 import com.stefanosiano.powerful_libraries.samasample_androidtest.extensions.SearchViewActionExtension.Companion.typeTextSearchView
 import com.stefanosiano.powerful_libraries.samasample_androidtest.extensions.SearchViewAssertion
-import com.stefanosiano.powerful_libraries.samasample_androidtest.extensions.SpinnerActionExtension
 import com.stefanosiano.powerful_libraries.samasample_androidtest.extensions.SpinnerAssertion
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.runBlocking
 import org.hamcrest.Matchers
 import org.junit.Assert
 import org.junit.Before
@@ -35,19 +29,17 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AllCustomViewActivityTest {
 
-
-    /** Create and launch the activity under test before each test, and close it after each test */
+    /** Create and launch the activity under test before each test, and close it after each test. */
     @get:Rule var activityScenarioRule = ActivityScenarioRule(AllCustomViewsTestActivity::class.java)
 
-    lateinit var testVm : AllCustomViewsTestVM
+    lateinit var testVm: AllCustomViewsTestVM
 
     @Before
     fun init() {
         activityScenarioRule.scenario.onActivity { testVm = it.testVm }
     }
 
-
-    /** Run each tests 10 times to be sure everything works */
+    /** Run each tests 10 times to be sure everything works. */
     @Test
     fun testAll_AllCustomViewActivity() {
         for (i in 0 until 10) {
@@ -58,7 +50,7 @@ class AllCustomViewActivityTest {
         }
     }
 
-    /** Test binding of key and value of spinner, whenever an item is selected or the observableField is changed */
+    /** Test binding of key and value of spinner, whenever an item is selected or the observableField is changed. */
     @Test
     fun spinnerKeyValueChange_AllCustomViewActivity() {
         testVm.setSpnItems(
@@ -93,23 +85,29 @@ class AllCustomViewActivityTest {
         Assert.assertEquals("value4", testVm.spnValue.get())
     }
 
-
-    /** Test binding of items of recyclerViewAdapter, whenever they change. Using List, ObservableList, LiveData<List> */
+    /** Test binding of items of recyclerViewAdapter, whenever they change. Using List, ObservableList, LiveData<List>. */
     @Test
     fun recyclerViewListChange_AllCustomViewActivity() {
-
-        val itemsLiveData = MutableLiveData(listOf(
-            TestListItem("title LiveData 1", "subtitle LiveData 1"),
-            TestListItem("title LiveData 2", "subtitle LiveData 2"),
-            TestListItem("title LiveData 3", "subtitle LiveData 3")
-        ))
+        val itemsLiveData = MutableLiveData(
+            listOf(
+                TestListItem("title LiveData 1", "subtitle LiveData 1"),
+                TestListItem("title LiveData 2", "subtitle LiveData 2"),
+                TestListItem("title LiveData 3", "subtitle LiveData 3")
+            )
+        )
         val itemsObservableList = ObservableArrayList<TestListItem>()
-        itemsObservableList.addAll(listOf(
-            TestListItem("title Obs 1", "subtitle Obs 1"), TestListItem("title Obs 2", "subtitle Obs 2")
-        ))
-        val flowList = MutableStateFlow(listOf(
-            TestListItem("title Flow 1", "subtitle Flow 1"), TestListItem("title Flow 2", "subtitle Flow 2")
-        ))
+        itemsObservableList.addAll(
+            listOf(
+                TestListItem("title Obs 1", "subtitle Obs 1"),
+                TestListItem("title Obs 2", "subtitle Obs 2")
+            )
+        )
+        val flowList = MutableStateFlow(
+            listOf(
+                TestListItem("title Flow 1", "subtitle Flow 1"),
+                TestListItem("title Flow 2", "subtitle Flow 2")
+            )
+        )
 
         testVm.bindTestItems(emptyList())
         runBlocking { delay(30) }
@@ -147,16 +145,20 @@ class AllCustomViewActivityTest {
         runBlocking { delay(30) }
         Espresso.onView(withId(R.id.testRecyclerView)).check(withItemCount(2))
 
-        runBlocking { flowList.emit( listOf(
-            TestListItem("title Flow 1", "subtitle Flow 1"),
-            TestListItem("title Flow 2", "subtitle Flow 2"),
-            TestListItem("title Flow 3", "subtitle Flow 3")
-        ) ) }
+        runBlocking {
+            flowList.emit(
+                listOf(
+                    TestListItem("title Flow 1", "subtitle Flow 1"),
+                    TestListItem("title Flow 2", "subtitle Flow 2"),
+                    TestListItem("title Flow 3", "subtitle Flow 3")
+                )
+            )
+        }
         runBlocking { delay(30) }
         Espresso.onView(withId(R.id.testRecyclerView)).check(withItemCount(3))
     }
 
-    /** Test binding of text and milliseconds of searchview, whenever a text is written or the observableField is changed */
+    /** Test binding of text and milliseconds of searchview, whenever a text is written or the observableField is changed. */
     @Test
     fun searchViewValueChange_AllCustomViewActivity() {
         testVm.setSearchMillis(0)
@@ -189,5 +191,4 @@ class AllCustomViewActivityTest {
         runBlocking { delay(30) }
         Assert.assertEquals("fromSearch2", testVm.searchTerm.get())
     }
-
 }

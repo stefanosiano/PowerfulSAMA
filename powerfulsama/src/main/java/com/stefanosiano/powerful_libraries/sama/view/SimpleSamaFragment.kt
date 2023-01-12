@@ -2,13 +2,18 @@ package com.stefanosiano.powerful_libraries.sama.view
 
 import android.content.Context
 import android.os.Bundle
-import android.view.*
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import com.stefanosiano.powerful_libraries.sama.logVerbose
 
-/** Base Class that provides easy way to use data binding with a fragment without the need of other classes */
-open class SimpleSamaFragment: SamaFragment() {
+/** Base Class that provides easy way to use data binding with a fragment without the need of other classes. */
+open class SimpleSamaFragment : SamaFragment() {
 
     private var layoutId: Int = 0
     private var menuId: Int = 0
@@ -36,7 +41,6 @@ open class SimpleSamaFragment: SamaFragment() {
          * @param menuId The id of the menu to load. (0 means no menu is shown)
          */
         fun new(layoutId: Int, menuId: Int): SimpleSamaFragment {
-
             val fragment = SimpleSamaFragment()
             val bundle = Bundle()
             bundle.putInt(ExtraLayoutId, layoutId)
@@ -44,7 +48,6 @@ open class SimpleSamaFragment: SamaFragment() {
             fragment.arguments = bundle
             return fragment
         }
-
     }
 
     /**
@@ -56,24 +59,25 @@ open class SimpleSamaFragment: SamaFragment() {
      * @param bindingData the data to bind to the id
      */
     fun with(dataBindingId: Int, bindingData: Any): SimpleSamaFragment {
-        if(!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId))
+        if (!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId)) {
             this.bindingPairs.add(Pair(dataBindingId, bindingData))
+        }
         return this
     }
 
-    /** Sets the title to show on the toolbar (optional) */
+    /** Sets the title to show on the toolbar (optional). */
     fun title(titleId: Int): SimpleSamaFragment {
         this.title = getString(titleId)
         return this
     }
 
-    /** Sets the title to show on the toolbar (optional) */
+    /** Sets the title to show on the toolbar (optional). */
     fun title(title: String): SimpleSamaFragment {
         this.title = title
         return this
     }
 
-    /** Sets the tag shown in logs */
+    /** Sets the tag shown in logs. */
     fun logTag(logTag: String): SimpleSamaFragment {
         this.logTag = logTag
         return this
@@ -90,13 +94,13 @@ open class SimpleSamaFragment: SamaFragment() {
         return this
     }
 
-    /** Sets the function to call when creating the menu (optional) */
+    /** Sets the function to call when creating the menu (optional). */
     fun onOptionMenu(onOptionMenuCreated: (menu: Menu?) -> Unit): SimpleSamaFragment {
         this.onOptionMenuCreated = onOptionMenuCreated
         return this
     }
 
-    /** Sets the function to call when this fragment is detached from the activity */
+    /** Sets the function to call when this fragment is detached from the activity. */
     fun onDetach(onDetach: (fragment: SimpleSamaFragment) -> Unit): SimpleSamaFragment {
         this.onDetach = onDetach
         return this
@@ -104,18 +108,19 @@ open class SimpleSamaFragment: SamaFragment() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         logVerbose("$logTag: Selected item: ${item.title}")
-        menuFunctions.firstOrNull { it.first == item.itemId }?.second?.invoke() ?: return super.onOptionsItemSelected(item)
+        menuFunctions.firstOrNull { it.first == item.itemId }?.second?.invoke() ?: return super.onOptionsItemSelected(
+            item
+        )
         return true
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        if(menuId != 0)
+        if (menuId != 0) {
             inflater.inflate(menuId, menu)
+        }
         onOptionMenuCreated?.invoke(menu)
         super.onCreateOptionsMenu(menu, inflater)
     }
-
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -133,12 +138,11 @@ open class SimpleSamaFragment: SamaFragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-
         this.layoutId = arguments?.getInt(ExtraLayoutId) ?: 0
         this.menuId = arguments?.getInt(ExtraMenuId) ?: 0
         this.setHasOptionsMenu(menuId != 0)
 
-        if(layoutId == 0) return null
+        if (layoutId == 0) return null
 
         val binding: ViewDataBinding = DataBindingUtil.inflate(inflater, layoutId, container, false)
 
@@ -149,11 +153,12 @@ open class SimpleSamaFragment: SamaFragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        if(title.isNotEmpty()) activity?.title = title
-        else if (defaultTitle.isNotEmpty()) activity?.title = defaultTitle
+        if (title.isNotEmpty()) {
+            activity?.title = title
+        } else if (defaultTitle.isNotEmpty()) activity?.title = defaultTitle
     }
 
-    /** Clear references of dataBinding, searchView observable and menu functions */
+    /** Clear references of dataBinding, searchView observable and menu functions. */
     override fun clear() {
         bindingPairs.clear()
         menuFunctions.clear()

@@ -12,11 +12,10 @@ import com.stefanosiano.powerful_libraries.sama.utils.WeakPair
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import java.lang.ref.WeakReference
 
-
 /**
  * Class that provides easy Bottom Navigation
  */
-open class SamaBottomNavigationView: BottomNavigationView {
+open class SamaBottomNavigationView : BottomNavigationView {
 
     companion object {
         val cacheSelectedId = SparseIntArray()
@@ -32,10 +31,9 @@ open class SamaBottomNavigationView: BottomNavigationView {
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
-
     init {
 
-        setOnNavigationItemReselectedListener {  }
+        setOnNavigationItemReselectedListener { }
         setOnNavigationItemSelectedListener {
 
             val fragment: Fragment = pairs?.firstOrNull { pair -> pair.first() == it.itemId }?.second() ?: return@setOnNavigationItemSelectedListener false
@@ -45,7 +43,7 @@ open class SamaBottomNavigationView: BottomNavigationView {
 
             val fragmentTransaction = fragmentManager?.beginTransaction()
 //                    ?.replace(containerId, fragment)
-            if(activeFragment != null) fragmentTransaction?.hide(activeFragment)
+            if (activeFragment != null) fragmentTransaction?.hide(activeFragment)
 
             fragmentTransaction?.show(fragment)
                 ?.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
@@ -61,14 +59,13 @@ open class SamaBottomNavigationView: BottomNavigationView {
 
     fun addItemSelectedListener(listener: (Int) -> Unit) = itemSelectedListeners.add(listener)
 
-    /** Sets pairs of <menuId, fragment> and binds them to the bottom navigation view. Remove any preexisting fragment already attached (memory leaks may still occur) */
+    /** Sets pairs of <menuId, fragment> and binds them to the bottom navigation view. Remove any preexisting fragment already attached (memory leaks may still occur). */
     fun bindFragments(containerId: Int, activity: SamaActivity, pairs: Array<out Pair<Int, Fragment>>) {
-
         this.containerId = containerId
         this.pairs = pairs.map { WeakPair(it.first, it.second) }.toTypedArray()
         this.activityReference = WeakReference(activity)
 
-        //needed because "Only the original thread that created a view hierarchy can touch its views." in setSelectedItemId
+        // needed because "Only the original thread that created a view hierarchy can touch its views." in setSelectedItemId
         post {
             selectedItemId = cacheSelectedId.get(containerId)
             cacheSelectedId.delete(containerId)
@@ -80,13 +77,15 @@ open class SamaBottomNavigationView: BottomNavigationView {
             active = WeakReference(selectedPair.second)
 
             val isSelectedPairAdded = selectedPair.second.isAdded
-            if(!isSelectedPairAdded) fragmentTransaction.replace(containerId, selectedPair.second)
+            if (!isSelectedPairAdded) fragmentTransaction.replace(containerId, selectedPair.second)
 
-            this.pairs?.filter { it.second() != selectedPair.second && it.second()?.isAdded == false }?.forEach { p -> p.second()?.also {
-                fragmentTransaction.add(containerId, it).hide(it)
-            } }
+            this.pairs?.filter { it.second() != selectedPair.second && it.second()?.isAdded == false }?.forEach { p ->
+                p.second()?.also {
+                    fragmentTransaction.add(containerId, it).hide(it)
+                }
+            }
 
-            if(!isSelectedPairAdded) fragmentTransaction.show(selectedPair.second)
+            if (!isSelectedPairAdded) fragmentTransaction.show(selectedPair.second)
             fragmentTransaction.commitAllowingStateLoss()
 
             selectedItemId = selectedPair.first

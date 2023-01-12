@@ -100,7 +100,7 @@ formatting:
     autoCorrect: true
   ArgumentListWrapping:
     active: true
-    autoCorrect: false
+    autoCorrect: true
   NoUnusedImports:
     active: true
     autoCorrect: true

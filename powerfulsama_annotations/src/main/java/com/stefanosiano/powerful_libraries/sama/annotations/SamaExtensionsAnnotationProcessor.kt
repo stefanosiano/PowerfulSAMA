@@ -1,13 +1,15 @@
-package com.stefanosiano.powerful_libraries.sama_annotations
+package com.stefanosiano.powerful_libraries.sama.annotations
 
 import androidx.room.Ignore
-import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.FileSpec
+import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.ParameterSpec
 import java.io.File
 import javax.annotation.processing.RoundEnvironment
-import javax.lang.model.element.*
-import javax.lang.model.util.ElementFilter
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.jvm.jvmWildcard
+import javax.lang.model.element.ElementKind
+import javax.lang.model.element.Modifier
+import javax.lang.model.element.TypeElement
+import javax.lang.model.element.VariableElement
 
 class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
 
@@ -15,11 +17,9 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
     override fun getSupportedAnnotationTypes(): Set<String> = setOf(SamaExtensions::class.java.name, JvmField::class.java.name)
 
     override fun process(set: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
-
         val annotation = roundEnv.getElementsAnnotatedWith(SamaExtensions::class.java)
             .filter { it.kind == ElementKind.CLASS }
             .map { it.getAnnotation(SamaExtensions::class.java) }.firstOrNull() ?: return false
-
 
         val genDir = getGenDir()
 
@@ -39,9 +39,7 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
         return false
     }
 
-
-
-    /** Add SamaListItems default contentEquals() implementations as extension functions */
+    /** Add SamaListItems default contentEquals() implementations as extension functions. */
     private fun addDefaultContentEquals(roundEnv: RoundEnvironment): ArrayList<FunSpec> {
         val functions = ArrayList<FunSpec>()
 
@@ -57,7 +55,7 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
                 .addStatement("val ret = when {")
                 .addStatement("\tother !is ${cls.qualifiedName} -> false")
 
-            cls.enclosedElements.filter { it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && it.getAnnotation(IgnoreField::class.java) == null  && !it.modifiers.contains(Modifier.STATIC) }.map { it as VariableElement }.forEach { v ->
+            cls.enclosedElements.filter { it as? VariableElement != null && it.getAnnotation(Ignore::class.java) == null && it.getAnnotation(IgnoreField::class.java) == null && !it.modifiers.contains(Modifier.STATIC) }.map { it as VariableElement }.forEach { v ->
                 function.addStatement("\tthis.${v.simpleName} != other.${v.simpleName} -> false")
             }
 
@@ -70,8 +68,7 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
         return functions
     }
 
-
-    /** Add SamaListItems default contentEquals() implementations as extension functions */
+    /** Add SamaListItems default contentEquals() implementations as extension functions. */
     private fun addDefaultRestore(roundEnv: RoundEnvironment): ArrayList<FunSpec> {
         val functions = ArrayList<FunSpec>()
 
@@ -89,13 +86,13 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
                 when {
                     v.simpleName.toString().contains("$") -> {}
                     v.isAssignable("androidx.databinding.ObservableInt") ||
-                    v.isAssignable("androidx.databinding.ObservableShort") ||
-                    v.isAssignable("androidx.databinding.ObservableLong") ||
-                    v.isAssignable("androidx.databinding.ObservableFloat") ||
-                    v.isAssignable("androidx.databinding.ObservableDouble") ||
-                    v.isAssignable("androidx.databinding.ObservableBoolean") ||
-                    v.isAssignable("androidx.databinding.ObservableByte") ||
-                    v.isAssignable("androidx.databinding.ObservableField", 1) ->
+                        v.isAssignable("androidx.databinding.ObservableShort") ||
+                        v.isAssignable("androidx.databinding.ObservableLong") ||
+                        v.isAssignable("androidx.databinding.ObservableFloat") ||
+                        v.isAssignable("androidx.databinding.ObservableDouble") ||
+                        v.isAssignable("androidx.databinding.ObservableBoolean") ||
+                        v.isAssignable("androidx.databinding.ObservableByte") ||
+                        v.isAssignable("androidx.databinding.ObservableField", 1) ->
                         function.addStatement("\tthis.${v.simpleName}.set(oldDialog.${v.simpleName}.get())")
 
                     v.modifiers.contains(Modifier.FINAL) ->
@@ -109,10 +106,9 @@ class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
         return functions
     }
 
-
 /*
 
-/** Observes a sharedPreference until the ViewModel is destroyed, using a custom live data, and transforms it into an observable field. Does not update the observable if the value of the preference is null */
+/** Observes a sharedPreference until the ViewModel is destroyed, using a custom live data, and transforms it into an observable field. Does not update the observable if the value of the preference is null. */
 fun <T> SamaViewModel<*>.observeAsOf(preference: PowerfulPreference<T>): ObservableField<T> {
 	val observable = ObservableField<T>()
 	observe(preference.asLiveData()) { observable.set(it ?: return@observe) }

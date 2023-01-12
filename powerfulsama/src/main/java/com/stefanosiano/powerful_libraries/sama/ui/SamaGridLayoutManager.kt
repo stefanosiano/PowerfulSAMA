@@ -16,17 +16,33 @@ open class SamaGridLayoutManager : GridLayoutManager {
 
     internal var disablePredictiveAnimation = false
 
-    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) : super(context, attrs, defStyleAttr, defStyleRes)
+    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) : super(
+        context,
+        attrs,
+        defStyleAttr,
+        defStyleRes
+    )
     constructor(context: Context?, spanCount: Int) : super(context, spanCount)
-    constructor(context: Context?, spanCount: Int, orientation: Int, reverseLayout: Boolean) : super(context, spanCount, orientation, reverseLayout)
+    constructor(context: Context?, spanCount: Int, orientation: Int, reverseLayout: Boolean) : super(
+        context,
+        spanCount,
+        orientation,
+        reverseLayout
+    )
 
     override fun onLayoutChildren(recycler: RecyclerView.Recycler?, state: RecyclerView.State) {
-        try { super.onLayoutChildren(recycler, state) }
-        catch (e: IndexOutOfBoundsException) { logExceptionWorkarounded(e) }
+        try { super.onLayoutChildren(recycler, state) } catch (e: IndexOutOfBoundsException) {
+            logExceptionWorkarounded(
+                e
+            )
+        }
     }
 
     override fun supportsPredictiveItemAnimations(): Boolean {
-        return if(disablePredictiveAnimation) false
-        else super.supportsPredictiveItemAnimations()
+        return if (disablePredictiveAnimation) {
+            false
+        } else {
+            super.supportsPredictiveItemAnimations()
+        }
     }
 }

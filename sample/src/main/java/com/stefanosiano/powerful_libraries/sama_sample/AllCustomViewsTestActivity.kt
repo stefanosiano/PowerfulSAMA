@@ -2,7 +2,9 @@ package com.stefanosiano.powerful_libraries.sama_sample
 
 import android.os.Bundle
 import androidx.activity.viewModels
-import androidx.databinding.*
+import androidx.databinding.ObservableField
+import androidx.databinding.ObservableInt
+import androidx.databinding.ObservableList
 import androidx.lifecycle.LiveData
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
@@ -33,7 +35,7 @@ class AllCustomViewsTestVM : SamaViewModel<AlcvTestAction>() {
     val searchTerm = ObservableField("")
     val spnKey = ObservableField("")
     val spnValue = ObservableField("")
-    val spnItems = ObservableField( emptyList<SamaSpinner.SamaSpinnerItem>() )
+    val spnItems = ObservableField(emptyList<SamaSpinner.SamaSpinnerItem>())
     val rvAdapter = SamaRvAdapter(R.layout.list_item_test, BR.item)
 
     fun setSearchMillis(millis: Int) { searchMillis.set(millis) }
@@ -45,8 +47,8 @@ class AllCustomViewsTestVM : SamaViewModel<AlcvTestAction>() {
     fun bindTestItems(items: List<TestListItem>) { rvAdapter.bindItems(items) }
 }
 
-sealed class AlcvTestAction : VmAction {}
+sealed class AlcvTestAction : VmAction
 
-class TestListItem (val title: String, val subtitle: String): SamaListItem() {
+class TestListItem(val title: String, val subtitle: String) : SamaListItem() {
     override fun getStableIdString(): String = title
 }

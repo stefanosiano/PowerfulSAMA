@@ -11,12 +11,14 @@ object Deps {
     private const val espressoVersion = "3.5.0"
     private const val roomVersion = "2.4.3"
     const val detektPluginVersion = "1.19.0"
+    const val spotlessPluginVersion = "6.11.0"
 
     // Gradle plugins
     const val androidGradlePlugin = "com.android.tools.build:gradle:$agpVersion"
     const val kotlinGradlePlugin = "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
     const val createNonRsPlugin = "com.stefanosiano.powerful_libraries.imageview.plugins_non_rs"
     const val detektPlugin = "io.gitlab.arturbosch.detekt"
+    const val spotlessPlugin = "com.diffplug.spotless"
     const val kotlinKaptPlugin = "kotlin-kapt"
     const val androidLibrary = "com.android.library"
     const val androidApplication = "com.android.application"

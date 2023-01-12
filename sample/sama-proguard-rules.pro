@@ -20,5 +20,4 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
-
 -keep class com.stefanosiano.powerful_libraries.sama.ui.** { *; }

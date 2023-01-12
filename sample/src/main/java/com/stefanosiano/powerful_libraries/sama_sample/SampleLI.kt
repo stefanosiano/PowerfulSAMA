@@ -24,12 +24,13 @@ class SampleLI(
     }
 }
 
-abstract class S2: SamaListItem()
+abstract class S2 : SamaListItem()
 
 class S3 : S2() {
 
-    val id2 : String = ""
-    @Ignore val id : String = ""
+    val id2: String = ""
+
+    @Ignore val id: String = ""
 
     override fun contentEquals(other: SamaListItem): Boolean {
         return defaultContentEquals(other)

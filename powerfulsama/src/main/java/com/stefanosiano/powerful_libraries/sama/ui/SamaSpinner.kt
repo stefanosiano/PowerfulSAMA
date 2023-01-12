@@ -11,7 +11,6 @@ import com.stefanosiano.powerful_libraries.sama.logDebug
 import com.stefanosiano.powerful_libraries.sama.logVerbose
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner.SamaSpinnerItem
 
-
 /**
  * Custom Spinner that uses data binding to always have the most updated values.
  * It supports a collection of strings, or a collection of [SamaSpinnerItem] (pairs key, value).
@@ -21,26 +20,25 @@ open class SamaSpinner : AppCompatSpinner {
     private var arrayAdapter: ArrayAdapter<String>? = null
     private val itemMap = HashMap<String, String>()
 
-    /** Key to use after setting items (if Key was selected before items were available) */
+    /** Key to use after setting items (if Key was selected before items were available). */
     private var toSelectKey: String? = null
 
-    /** Key to use after setting items (if Key was selected before items were available) */
+    /** Key to use after setting items (if Key was selected before items were available). */
     private val listeners = ArrayList<(key: String, value: String) -> Unit>()
 
     constructor(context: Context) : super(context)
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs)
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
-
-    /** Common initialization of the spinner */
+    /** Common initialization of the spinner. */
     init {
-        onItemSelectedListener = object: OnItemSelectedListener {
+        onItemSelectedListener = object : OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) {}
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                //if an item was selected, i should have key and value. this is only a lifesaver
+                // if an item was selected, i should have key and value. this is only a lifesaver
                 val key = getSpnKey() ?: return
                 val value = getSpnValue() ?: return
-                if(key == toSelectKey) toSelectKey = null
+                if (key == toSelectKey) toSelectKey = null
                 logDebug("Selected item: $key -> $value")
                 listeners.forEach { it(key, value) }
             }
@@ -50,8 +48,7 @@ open class SamaSpinner : AppCompatSpinner {
         super.setAdapter(arrayAdapter)
     }
 
-
-    /** Initializes the spinner, using [spinnerLayoutId] for the spinner items */
+    /** Initializes the spinner, using [spinnerLayoutId] for the spinner items. */
     fun init(spinnerLayoutId: Int) {
         val temp = ArrayList<String>()
         val old = getSpnKey()
@@ -68,67 +65,58 @@ open class SamaSpinner : AppCompatSpinner {
 
     fun addListener(l: (key: String, value: String) -> Unit) { listeners.add(l) }
 
-    /** Sets [items] as the array of [SamaSpinnerItem] to show in the spinner */
+    /** Sets [items] as the array of [SamaSpinnerItem] to show in the spinner. */
     fun setItems(items: Array<out SamaSpinnerItem>?) = setItems(items?.toList())
 
-    /** Sets [items] as the collection of [SamaSpinnerItem] to show in the spinner */
+    /** Sets [items] as the collection of [SamaSpinnerItem] to show in the spinner. */
     fun setItems(items: Collection<SamaSpinnerItem>?) {
-        if(items == null) return
+        if (items == null) return
         itemMap.clear()
         items.forEach { itemMap.put(it.key(), it.value()) }
         val old = getSpnKey()
         arrayAdapter?.clear()
-        arrayAdapter?.addAll( items.map { it.value() } )
+        arrayAdapter?.addAll(items.map { it.value() })
         arrayAdapter?.notifyDataSetChanged()
 
-        logVerbose(if(items.isNotEmpty()) "Setting spinner items: " else "No items set for this spinner")
+        logVerbose(if (items.isNotEmpty()) "Setting spinner items: " else "No items set for this spinner")
         items.forEach { logVerbose(it.toString()) }
 
         setSpnKey(toSelectKey ?: old)
     }
 
-
-    /** Sets the selection of the spinner to the first occurrence of [value]. If it was initialized with a collection of strings, it calls [setSelection] */
+    /** Sets the selection of the spinner to the first occurrence of [value]. If it was initialized with a collection of strings, it calls [setSelection]. */
     fun setSpnValue(value: String?) {
         value ?: return
-        if(getSpnValue() == value) return
+        if (getSpnValue() == value) return
         val selectedIndex = (0 until adapter.count).firstOrNull { adapter.getItem(it) == value }
-        if(selectedIndex != null) {
+        if (selectedIndex != null) {
             toSelectKey = null
             setSelection(selectedIndex)
-        }
-        else {
+        } else {
             toSelectKey = itemMap.getKey(value)
         }
     }
 
-    /** Sets the selection of the spinner to the first occurrence of [key]. If it was initialized with a collection of strings, it calls [setSelection] */
+    /** Sets the selection of the spinner to the first occurrence of [key]. If it was initialized with a collection of strings, it calls [setSelection]. */
     fun setSpnKey(key: String?) {
         key ?: return
-        if(getSpnKey() == key) return
+        if (getSpnKey() == key) return
         val selectedIndex = (0 until adapter.count).firstOrNull { adapter.getItem(it) == itemMap[key] }
-        if(selectedIndex != null) {
+        if (selectedIndex != null) {
             toSelectKey = null
             setSelection(selectedIndex)
-        }
-        else {
+        } else {
             toSelectKey = key
         }
     }
 
-
-    /** Gets the value associated to the currently shown item */
+    /** Gets the value associated to the currently shown item. */
     fun getSpnValue(): String? = selectedItem as? String
 
-    /** Gets the key associated to the currently shown item */
+    /** Gets the key associated to the currently shown item. */
     fun getSpnKey(): String? = (selectedItem as? String).let { itemMap.getKey(it) }
 
-
-
-
-
-
-    /** Simple class representing a pair key/value */
+    /** Simple class representing a pair key/value. */
     open class SamaSpinnerItem(open val key: String?, open val value: String?) {
         open fun value() = value ?: ""
         open fun key() = key ?: ""

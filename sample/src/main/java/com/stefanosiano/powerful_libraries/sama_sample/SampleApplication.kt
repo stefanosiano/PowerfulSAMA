@@ -6,11 +6,8 @@ import android.util.Log
 import androidx.multidex.MultiDex
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSamaLogger
-import com.stefanosiano.powerful_libraries.sama_sample.BuildConfig
-import com.stefanosiano.powerful_libraries.sama_sample.R
 
 class SampleApplication : Application() {
-
 
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
@@ -34,6 +31,7 @@ class SampleApplication : Application() {
                 override fun logInfo(clazz: Class<*>, message: String) { Log.i(clazz.simpleName, message) }
                 override fun logVerbose(clazz: Class<*>, message: String) { Log.v(clazz.simpleName, message) }
                 override fun logWarning(clazz: Class<*>, message: String) { Log.w(clazz.simpleName, message) }
-            })
+            }
+        )
     }
 }

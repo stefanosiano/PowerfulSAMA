@@ -1,12 +1,25 @@
 package com.stefanosiano.powerful_libraries.samasample_test
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import androidx.databinding.*
+import androidx.databinding.ObservableBoolean
+import androidx.databinding.ObservableByte
+import androidx.databinding.ObservableChar
+import androidx.databinding.ObservableDouble
+import androidx.databinding.ObservableField
+import androidx.databinding.ObservableFloat
+import androidx.databinding.ObservableInt
+import androidx.databinding.ObservableLong
+import androidx.databinding.ObservableShort
 import androidx.lifecycle.MutableLiveData
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserver
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserverImpl
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
@@ -16,13 +29,13 @@ class SamaObserverUnitTest : CoroutineScope {
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineJob + CoroutineExceptionHandler { _, t -> t.printStackTrace() }
 
-    //Rule for Main dispatcher
+    // Rule for Main dispatcher
     @get:Rule val coroutineRule = MainCoroutineRule()
 
-    //Rule for Main Looper
+    // Rule for Main Looper
     @get:Rule val taskExecutorRule = InstantTaskExecutorRule()
 
-    /** Test if observing a variable calls the corresponding lambda functions on changes */
+    /** Test if observing a variable calls the corresponding lambda functions on changes. */
     @Test fun observeOnChange_isCorrect() {
         val observer: SamaObserver = SamaObserverImpl()
 
@@ -76,8 +89,8 @@ class SamaObserverUnitTest : CoroutineScope {
         liveDataToObserve.postValue("1")
         runBlocking { flowToObserve.emit("1") }
 
-        //observing happens in background: should wait a very short delay for changes to happen
-        //observer.startObserver() not called yet. Values shouldn't have changed
+        // observing happens in background: should wait a very short delay for changes to happen
+        // observer.startObserver() not called yet. Values shouldn't have changed
         runBlocking { delay(10) }
         Assert.assertEquals(false, boolToSet)
         Assert.assertEquals(0, intToSet)
@@ -93,7 +106,7 @@ class SamaObserverUnitTest : CoroutineScope {
 
         observer.startObserver()
 
-        //just called observer.startObserver(). Values should change right now
+        // just called observer.startObserver(). Values should change right now
         runBlocking { delay(10) }
         Assert.assertEquals(true, boolToSet)
         Assert.assertEquals(1, intToSet)
@@ -119,7 +132,7 @@ class SamaObserverUnitTest : CoroutineScope {
         liveDataToObserve.postValue("2")
         runBlocking { flowToObserve.emit("2") }
 
-        //changed observables: variable values should change
+        // changed observables: variable values should change
         runBlocking { delay(10) }
         Assert.assertEquals(false, boolToSet)
         Assert.assertEquals(2, intToSet)
@@ -145,7 +158,7 @@ class SamaObserverUnitTest : CoroutineScope {
         liveDataToObserve.postValue("3")
         runBlocking { flowToObserve.emit("3") }
 
-        //changed observables: variable values should change
+        // changed observables: variable values should change
         runBlocking { delay(10) }
         Assert.assertEquals(true, boolToSet)
         Assert.assertEquals(3, intToSet)
@@ -173,7 +186,7 @@ class SamaObserverUnitTest : CoroutineScope {
         liveDataToObserve.postValue("4")
         runBlocking { flowToObserve.emit("4") }
 
-        //just called observer.stopObserver(). Changed observables: variable values should NOT change
+        // just called observer.stopObserver(). Changed observables: variable values should NOT change
         runBlocking { delay(10) }
         Assert.assertEquals(true, boolToSet)
         Assert.assertEquals(3, intToSet)
@@ -187,12 +200,10 @@ class SamaObserverUnitTest : CoroutineScope {
         Assert.assertEquals("3", liveDataToSet)
         Assert.assertEquals("3", flowToSet)
 
-
         observer.destroyObserver()
     }
 
-
-    /** Test if observing multiple variables changing at the same time calls the corresponding lambda function only once */
+    /** Test if observing multiple variables changing at the same time calls the corresponding lambda function only once. */
     @Test
     fun observeOnMultipleChangesOnlyOnce_isCorrect() {
         val observer: SamaObserver = SamaObserverImpl()
@@ -221,7 +232,7 @@ class SamaObserverUnitTest : CoroutineScope {
         var2.set(3)
         var3.set("1")
         var3.set("2")
-        //observing multiple variables happens in background after 50 milliseconds: should wait a short delay for changes to happen
+        // observing multiple variables happens in background after 50 milliseconds: should wait a short delay for changes to happen
         runBlocking { delay(100) }
         observer.stopObserver()
         observer.destroyObserver()
@@ -230,7 +241,7 @@ class SamaObserverUnitTest : CoroutineScope {
         Assert.assertEquals(1, k)
     }
 
-    /** Run each tests 10 times to be sure everything works */
+    /** Run each tests 10 times to be sure everything works. */
     @Test
     fun observeTestAll() {
         for (i in 0 until 10) {
@@ -239,5 +250,4 @@ class SamaObserverUnitTest : CoroutineScope {
             observeOnMultipleChangesOnlyOnce_isCorrect()
         }
     }
-
 }

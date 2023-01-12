@@ -14,8 +14,8 @@ object PowerfulSama {
     internal var isAppDebug: Boolean = false
     internal lateinit var applicationContext: Context
 
-    /** Weak reference to the current activity */
-    private var currentActivity : WeakReference<Activity>? = null
+    /** Weak reference to the current activity. */
+    private var currentActivity: WeakReference<Activity>? = null
 
     /** Initializes the SAMA library
      *
@@ -37,8 +37,8 @@ object PowerfulSama {
         defaultNolabel: Int = android.R.string.cancel,
         logger: PowerfulSamaLogger? = null,
         checkSignatureFunction: ((Array<Signature>) -> Boolean)? = null,
-        onSignatureChackFailed: ((Array<Signature>) -> Unit)? = null) {
-
+        onSignatureChackFailed: ((Array<Signature>) -> Unit)? = null
+    ) {
         applicationContext = application
         isAppDebug = isDebug
         application.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
@@ -48,7 +48,11 @@ object PowerfulSama {
             override fun onActivityDestroyed(activity: Activity) { clearIntent(activity) }
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
             override fun onActivityStopped(activity: Activity) {}
-            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) { setCurrentActivity(activity) }
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                setCurrentActivity(
+                    activity
+                )
+            }
         })
 
         Res.setApplicationContext(application)
@@ -58,21 +62,28 @@ object PowerfulSama {
         Msg.defaultNo = defaultNolabel
         PowerfulSama.logger = logger
 
-        if(checkSignatureFunction != null && onSignatureChackFailed != null)
+        if (checkSignatureFunction != null && onSignatureChackFailed != null) {
             SamaSignature.init(checkSignatureFunction, onSignatureChackFailed)
+        }
     }
 
-    /** Clears the intent used to start an activity */
-    private fun clearIntent(activity: Activity?) = activity?.let { if(it is SamaActivity) SamaIntent.clear("${it.samaIntent.uid} ") }
+    /** Clears the intent used to start an activity. */
+    private fun clearIntent(activity: Activity?) = activity?.let {
+        if (it is SamaActivity) {
+            SamaIntent.clear(
+                "${it.samaIntent.uid} "
+            )
+        }
+    }
 
-    /** Sets the current activity on which to show the messages */
+    /** Sets the current activity on which to show the messages. */
     private fun setCurrentActivity(activity: Activity?) = activity?.let {
         currentActivity?.clear()
         currentActivity = WeakReference(activity)
     }
 
     /** Get the current activity as a weak reference. Can be null if no activities are running
-     * (e.g. in services, broadcast receivers, threads finishing after activity's onDestroy, etc.) */
+     * (e.g. in services, broadcast receivers, threads finishing after activity's onDestroy, etc.). */
     fun getCurrentActivity(): Activity? = currentActivity?.get()
 }
 
