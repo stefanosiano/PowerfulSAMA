@@ -8,9 +8,9 @@ import androidx.test.espresso.matcher.ViewMatchers
 import org.hamcrest.CoreMatchers
 import org.hamcrest.Matcher
 
-class SpinnerActionExtension
+internal class SpinnerActionExtension
 
-class SpinnerAssertion private constructor(private val matcher: Matcher<String>) : ViewAssertion {
+internal class SpinnerAssertion private constructor(private val matcher: Matcher<String>) : ViewAssertion {
     override fun check(view: View, noViewFoundException: NoMatchingViewException?) {
         if (noViewFoundException != null) {
             throw noViewFoundException

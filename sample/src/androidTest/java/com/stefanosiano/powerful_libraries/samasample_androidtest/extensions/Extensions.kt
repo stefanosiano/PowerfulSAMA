@@ -1,3 +1,0 @@
-package com.stefanosiano.powerful_libraries.samasample_androidtest.extensions
-
-class Extensions

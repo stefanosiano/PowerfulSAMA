@@ -27,7 +27,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class AllCustomViewActivityTest {
+internal class AllCustomViewActivityTest {
 
     /** Create and launch the activity under test before each test, and close it after each test. */
     @get:Rule var activityScenarioRule = ActivityScenarioRule(AllCustomViewsTestActivity::class.java)

@@ -16,22 +16,25 @@ import com.stefanosiano.powerful_libraries.sama.viewModel.VmAction
 import com.stefanosiano.powerful_libraries.sama_sample.databinding.ActivityAllCustomViewsBinding
 import kotlinx.coroutines.flow.Flow
 
-class AllCustomViewsTestActivity : SamaActivity() {
+internal class AllCustomViewsTestActivity : SamaActivity() {
 
     val testVm by viewModels<AllCustomViewsTestVM>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding: ActivityAllCustomViewsBinding = DataBindingUtil.setContentView(this, R.layout.activity_all_custom_views)
+        val binding: ActivityAllCustomViewsBinding = DataBindingUtil.setContentView(
+            this,
+            R.layout.activity_all_custom_views
+        )
         binding.testVm = testVm
         onVmAction(testVm, ::handleVmResponse)
     }
 
-    fun handleVmResponse(action: AlcvTestAction) {
+    fun handleVmResponse(ignored: AlcvTestAction) {
 //        when(action) {}
     }
 }
 
-class AllCustomViewsTestVM : SamaViewModel<AlcvTestAction>() {
+internal class AllCustomViewsTestVM : SamaViewModel<AlcvTestAction>() {
     val searchMillis = ObservableInt(0)
     val searchTerm = ObservableField("")
     val spnKey = ObservableField("")
@@ -48,8 +51,8 @@ class AllCustomViewsTestVM : SamaViewModel<AlcvTestAction>() {
     fun bindTestItems(items: List<TestListItem>) { rvAdapter.bindItems(items) }
 }
 
-sealed class AlcvTestAction : VmAction
+internal sealed class AlcvTestAction : VmAction
 
-class TestListItem(val title: String, val subtitle: String) : SamaListItem() {
+internal class TestListItem(val title: String, val subtitle: String) : SamaListItem() {
     override fun getStableIdString(): String = title
 }

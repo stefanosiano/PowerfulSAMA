@@ -13,7 +13,7 @@ import org.hamcrest.CoreMatchers
 import org.hamcrest.Matcher
 import org.hamcrest.core.AllOf
 
-class SearchViewActionExtension {
+internal class SearchViewActionExtension {
 
     companion object {
         fun submitText(text: String): ViewAction {
@@ -49,7 +49,7 @@ class SearchViewActionExtension {
     }
 }
 
-class SearchViewAssertion private constructor(private val matcher: Matcher<String>) : ViewAssertion {
+internal class SearchViewAssertion private constructor(private val matcher: Matcher<String>) : ViewAssertion {
     override fun check(view: View, noViewFoundException: NoMatchingViewException?) {
         if (noViewFoundException != null) {
             throw noViewFoundException

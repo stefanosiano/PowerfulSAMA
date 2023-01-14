@@ -5,7 +5,7 @@ import android.util.Log
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSama
 import com.stefanosiano.powerful_libraries.sama.utils.PowerfulSamaLogger
 
-class SampleApplication : Application() {
+internal class SampleApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
