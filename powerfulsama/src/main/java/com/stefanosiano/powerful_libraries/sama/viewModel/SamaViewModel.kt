@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Base class for ViewModels.
- * It will contain the fields used by the databinding and all the logic of the data contained into the layouts.
+ * It will contain the fields used by the databinding and the logic of the data in the layouts.
  */
 open class SamaViewModel<A : VmAction>
 /** Initializes the LiveData of the response. */
@@ -86,13 +86,13 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
         lastStickyAction?.let { observer(it) }
     }
 
-    /** Stop actions from being sent to the observing activity. To resume them call [startVmActions]. */
+    /** Stop sending actions to the observing activity. To resume them call [startVmActions]. */
     fun stopVmActions() { actionsStopped = true }
 
     /** Start sending actions to the observing activity. To stop them call [stopVmActions]. */
     fun startVmActions() { actionsStopped = false }
 
-    /** Start sending actions to the observing activity. To stop them call [stopVmActions]. */
+    /** Clear any retained [VmAction.VmActionSticky]. */
     fun clearStickyAction() { lastStickyAction = null }
 }
 
@@ -108,13 +108,16 @@ open class VmResponse<A : VmAction> (
     /** Optional data provided by the action . */
     val data: Any?
 ) {
-
     override fun toString() = "VmResponse{ action= $action, data=$data }"
 }
 
 /** Interface that indicates the action sent by the ViewModel. */
 interface VmAction {
-    /** Indicates that this [VmAction] should be retained when activity is recreated. Any new [VmActionSticky] overrides previous one, so that only 1 action will be retained.
-     * If an action is sent and the device is rotated, when the activity restarts it needs to get that action again. */
+    /**
+     * Indicates that this [VmAction] should be retained when activity is recreated.
+     * Any new [VmActionSticky] overrides the previous one, so that only 1 action will be retained.
+     * If an action is sent and the device is rotated,
+     *  when the activity restarts it needs to get that action again.
+     */
     interface VmActionSticky
 }
