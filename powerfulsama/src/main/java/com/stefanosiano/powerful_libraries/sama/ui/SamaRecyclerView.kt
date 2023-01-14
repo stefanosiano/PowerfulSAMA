@@ -12,7 +12,10 @@ import com.stefanosiano.powerful_libraries.sama.utils.SamaActivityCallback
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import com.stefanosiano.powerful_libraries.sama.view.SamaRvAdapter
 
-/** Simple RecyclerView implementation. It just have a fix to avoid memory leaks when using a long living adapter. */
+/**
+ * Simple RecyclerView implementation.
+ * It just have a fix to avoid memory leaks when using a long living adapter.
+ */
 open class SamaRecyclerView : RecyclerView {
 
     private var inconsistencyWorkaround = true
@@ -30,27 +33,29 @@ open class SamaRecyclerView : RecyclerView {
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
-    constructor(context: Context, attrs: AttributeSet?, defStyle: Int) : super(context, attrs, defStyle) {
+    constructor(context: Context, attrs: AttributeSet?, defStyle: Int) :
+        super(context, attrs, defStyle) {
 
-        val attrSet = context.theme.obtainStyledAttributes(attrs, R.styleable.SamaRecyclerView, defStyle, 0)
-        columns = attrSet.getInt(R.styleable.SamaRecyclerView_srvColumns, columns)
-        horizontal = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvHorizontal, horizontal)
-        autoDetach = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvAutoDetach, autoDetach)
-        inconsistencyWorkaround = attrSet.getBoolean(
-            R.styleable.SamaRecyclerView_srvInconsistencyWorkaround,
-            inconsistencyWorkaround
-        )
-        disableAdapterAutoStop = attrSet.getBoolean(
-            R.styleable.SamaRecyclerView_srvDisableAdapterAutoStop,
-            disableAdapterAutoStop
-        )
-        disablePredictiveAnimation = attrSet.getBoolean(
-            R.styleable.SamaRecyclerView_srvDisablePredictiveAnimation,
-            disablePredictiveAnimation
-        )
-        attrSet.recycle()
-        resetLayoutManager()
-    }
+            val attrSet = context.theme
+                .obtainStyledAttributes(attrs, R.styleable.SamaRecyclerView, defStyle, 0)
+            columns = attrSet.getInt(R.styleable.SamaRecyclerView_srvColumns, columns)
+            horizontal = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvHorizontal, horizontal)
+            autoDetach = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvAutoDetach, autoDetach)
+            inconsistencyWorkaround = attrSet.getBoolean(
+                R.styleable.SamaRecyclerView_srvInconsistencyWorkaround,
+                inconsistencyWorkaround
+            )
+            disableAdapterAutoStop = attrSet.getBoolean(
+                R.styleable.SamaRecyclerView_srvDisableAdapterAutoStop,
+                disableAdapterAutoStop
+            )
+            disablePredictiveAnimation = attrSet.getBoolean(
+                R.styleable.SamaRecyclerView_srvDisablePredictiveAnimation,
+                disablePredictiveAnimation
+            )
+            attrSet.recycle()
+            resetLayoutManager()
+        }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -74,7 +79,8 @@ open class SamaRecyclerView : RecyclerView {
 
                         val res = when {
                             requestedSpan == -1 || nextRequestedSpan == -1 -> requestedSpan
-                            rem <= columns - requestedSpan && remNext <= columns - nextRequestedSpan -> requestedSpan
+                            rem <= columns - requestedSpan &&
+                                remNext <= columns - nextRequestedSpan -> requestedSpan
                             else -> columns - rem
                         }
                         spans.put(position, res)
@@ -92,26 +98,39 @@ open class SamaRecyclerView : RecyclerView {
         super.onDetachedFromWindow()
     }
 
+    /**
+     * Sets the number of [columns] of the recyclerView.
+     * If [columns] is 1 a LinearLayoutManager is set. If higher a GridLayoutManager is set.
+     */
     fun setSrvColumns(columns: Int) {
         this.columns = columns
         (adapter as? SamaRvAdapter?)?.recyclerViewColumnCount = columns
         resetLayoutManager()
     }
 
+    /** Gets the number of columns of the recyclerView. */
     fun getColumnCount() = if (columns == 0) 0 else columns
 
+    /** Sets if the recyclerView should put items horizontally (using a linearLayoutManager). */
     fun setSrvHorizontal(horizontal: Boolean) {
         this.horizontal = horizontal
         resetLayoutManager()
     }
 
+    /**
+     * Sets whether to use a workaround for the inconsistencyDetected: IndexOutOfBoundsException.
+     *  (Only when using srv_columns). See
+     *  https://stackoverflow.com/questions/31759171/recyclerview-and-java-lang-indexoutofboundsexception-inconsistency-detected-in/33822747#33822747
+     */
     fun setSrvInconsistencyWorkaround(inconsistencyWorkaround: Boolean) {
         this.inconsistencyWorkaround = inconsistencyWorkaround
         resetLayoutManager()
     }
 
-    /** Call [LinearLayoutManager.scrollToPositionWithOffset] if the underlying layoutManager is a [LinearLayoutManager].
-     * Otherwise it calls [scrollToPosition]. */
+    /**
+     * Call [LinearLayoutManager.scrollToPositionWithOffset] if the underlying layoutManager is a
+     *  [LinearLayoutManager], otherwise it calls [scrollToPosition].
+     */
     fun scrollToPositionWithOffset(position: Int, offset: Int = 0) {
         if (layoutManager is LinearLayoutManager) {
             (layoutManager as LinearLayoutManager).scrollToPositionWithOffset(position, offset)
@@ -120,8 +139,11 @@ open class SamaRecyclerView : RecyclerView {
         }
     }
 
-    /** Sets whether to disable the predictive animation. Useful when items are changed and take some time to reload the adapter.
-     * Used only with srvInconsistencyWorkaround. Reduces (or removes) inconsistency exceptions. */
+    /**
+     * Sets whether to disable the predictive animation.
+     * Useful when items are changed and take some time to reload the adapter.
+     * Used only with srvInconsistencyWorkaround. Reduces (or removes) inconsistency exceptions.
+     */
     fun setSrvDisablePredictiveAnimation(srvDisablePredictiveAnimation: Boolean) {
         this.disablePredictiveAnimation = srvDisablePredictiveAnimation
         updateDisablePredictiveAnimationInManager()
@@ -131,17 +153,19 @@ open class SamaRecyclerView : RecyclerView {
         val position = (layoutManager as? LinearLayoutManager?)?.findFirstVisibleItemPosition()
         recycledViewPool.clear()
         if (columns > 0 || horizontal) {
-            when {
-                columns == 1 && inconsistencyWorkaround -> layoutManager = SamaLinearLayoutManager(context)
-                columns == 1 && !inconsistencyWorkaround -> layoutManager = LinearLayoutManager(context)
-                columns > 1 && inconsistencyWorkaround -> layoutManager = SamaGridLayoutManager(context, columns)
-                columns > 1 && !inconsistencyWorkaround -> layoutManager = GridLayoutManager(context, columns)
-                horizontal && inconsistencyWorkaround -> layoutManager = SamaLinearLayoutManager(
+            layoutManager = when {
+                columns == 1 && inconsistencyWorkaround -> SamaLinearLayoutManager(context)
+                columns == 1 && !inconsistencyWorkaround -> LinearLayoutManager(context)
+                columns > 1 && inconsistencyWorkaround -> SamaGridLayoutManager(context, columns)
+                columns > 1 && !inconsistencyWorkaround -> GridLayoutManager(context, columns)
+                // Now horizontal is always true
+                inconsistencyWorkaround -> SamaLinearLayoutManager(
                     context,
                     LinearLayoutManager.HORIZONTAL,
                     false
                 )
-                horizontal && !inconsistencyWorkaround -> layoutManager = LinearLayoutManager(
+                // !inconsistencyWorkaround
+                else -> LinearLayoutManager(
                     context,
                     LinearLayoutManager.HORIZONTAL,
                     false
@@ -152,7 +176,9 @@ open class SamaRecyclerView : RecyclerView {
     }
 
     private fun updateDisablePredictiveAnimationInManager() {
-        (layoutManager as? SamaLinearLayoutManager)?.disablePredictiveAnimation = disablePredictiveAnimation
-        (layoutManager as? SamaGridLayoutManager)?.disablePredictiveAnimation = disablePredictiveAnimation
+        (layoutManager as? SamaLinearLayoutManager)?.disablePredictiveAnimation =
+            disablePredictiveAnimation
+        (layoutManager as? SamaGridLayoutManager)?.disablePredictiveAnimation =
+            disablePredictiveAnimation
     }
 }

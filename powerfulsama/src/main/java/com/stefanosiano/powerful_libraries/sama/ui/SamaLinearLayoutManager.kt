@@ -7,10 +7,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.logExceptionWorkarounded
 
 /**
- * Simple [LinearLayoutManager] that catches the [IndexOutOfBoundsException] occurring with inconsistency detected.
- * If the exception raises, it will only print it. If it happens: check your code! You may be making some calls in the background!
+ * Simple [LinearLayoutManager] that catches the [IndexOutOfBoundsException] occurring with
+ *  inconsistency detected. If the exception raises, it will only print it.
+ * If it happens: check your code! You may be making some calls in the background.
  *
- * For more info check https://stackoverflow.com/questions/31759171/recyclerview-and-java-lang-indexoutofboundsexception-inconsistency-detected-in/33822747#33822747
+ * For more info check
+ * https://stackoverflow.com/questions/31759171/recyclerview-and-java-lang-indexoutofboundsexception-inconsistency-detected-in/33822747#33822747
  */
 open class SamaLinearLayoutManager : LinearLayoutManager {
 
@@ -29,11 +31,12 @@ open class SamaLinearLayoutManager : LinearLayoutManager {
         defStyleRes
     )
 
+    @Suppress("TooGenericExceptionCaught")
     override fun onLayoutChildren(recycler: RecyclerView.Recycler?, state: RecyclerView.State) {
-        try { super.onLayoutChildren(recycler, state) } catch (e: IndexOutOfBoundsException) {
-            logExceptionWorkarounded(
-                e
-            )
+        try {
+            super.onLayoutChildren(recycler, state)
+        } catch (e: IndexOutOfBoundsException) {
+            logExceptionWorkarounded(e)
         }
     }
 

@@ -26,18 +26,22 @@ open class SamaBottomNavigationView : BottomNavigationView {
         setOnNavigationItemReselectedListener { }
         setOnNavigationItemSelectedListener {
 
-            val fragment: Fragment = pairs?.firstOrNull { pair -> pair.first() == it.itemId }?.second() ?: return@setOnNavigationItemSelectedListener false
+            val fragment: Fragment = pairs?.firstOrNull { pair -> pair.first() == it.itemId }
+                ?.second()
+                ?: return@setOnNavigationItemSelectedListener false
+
             val activeFragment: Fragment? = active?.get()
-
             val fragmentManager = activityReference?.get()?.supportFragmentManager
-
             val fragmentTransaction = fragmentManager?.beginTransaction()
-//                    ?.replace(containerId, fragment)
-            if (activeFragment != null) fragmentTransaction?.hide(activeFragment)
+
+            if (activeFragment != null) {
+                fragmentTransaction?.hide(activeFragment)
+            }
 
             fragmentTransaction?.show(fragment)
                 ?.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-                ?.commitAllowingStateLoss() ?: return@setOnNavigationItemSelectedListener false
+                ?.commitAllowingStateLoss()
+                ?: return@setOnNavigationItemSelectedListener false
 
             active = WeakReference(fragment)
 
@@ -51,20 +55,30 @@ open class SamaBottomNavigationView : BottomNavigationView {
     constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
+    /** Add a listener to be called when an item is selected. */
     fun addItemSelectedListener(listener: (Int) -> Unit) = itemSelectedListeners.add(listener)
 
-    /** Sets pairs of <menuId, fragment> and binds them to the bottom navigation view. Remove any preexisting fragment already attached (memory leaks may still occur). */
-    fun bindFragments(containerId: Int, activity: SamaActivity, pairs: Array<out Pair<Int, Fragment>>) {
+    /**
+     * Sets pairs of <menuId, fragment> and binds them to the bottom navigation view.
+     * Remove any preexisting fragment already attached (memory leaks may still occur).
+     */
+    fun bindFragments(
+        containerId: Int,
+        activity: SamaActivity,
+        pairs: Array<out Pair<Int, Fragment>>
+    ) {
         this.containerId = containerId
         this.pairs = pairs.map { WeakPair(it.first, it.second) }.toTypedArray()
         this.activityReference = WeakReference(activity)
 
-        // needed because "Only the original thread that created a view hierarchy can touch its views." in setSelectedItemId
+        // needed because "Only the original thread that created a view hierarchy can touch +
+        //  its views." in setSelectedItemId
         post {
             selectedItemId = cacheSelectedId.get(containerId)
             cacheSelectedId.delete(containerId)
 
-            val selectedPair: Pair<Int, Fragment> = pairs.firstOrNull { it.first == selectedItemId } ?: return@post
+            val selectedPair: Pair<Int, Fragment> = pairs.firstOrNull { it.first == selectedItemId }
+                ?: return@post
 
             val fragmentTransaction = activity.supportFragmentManager.beginTransaction()
 
@@ -73,13 +87,17 @@ open class SamaBottomNavigationView : BottomNavigationView {
             val isSelectedPairAdded = selectedPair.second.isAdded
             if (!isSelectedPairAdded) fragmentTransaction.replace(containerId, selectedPair.second)
 
-            this.pairs?.filter { it.second() != selectedPair.second && it.second()?.isAdded == false }?.forEach { p ->
+            this.pairs?.filter {
+                it.second() != selectedPair.second && it.second()?.isAdded == false
+            }?.forEach { p ->
                 p.second()?.also {
                     fragmentTransaction.add(containerId, it).hide(it)
                 }
             }
 
-            if (!isSelectedPairAdded) fragmentTransaction.show(selectedPair.second)
+            if (!isSelectedPairAdded) {
+                fragmentTransaction.show(selectedPair.second)
+            }
             fragmentTransaction.commitAllowingStateLoss()
 
             selectedItemId = selectedPair.first
@@ -88,8 +106,7 @@ open class SamaBottomNavigationView : BottomNavigationView {
 
     /**
      * Call this function to know if bottom navigation should return to first tab.
-     * @return true if it returns to first tab,
-     *          false if it's already at the first tab and you can close the activity
+     * Returns true if it returns to the first tab, false if it's already at the first tab.
      */
     fun onBackPressed(id: Int): Boolean {
         if (id != 0 && id != selectedItemId) {
@@ -99,6 +116,7 @@ open class SamaBottomNavigationView : BottomNavigationView {
         return false
     }
 
+    /** Select the fragment with the specified [id]. */
     fun selectFragment(id: Int) {
         if (id != 0 && id != selectedItemId) {
             post { selectedItemId = id }
@@ -116,6 +134,6 @@ open class SamaBottomNavigationView : BottomNavigationView {
     }
 
     companion object {
-        val cacheSelectedId = SparseIntArray()
+        private val cacheSelectedId = SparseIntArray()
     }
 }
