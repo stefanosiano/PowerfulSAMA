@@ -123,9 +123,9 @@ public class Foo {		// TypeElement
 	private int a;		// VariableElement
 	private Foo other; 	// VariableElement
 
-	public Foo () {} 	// ExecuteableElement
+	public Foo () {} 	// ExecutableElement
 
-	public void setA ( 	// ExecuteableElement
+	public void setA ( 	// ExecutableElement
 	                 int newA	// TypeElement
 	                 ) {}
 }
