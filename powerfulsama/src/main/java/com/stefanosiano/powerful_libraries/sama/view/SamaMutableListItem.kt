@@ -3,9 +3,14 @@ package com.stefanosiano.powerful_libraries.sama.view
 import androidx.room.Ignore
 import kotlinx.coroutines.launch
 
+/**
+ * Class to be extended by other list items. To be used with [SamaRvAdapter].
+ * It contains a dynamic object that is retained in memory by the adapter, passed in [onBind].
+ * In case no dynamic objects are needed, use [SamaListItem].
+ */
 abstract class SamaMutableListItem<T : Any> : SamaListItem() {
 
-    /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind]. */
+    /** Function to edit the object bound to this item. */
     @Ignore internal var mEditBoundItem: (T) -> Unit = {}
 
     final override suspend fun onBind() = super.onBind()
@@ -22,10 +27,8 @@ abstract class SamaMutableListItem<T : Any> : SamaListItem() {
     /** Called to bind the item to the view. */
     @Suppress("UNCHECKED_CAST")
     internal fun bind(bound: Any, initObjects: Map<String, Any>) {
-        this.passedObjects = initObjects; launchableFunctions.clear(); launch {
-            onBind(
-                bound as T
-            )
-        }
+        this.passedObjects = initObjects
+        launchableFunctions.clear()
+        launch { onBind(bound as T) }
     }
 }

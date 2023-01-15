@@ -33,10 +33,10 @@ import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Class that implements RecyclerViewAdapter in an easy and powerful way!
- *
- * @param itemLayoutId Id of the layout of each row
- * @param itemBindingId Id of the dataBinding variable in the row layout
- * @param hasStableId Whether the adapter has stableIds (The items of the adapter must implement getStableId() or getStableIdString(), or it won't have any effect)
+ * It needs the [itemLayoutId] of each row, the [itemBindingId] of the dataBinding variable in the
+ *  row layout. If [hasStableId] is set, the adapter will use stableIds.
+ * In this case, the items of the adapter must implement
+ *  [SamaListItem.getStableId] or [SamaListItem.getStableIdString], or it won't have any effect.
  */
 open class SamaRvAdapter(
     private var itemLayoutId: Int,
@@ -50,10 +50,10 @@ open class SamaRvAdapter(
 
     private val mDiffer: AsyncPagingDataDiffer<SamaListItem> = AsyncPagingDataDiffer(
         object : DiffUtil.ItemCallback<SamaListItem>() {
-            override fun areItemsTheSame(old: SamaListItem, new: SamaListItem) = getItemStableId(old) == getItemStableId(
-                new
-            )
-            override fun areContentsTheSame(old: SamaListItem, new: SamaListItem) = old.contentEquals(new)
+            override fun areItemsTheSame(old: SamaListItem, new: SamaListItem) =
+                getItemStableId(old) == getItemStableId(new)
+            override fun areContentsTheSame(old: SamaListItem, new: SamaListItem) =
+                old.contentEquals(new)
         },
         AdapterListUpdateCallback(this)
     )
@@ -66,16 +66,17 @@ open class SamaRvAdapter(
     /** Objects passed to items during onBind. */
     private val passedObjects = HashMap<String, Any>()
 
-    /** callback called when the item list changes. */
-    private val onListChangedCallback: WeakReferenceOnListChangedCallback = WeakReferenceOnListChangedCallback(this)
+    /** Callback called when the item list changes. */
+    private val onListChangedCallback: WeakReferenceOnListChangedCallback =
+        WeakReferenceOnListChangedCallback(this)
 
-    /** items shown bound to rows (implemented through ObservableArrayList). */
+    /** Items shown bound to rows (implemented through ObservableArrayList). */
     private var items: ObservableList<SamaListItem> = ObservableArrayList()
 
-    /** items implemented through live data. */
+    /** Items implemented through live data. */
     private var liveDataItems: LiveData<out List<SamaListItem>>? = null
 
-    /** items implemented through live data. */
+    /** Items implemented through live data. */
     private var liveDataPagedItems: LiveData<out PagingData<SamaListItem>>? = null
 
     /** Whether liveData observers have been stopped by [stopLiveDataObservers]. */
@@ -88,33 +89,45 @@ open class SamaRvAdapter(
     private val maxId = AtomicLong(0)
 
     /** Function to be called when the liveData changes. It will reload the list. */
-    private val liveDataObserver = Observer<List<SamaListItem>> { if (it != null) bindItems(it) }
+    private val liveDataObserver = Observer<List<SamaListItem>> {
+        if (it != null) {
+            bindItems(it)
+        }
+    }
 
     /** Function to be called when the liveData changes. It will reload the list. */
-    private val pagedLiveDataObserver = Observer<PagingData<SamaListItem>> { if (it != null) bindPagingItems(it) }
+    private val pagedLiveDataObserver = Observer<PagingData<SamaListItem>> {
+        if (it != null) {
+            bindPagingItems(it)
+        }
+    }
 
-    /** Reference to the recyclerView. Will be used to post runnables to the UIthread. */
+    /** Reference to the recyclerView. Will be used to post runnables to the UIThread. */
     var recyclerView: WeakReference<RecyclerView>? = null
         private set
 
     internal var recyclerViewColumnCount = 1
 
     /** Listener passed to items to provide a callback to the adapter's caller. */
-    private var itemUpdatedListeners: MutableList<(SamaListItem.SamaListItemAction) -> Unit> = ArrayList()
+    private var itemUpdatedListeners: MutableList<(SamaListItem.SamaListItemAction) -> Unit> =
+        ArrayList()
 
-    /** Function called when adapter starts loading items (one of [bindItems] or [bindPagingItems] is called). */
+    /** Function run when adapter loads items, when [bindItems] or [bindPagingItems] is called. */
     private var onLoadStarted: (() -> Unit)? = null
 
-    /** Function called when adapter finishes loading items (one of [bindItems] or [bindPagingItems] finished its job). */
+    /** Function run after adapter loads items, when [bindItems] or [bindPagingItems] finished. */
     private var onLoadFinished: (() -> Unit)? = null
 
     /** List of items to be bound to [SamaMutableListItem]. */
     private var mutableBoundItems = LongSparseArray<Any>()
 
-    /** Last item detached: if the latest item detached is the one being recycled, then the item needs to be restarted. */
+    /**
+     * Last item detached:
+     *  if the latest item detached is the one being recycled, then the item needs to be restarted.
+     */
     private var lastDetached = -1
 
-    /** Last item detached: if the latest item detached is the one being recycled, then the item needs to be restarted. */
+    /** Span sizes of each row. */
     private val spannedSizes = SparseIntArray()
 
     /** Whether the adapter has just been restarted through [restartLiveDataObservers]. */
@@ -127,35 +140,49 @@ open class SamaRvAdapter(
 
     /**
      * Class that implements RecyclerViewAdapter in an easy and powerful way!
-     * [hasStableId] defaults to true
-     *
-     * @param itemLayoutId Id of the layout of each row
-     * @param itemBindingId Id of the dataBinding variable in the row layout
+     * It needs the [itemLayoutId] of each row, the [itemBindingId] of the dataBinding variable in the
+     *  row layout. [hasStableId] defaults to true.
+     * In this case, the items of the adapter must implement
+     *  [SamaListItem.getStableId] or [SamaListItem.getStableIdString], or it won't have any effect.
      */
     constructor(itemLayoutId: Int, itemBindingId: Int) : this(itemLayoutId, itemBindingId, true)
 
-    /** Set a different [layoutId] for different [viewType] (viewTypes should be used in [SamaListItem.getViewType] of the items). */
-    fun addLayoutType(viewType: Int, layoutId: Int): SamaRvAdapter { itemLayoutIds.put(viewType, layoutId); return this }
+    /**
+     * Set a different [layoutId] for different [viewType].
+     * ViewTypes should be defined in [SamaListItem.getViewType].
+     */
+    fun addLayoutType(viewType: Int, layoutId: Int): SamaRvAdapter {
+        itemLayoutIds.put(viewType, layoutId)
+        return this
+    }
 
     /** Changes the layout of the rows and reload the list. */
     fun setItemLayoutId(itemLayoutId: Int) {
         this.itemLayoutId = itemLayoutId
-        launch(Dispatchers.Main) { notifyDataSetChanged() }
+        launch(Dispatchers.Main) {
+            notifyDataSetChanged()
+        }
     }
 
     override fun getItemCount(): Int = if (isPaged) mDiffer.itemCount else items.size
 
     override fun getItemViewType(position: Int): Int = getItem(position)?.getViewType() ?: -1
 
-    fun getItemSpanSize(position: Int, columns: Int): Int = getItem(position)?.getItemSpanSize(columns) ?: -1
+    /** Return the span size requested by the item at position [position]. */
+    fun getItemSpanSize(position: Int, columns: Int): Int =
+        getItem(position)?.getItemSpanSize(columns) ?: -1
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SimpleViewHolder {
-        val layoutId = if (itemLayoutIds.get(viewType) != 0) itemLayoutIds.get(viewType) else itemLayoutId
+        val layoutId = if (itemLayoutIds.get(viewType) != 0) {
+            itemLayoutIds.get(viewType)
+        } else {
+            itemLayoutId
+        }
         val view: View = LayoutInflater.from(parent.context).inflate(layoutId, parent, false)
         return SimpleViewHolder(view)
     }
 
-    /** Function that binds the item to the view holder, calling appropriate methods in the right order. */
+    /** Function that binds the item to the view holder. */
     override fun onBindViewHolder(holder: SimpleViewHolder, position: Int) {
         val item = getItem(position) ?: return
         holder.binding.get()?.root?.let { item.root = WeakReference(it) }
@@ -163,32 +190,30 @@ open class SamaRvAdapter(
         holder.binding.get()?.setVariable(itemBindingId, item)
 
         item.adapterPosition = holder.bindingAdapterPosition
-        item.adapterSpannedPosition = if (recyclerViewColumnCount == 1 || holder.bindingAdapterPosition == 0) {
-            holder.bindingAdapterPosition
-        } else {
-            (
-                getItem(holder.bindingAdapterPosition - 1)?.adapterSpannedPosition?.plus(
-                    spannedSizes.get(holder.bindingAdapterPosition - 1, 1)
-                )
-                ) ?: holder.bindingAdapterPosition
-        }
+        item.adapterSpannedPosition =
+            if (recyclerViewColumnCount == 1 || holder.bindingAdapterPosition == 0) {
+                holder.bindingAdapterPosition
+            } else {
+                getItem(holder.bindingAdapterPosition - 1)
+                    ?.adapterSpannedPosition
+                    ?.plus(spannedSizes.get(holder.bindingAdapterPosition - 1, 1))
+                    ?: holder.bindingAdapterPosition
+            }
         item.adapterSize = itemCount
         item.adapterColumnCount = recyclerViewColumnCount
         item.adapter = WeakReference(this)
         if (item is SamaMutableListItem<*>) {
-            val bound = mutableBoundItems.get(getItemStableId(item)) ?: item.newBoundItem().also {
-                mutableBoundItems.put(
-                    getItemStableId(item),
-                    it
-                )
-            }
+            val bound = mutableBoundItems.get(getItemStableId(item))
+                ?: item.newBoundItem().also { mutableBoundItems.put(getItemStableId(item), it) }
 
             item.mEditBoundItem = { mutableBoundItems.put(getItemStableId(item), it) }
             item.bind(bound, passedObjects)
         } else {
             item.onBind(passedObjects)
         }
-        item.setSendActionListener { action -> itemUpdatedListeners.forEach { it.invoke(action) } }
+        item.setSendActionListener { action ->
+            itemUpdatedListeners.forEach { it.invoke(action) }
+        }
         item.onStart()
     }
 
@@ -205,19 +230,18 @@ open class SamaRvAdapter(
         item.onStart()
     }
 
-    /** Observe the items of this [RecyclerView] passing an action, the item and optional data when they change (when [SamaListItem.sendAction] is called). */
+    /**
+     * Observe the items of this [RecyclerView] passing an action, the item and optional data
+     *  when an action is sent (when [SamaListItem.sendAction] is called).
+     */
     @Suppress("UNCHECKED_CAST")
     fun <T : SamaListItem.SamaListItemAction> onAction(f: (action: T) -> Unit) {
-        this.itemUpdatedListeners.add(
-            f as (SamaListItem.SamaListItemAction) -> Unit
-        )
+        this.itemUpdatedListeners.add(f as (SamaListItem.SamaListItemAction) -> Unit)
     }
 
     /**
-     * Binds the items of the adapter to the passed list.
-     *
-     * @param list ObservableList that will be bound to the adapter.
-     *              When it changes, the changes will be reflected to the adapter.
+     * Binds the items of the adapter to the passed [list].
+     * When [list] changes, the changes will be reflected in the adapter.
      */
     @Suppress("unchecked_cast")
     @Synchronized
@@ -236,7 +260,10 @@ open class SamaRvAdapter(
         return this
     }
 
-    /** Binds the items of the adapter to the passed [list]. Checks differences with previous items to check what changed. */
+    /**
+     * Binds the items of the adapter to the passed [list].
+     * Checks differences with previous items to check what changed.
+     */
     @Synchronized fun bindItems(list: List<SamaListItem>): SamaRvAdapter {
         isPaged = false
         isObservableList = false
@@ -246,16 +273,18 @@ open class SamaRvAdapter(
 
         launch(Dispatchers.Main) {
             recyclerView?.get()?.also {
-                // I have to stop the scrolling if the new list has less items then current item list
+                // I stop the scrolling if the new list has less items then current item list
                 if (items.size > list.size) {
-                    val firstPos = (it.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition() ?: items.size
+                    val firstPos =
+                        (it.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition()
+                            ?: items.size
                     if (firstPos > list.size) {
                         it.stopScroll()
                     }
                 }
             }
             items.clear()
-            items = list.mapTo(ObservableArrayList(), { it })
+            items = list.mapTo(ObservableArrayList()) { it }
             diffResult.dispatchUpdatesTo(this@SamaRvAdapter)
             onLoadFinished?.invoke()
             if (justRestarted) {
@@ -267,7 +296,10 @@ open class SamaRvAdapter(
         return this
     }
 
-    /** Binds the items of the adapter to the passed LiveData [list]. When it changes, differences with the previous items will be performed and reflected to the adapter. */
+    /**
+     * Binds the items of the adapter to the passed LiveData [list].
+     * When it changes, differences with the previous items will be reflected to the adapter.
+     */
     @Synchronized fun bindItems(list: LiveData<out List<SamaListItem>>?): SamaRvAdapter {
         isPaged = false
         isObservableList = false
@@ -281,10 +313,14 @@ open class SamaRvAdapter(
         return this
     }
 
-    /** Binds the items of the adapter to the passed Flow [list]. When it changes, differences with the previous items will be performed and reflected to the adapter. */
+    /**
+     * Binds the items of the adapter to the passed Flow [list].
+     * When it changes, differences with the previous items will be reflected to the adapter.
+     */
     @Synchronized fun bindItems(list: Flow<List<SamaListItem>>?): SamaRvAdapter =
         bindItems(list?.asLiveData(coroutineContext))
 
+    /** Stop observing this [SamaRvAdapter]. */
     fun stopLiveDataObservers() {
         logDebug("Stop observing liveData in adapter")
         liveDataObserversStopped = true
@@ -295,6 +331,7 @@ open class SamaRvAdapter(
         }
     }
 
+    /** Restart observing this [SamaRvAdapter]. */
     fun restartLiveDataObservers() {
         if (!liveDataObserversStopped) return
         logDebug("Restart observing liveData in adapter")
@@ -309,7 +346,10 @@ open class SamaRvAdapter(
         }
     }
 
-    /** Binds the items of the adapter to the passed PagingData [list]. When it changes, differences with the previous items will be performed and reflected to the adapter. */
+    /**
+     * Binds the items of the adapter to the passed PagingData [list].
+     * When it changes, differences with the previous items will be reflected to the adapter.
+     */
     @Suppress("UNCHECKED_CAST")
     @Synchronized
     fun bindPagingItems(list: PagingData<out SamaListItem>): SamaRvAdapter {
@@ -321,9 +361,11 @@ open class SamaRvAdapter(
             items.clear()
             mDiffer.submitData(list as PagingData<SamaListItem>)
             recyclerView?.get()?.also {
-                // I have to stop the scrolling if the new list has less items then current item list
+                // I stop the scrolling if the new list has less items then current item list
                 if (itemCount > mDiffer.itemCount) {
-                    val firstPos = (it.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition() ?: items.size
+                    val firstPos =
+                        (it.layoutManager as? LinearLayoutManager)?.findFirstVisibleItemPosition()
+                            ?: items.size
                     if (firstPos > mDiffer.itemCount) {
                         it.stopScroll()
                     }
@@ -341,7 +383,10 @@ open class SamaRvAdapter(
         return this
     }
 
-    /** Binds the items of the adapter to the passed LiveData of PagingData [list]. When it changes, differences with the previous items will be performed and reflected to the adapter. */
+    /**
+     * Binds the items of the adapter to the passed LiveData of PagingData [list].
+     * When it changes, differences with the previous items will be reflected to the adapter.
+     */
     @Suppress("UNCHECKED_CAST")
     @Synchronized
     fun bindPagingItems(list: LiveData<out PagingData<out SamaListItem>>?): SamaRvAdapter {
@@ -363,10 +408,10 @@ open class SamaRvAdapter(
         return this
     }
 
-    /** Function called when adapter starts loading items (one of [bindItems] or [bindPagingItems] is called). */
+    /** Function run when adapter loads items, when [bindItems] or [bindPagingItems] is called. */
     fun onLoadStarted(f: () -> Unit): SamaRvAdapter { this.onLoadStarted = f; return this }
 
-    /** Function called when adapter finishes loading items (one of [bindItems] or [bindPagingItems] finished its job). */
+    /** Function run after adapter loads items, when [bindItems] or [bindPagingItems] finished. */
     fun onLoadFinished(f: () -> Unit): SamaRvAdapter { this.onLoadFinished = f; return this }
 
     private fun getItemStableId(listItem: SamaListItem?): Long {
@@ -374,7 +419,9 @@ open class SamaRvAdapter(
             listItem?.getStableId() ?: RecyclerView.NO_ID
         } else {
             val id = idsMap[listItem.getStableIdString()] ?: RecyclerView.NO_ID
-            if (id == RecyclerView.NO_ID) idsMap[listItem.getStableIdString()] = maxId.incrementAndGet()
+            if (id == RecyclerView.NO_ID) {
+                idsMap[listItem.getStableIdString()] = maxId.incrementAndGet()
+            }
             idsMap[listItem.getStableIdString()] ?: RecyclerView.NO_ID
         }
     }
@@ -406,7 +453,7 @@ open class SamaRvAdapter(
         }
     }
 
-    /** Clears all data from the adapter (call it only if you know the adapter is not needed anymore!). */
+    /** Clears all data from the adapter. Call it only if the adapter is not needed anymore. */
     fun clear() {
         // remove the observer from the optional current liveData
         launch(Dispatchers.Main) {
@@ -430,41 +477,61 @@ open class SamaRvAdapter(
         val size = mutableBoundItems.size()
 
         val boundItems = ArrayList<T?>(size)
-        for (i in 0..size)
+        for (i in 0..size) {
             boundItems.add(mutableBoundItems.valueAt(i) as T?)
+        }
 
         return boundItems.filterNotNull()
     }
 
-    /** Clears all bound items from the adapter. If [reloadList] is set, [notifyDataSetChanged] is called. */
+    /**
+     * Clears all bound items from the adapter.
+     * If [reloadList] is set, [notifyDataSetChanged] is called.
+     */
     fun clearBoundItems(reloadList: Boolean = true) {
         mutableBoundItems.clear()
-        if (reloadList) launch(Dispatchers.Main) { notifyDataSetChanged() }
+        if (reloadList) {
+            launch(Dispatchers.Main) {
+                notifyDataSetChanged()
+            }
+        }
     }
 
     /** Returns the stableId of the item at position [position], if available and if adapter hasStableId. */
-    override fun getItemId(position: Int): Long = if (hasStableId && getItem(position) != null) {
-        getItemStableId(
-            getItem(position)!!
-        )
-    } else {
-        RecyclerView.NO_ID
-    }
+    override fun getItemId(position: Int): Long =
+        if (hasStableId && getItem(position) != null) {
+            getItemStableId(getItem(position)!!)
+        } else {
+            RecyclerView.NO_ID
+        }
 
     /** Returns all the items in the adapter. */
     fun getItems(): List<SamaListItem> = this.items
 
-    fun getItemPosition(id: String): Int = (0 until itemCount).firstOrNull { getItem(it)?.getStableIdString() == id } ?: -1
+    /** Return the position for the item with stableId [id]. */
+    fun getItemPosition(id: String): Int = (0 until itemCount).firstOrNull {
+        getItem(it)?.getStableIdString() == id
+    } ?: -1
 
-    fun getItemPosition(id: Long): Int = (0 until itemCount).firstOrNull { getItem(it)?.getStableId() == id } ?: -1
+    /** Return the position for the item with stableId [id]. */
+    fun getItemPosition(id: Long): Int = (0 until itemCount).firstOrNull {
+        getItem(it)?.getStableId() == id
+    } ?: -1
 
+    /** Return the position for the [item], if it has a stable id. */
     fun getItemPosition(item: SamaListItem): Int {
         val stableId = getItemStableId(item)
         return (0 until itemCount).firstOrNull { i -> getItem(i)?.let { getItemStableId(it) } == stableId } ?: -1
     }
 
     /** Returns the item at position [position]. */
-    fun getItem(position: Int): SamaListItem? = tryOrNull { if (isPaged) mDiffer.getItem(position) else items[position] }
+    fun getItem(position: Int): SamaListItem? = tryOrNull {
+        if (isPaged) {
+            mDiffer.getItem(position)
+        } else {
+            items[position]
+        }
+    }
 
     internal fun setSpannedSize(position: Int, size: Int) = spannedSizes.put(position, size)
 
@@ -489,51 +556,73 @@ open class SamaRvAdapter(
 
     /** Class that implement the ViewHolder of the Adapter. */
     class SimpleViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        /** WeakReference to the ViewDataBinding. */
         val binding: WeakReference<ViewDataBinding> = WeakReference(DataBindingUtil.bind(view))
         override fun toString(): String = "$bindingAdapterPosition: " + super.toString()
     }
 
     /** Class that listens for changes of the passed list and calls the methods of the adapter. */
-    inner class WeakReferenceOnListChangedCallback(bindingRvAdapter: SamaRvAdapter) : ObservableList.OnListChangedCallback<ObservableList<SamaListItem>>() {
+    inner class WeakReferenceOnListChangedCallback(bindingRvAdapter: SamaRvAdapter) :
+        ObservableList.OnListChangedCallback<ObservableList<SamaListItem>>() {
 
         private val adapterReference = WeakReference(bindingRvAdapter)
 
-        @Synchronized override fun onChanged(sender: ObservableList<SamaListItem>?) { launch(Dispatchers.Main) { adapterReference.get()?.notifyDataSetChanged() } }
+        @Synchronized override fun onChanged(sender: ObservableList<SamaListItem>?) {
+            launch(Dispatchers.Main) {
+                adapterReference.get()?.notifyDataSetChanged()
+            }
+        }
 
         @Synchronized override fun onItemRangeRemoved(
             sender: ObservableList<SamaListItem>?,
             positionStart: Int,
             itemCount: Int
-        ) { launch(Dispatchers.Main) { adapterReference.get()?.itemRangeRemoved(positionStart, itemCount) } }
+        ) {
+            launch(Dispatchers.Main) {
+                adapterReference.get()?.itemRangeRemoved(positionStart, itemCount)
+            }
+        }
 
         @Synchronized override fun onItemRangeMoved(
             sender: ObservableList<SamaListItem>?,
             fromPosition: Int,
             toPosition: Int,
             itemCount: Int
-        ) { launch(Dispatchers.Main) { adapterReference.get()?.itemRangeMoved(fromPosition, toPosition, itemCount) } }
+        ) {
+            launch(Dispatchers.Main) {
+                adapterReference.get()?.itemRangeMoved(fromPosition, toPosition, itemCount)
+            }
+        }
 
         @Synchronized override fun onItemRangeInserted(
             sender: ObservableList<SamaListItem>?,
             positionStart: Int,
             itemCount: Int
-        ) { launch(Dispatchers.Main) { adapterReference.get()?.itemRangeInserted(positionStart, itemCount) } }
+        ) {
+            launch(Dispatchers.Main) {
+                adapterReference.get()?.itemRangeInserted(positionStart, itemCount)
+            }
+        }
 
         @Synchronized override fun onItemRangeChanged(
             sender: ObservableList<SamaListItem>?,
             positionStart: Int,
             itemCount: Int
-        ) { launch(Dispatchers.Main) { adapterReference.get()?.itemRangeChanged(positionStart, itemCount) } }
+        ) {
+            launch(Dispatchers.Main) {
+                adapterReference.get()?.itemRangeChanged(positionStart, itemCount)
+            }
+        }
     }
 
-    inner class LIDiffCallback(private val oldList: List<SamaListItem>, private val newList: List<SamaListItem>) : DiffUtil.Callback() {
-        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean = if (hasStableId) {
-            getItemStableId(
-                oldList[oldItemPosition]
-            ) == getItemStableId(newList[newItemPosition])
-        } else {
-            true
-        }
+    private inner class LIDiffCallback(
+        private val oldList: List<SamaListItem>,
+        private val newList: List<SamaListItem>
+    ) : DiffUtil.Callback() {
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
+            !hasStableId ||
+                getItemStableId(oldList[oldItemPosition]) ==
+                    getItemStableId(newList[newItemPosition])
         override fun getOldListSize(): Int = oldList.size
         override fun getNewListSize(): Int = newList.size
         override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =

@@ -22,91 +22,118 @@ import kotlinx.coroutines.cancel
 import java.util.concurrent.atomic.AtomicInteger
 
 /** Abstract Activity for all Activities to extend. */
-abstract class SamaActivity : AppCompatActivity(), CoroutineScope, SamaObserver by SamaObserverImpl() {
+abstract class SamaActivity :
+    AppCompatActivity(), CoroutineScope, SamaObserver by SamaObserverImpl() {
     private val coroutineJob: Job = SupervisorJob()
     override val coroutineContext = coroutineSamaHandler(coroutineJob)
 
     private val registeredViewModels = ArrayList<SamaViewModel<*>>()
-
     private val registeredCallbacks = ArrayList<SamaActivityCallback>()
-
     private val managedDialog = SparseArray<SamaDialogFragment>()
 
+    /** The intent that started this activity as [SamaIntent], to use [getExtraStatic]. */
     val samaIntent
-        /** Returns the intent that started this activity as [SamaIntent], allowing the use of [SamaIntent.getExtraStatic]. */
         get() = SamaIntent(super.getIntent())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         logVerbose("onCreate")
         initObserver(this)
-        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onCreate(this) } }
+        synchronized(registeredCallbacks) {
+            registeredCallbacks.forEach { it.onCreate(this) }
+        }
     }
 
     override fun onResume() {
         super.onResume()
         logVerbose("onResume")
-        synchronized(managedDialog) { managedDialog.forEach { it.onResumeRestore(this) } }
-        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onResume(this) } }
+        synchronized(managedDialog) {
+            managedDialog.forEach { it.onResumeRestore(this) }
+        }
+        synchronized(registeredCallbacks) {
+            registeredCallbacks.forEach { it.onResume(this) }
+        }
     }
 
     override fun onStart() {
         super.onStart()
         logVerbose("onStart")
         startObserver()
-        synchronized(registeredViewModels) { registeredViewModels.forEach { it.restartObserving() } }
-        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onStart(this) } }
+        synchronized(registeredViewModels) {
+            registeredViewModels.forEach { it.restartObserving() }
+        }
+        synchronized(registeredCallbacks) {
+            registeredCallbacks.forEach { it.onStart(this) }
+        }
     }
 
     override fun onPause() {
         super.onPause()
         logVerbose("onPause")
-        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onPause(this) } }
+        synchronized(registeredCallbacks) {
+            registeredCallbacks.forEach { it.onPause(this) }
+        }
     }
 
     override fun onStop() {
         super.onStop()
         logVerbose("onStop")
         stopObserver()
-        synchronized(registeredViewModels) { registeredViewModels.forEach { it.stopObserving() } }
-        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onStop(this) } }
+        synchronized(registeredViewModels) {
+            registeredViewModels.forEach { it.stopObserving() }
+        }
+        synchronized(registeredCallbacks) {
+            registeredCallbacks.forEach { it.onStop(this) }
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         logVerbose("onDestroy")
         destroyObserver()
-        synchronized(managedDialog) { managedDialog.forEach { it.onDestroy(this) } }
+        synchronized(managedDialog) {
+            managedDialog.forEach { it.onDestroy(this) }
+        }
         managedDialog.clear()
-        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onDestroy(this) }; registeredCallbacks.clear() }
+        synchronized(registeredCallbacks) {
+            registeredCallbacks.forEach { it.onDestroy(this) }
+            registeredCallbacks.clear()
+        }
         registeredViewModels.clear()
         coroutineContext.cancel()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
-        synchronized(managedDialog) { managedDialog.forEach { it.onSaveInstanceState(this) } }
-        synchronized(registeredCallbacks) { registeredCallbacks.forEach { it.onSaveInstanceState(this) } }
+        synchronized(managedDialog) {
+            managedDialog.forEach { it.onSaveInstanceState(this) }
+        }
+        synchronized(registeredCallbacks) {
+            registeredCallbacks.forEach { it.onSaveInstanceState(this) }
+        }
         super.onSaveInstanceState(outState)
     }
 
     internal fun registerSamaCallback(cb: SamaActivityCallback) = synchronized(registeredCallbacks) {
-        registeredCallbacks.add(
-            cb
-        )
+        registeredCallbacks.add(cb)
     }
 
     internal fun unregisterSamaCallback(cb: SamaActivityCallback) = synchronized(registeredCallbacks) {
-        registeredCallbacks.remove(
-            cb
-        )
+        registeredCallbacks.remove(cb)
     }
 
-    /** Manages a dialogFragment, making it restore and show again if it was dismissed due to device rotation. */
+    /**
+     * Manages a dialogFragment.
+     * It restores and shows again if it was dismissed due to device rotation.
+     */
     fun <T : SamaDialogFragment> manageDialog(f: () -> T): T =
         f().also { dialog -> managedDialog.put(dialog.getUidInternal(), dialog) }
 
-    /** Manages a dialogFragment, making it restore and show again if it was dismissed due to device rotation. */
-    internal fun manageDialogInternal(dialog: SamaDialogFragment) = managedDialog.put(dialog.getUidInternal(), dialog)
+    /**
+     * Manages a dialogFragment.
+     * It restores and shows again if it was dismissed due to device rotation.
+     */
+    internal fun manageDialogInternal(dialog: SamaDialogFragment) =
+        managedDialog.put(dialog.getUidInternal(), dialog)
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         logVerbose("Selected item ${item.title}")
@@ -117,7 +144,11 @@ abstract class SamaActivity : AppCompatActivity(), CoroutineScope, SamaObserver 
         return super.onOptionsItemSelected(item)
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         Perms.onRequestPermissionsResult(this, requestCode, permissions, grantResults)
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }

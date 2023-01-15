@@ -6,8 +6,11 @@ import android.net.Uri
 import com.stefanosiano.powerful_libraries.sama.removeWhen
 import java.util.concurrent.atomic.AtomicLong
 
-/** Extension of the Intent class. It allows to pass any value using static variables.
- * NOTE: There may be some problem when using its methods with multiple instances of the same activity at the same moment. */
+/**
+ * Extension of the Intent class. It allows to pass any value using static variables.
+ * NOTE: There may be some problem when using its methods with multiple instances of
+ *  the same activity at the same time.
+ */
 class SamaIntent : Intent {
 
     internal val uid: Long
@@ -32,10 +35,16 @@ class SamaIntent : Intent {
         uri,
         packageContext,
         cls
-    ) { this.uid = uids.incrementAndGet(); putExtra(extra, uid) }
+    ) {
+        this.uid = uids.incrementAndGet()
+        putExtra(extra, uid)
+    }
 
     /** Put a static variable associated to [key]. */
-    fun putExtraStatic(key: String, variable: Any?): SamaIntent { SamaIntent.store("$uid $key", variable); return this }
+    fun putExtraStatic(key: String, variable: Any?): SamaIntent {
+        SamaIntent.store("$uid $key", variable)
+        return this
+    }
 
     /** Retrieve the static variable associated to [key], if it exists, or null. */
     fun <T> getExtraStatic(key: String): T? = SamaIntent.retrieve("$uid $key")

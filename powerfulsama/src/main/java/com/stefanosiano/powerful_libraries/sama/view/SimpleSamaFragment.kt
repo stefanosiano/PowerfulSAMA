@@ -12,7 +12,10 @@ import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
 import com.stefanosiano.powerful_libraries.sama.logVerbose
 
-/** Base Class that provides easy way to use data binding with a fragment without the need of other classes. */
+/**
+ * Base Class that provides easy way to use data binding with a fragment,
+ *  without the need of other classes.
+ */
 open class SimpleSamaFragment : SamaFragment() {
 
     private var layoutId: Int = 0
@@ -25,15 +28,12 @@ open class SimpleSamaFragment : SamaFragment() {
     private var onDetach: ((fragment: SimpleSamaFragment) -> Unit)? = null
 
     /**
-     * Sets the data to work with data binding
+     * Sets the [bindingData] to work with data binding through [dataBindingId].
      * Calling this method multiple times will associate the id to the last data passed.
-     * Multiple dataBindingIds are allowed
-     *
-     * @param dataBindingId the id of the variable in the layout
-     * @param bindingData the data to bind to the id
+     * Multiple dataBindingIds are allowed.
      */
     fun with(dataBindingId: Int, bindingData: Any): SimpleSamaFragment {
-        if (!this.bindingPairs.asSequence().map { it.first }.contains(dataBindingId)) {
+        if (!this.bindingPairs.map { it.first }.contains(dataBindingId)) {
             this.bindingPairs.add(Pair(dataBindingId, bindingData))
         }
         return this
@@ -77,9 +77,8 @@ open class SimpleSamaFragment : SamaFragment() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         logVerbose("$logTag: Selected item: ${item.title}")
-        menuFunctions.firstOrNull { it.first == item.itemId }?.second?.invoke() ?: return super.onOptionsItemSelected(
-            item
-        )
+        menuFunctions.firstOrNull { it.first == item.itemId }?.second?.invoke()
+            ?: return super.onOptionsItemSelected(item)
         return true
     }
 
@@ -98,7 +97,9 @@ open class SimpleSamaFragment : SamaFragment() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        if (defaultTitle.isEmpty()) this.defaultTitle = activity?.title?.toString() ?: ""
+        if (defaultTitle.isEmpty()) {
+            this.defaultTitle = activity?.title?.toString() ?: ""
+        }
     }
 
     override fun onDetach() {
@@ -106,7 +107,11 @@ open class SimpleSamaFragment : SamaFragment() {
         super.onDetach()
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         this.layoutId = arguments?.getInt(ExtraLayoutId) ?: 0
         this.menuId = arguments?.getInt(ExtraMenuId) ?: 0
         this.setHasOptionsMenu(menuId != 0)
@@ -124,7 +129,11 @@ open class SimpleSamaFragment : SamaFragment() {
         super.onActivityCreated(savedInstanceState)
         if (title.isNotEmpty()) {
             activity?.title = title
-        } else if (defaultTitle.isNotEmpty()) activity?.title = defaultTitle
+        } else {
+            if (defaultTitle.isNotEmpty()) {
+                activity?.title = defaultTitle
+            }
+        }
     }
 
     /** Clear references of dataBinding, searchView observable and menu functions. */
@@ -139,16 +148,12 @@ open class SimpleSamaFragment : SamaFragment() {
         private const val ExtraLayoutId = "ExtraLayoutId"
         private const val ExtraMenuId = "ExtraMenuId"
 
-        /**
-         * Creates a new SimpleFragment.
-         * @param layoutId The id of the layout to use. (0 means no layout is shown).
-         */
+        /** Creates a new SimpleFragment, with [layoutId]. (0 means no layout is shown). */
         fun new(layoutId: Int): SimpleSamaFragment = new(layoutId, 0)
 
         /**
-         * Creates a new SimpleFragment.
-         * @param layoutId The id of the layout to use. (0 means no layout is shown).
-         * @param menuId The id of the menu to load. (0 means no menu is shown).
+         * Creates a new SimpleFragment, with [layoutId]. (0 means no layout is shown).
+         * [menuId] is the id of the menu to load. (0 means no menu is shown).
          */
         fun new(layoutId: Int, menuId: Int): SimpleSamaFragment {
             val fragment = SimpleSamaFragment()
