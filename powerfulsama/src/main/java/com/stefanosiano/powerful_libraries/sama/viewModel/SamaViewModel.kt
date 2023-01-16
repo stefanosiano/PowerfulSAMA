@@ -3,9 +3,9 @@ package com.stefanosiano.powerful_libraries.sama.viewModel
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
-import com.stefanosiano.powerful_libraries.sama.extensions.coroutineSamaHandler
-import com.stefanosiano.powerful_libraries.sama.extensions.logVerbose
-import com.stefanosiano.powerful_libraries.sama.extensions.tryOrPrint
+import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
+import com.stefanosiano.powerful_libraries.sama.logVerbose
+import com.stefanosiano.powerful_libraries.sama.tryOrPrint
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserver
 import com.stefanosiano.powerful_libraries.sama.utils.SamaObserverImpl
 import kotlinx.coroutines.CoroutineScope
@@ -17,10 +17,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Base class for ViewModels.
- * It will contain the fields used by the databinding and all the logic of the data contained into the layouts.
- * */
-@Suppress("TooManyFunctions")
-open class SamaViewModel<A: VmAction>
+ * It will contain the fields used by the databinding and the logic of the data in the layouts.
+ */
+open class SamaViewModel<A : VmAction>
 /** Initializes the LiveData of the response. */
 protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObserverImpl() {
     private val coroutineJob: Job = SupervisorJob()
@@ -35,9 +34,8 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
     /** LiveData of the response the ViewModel sends to the observer (activity/fragment). */
     private var liveAction: MediatorLiveData<A> = MediatorLiveData()
 
-    /** Whether this is already initialized. Used to check if [onFirstTime] should be called. */
+    /** Flag to know if this [SamaViewModel] is initialized. Used to check if [onFirtstTime] should be called. */
     internal var isInitialized = AtomicBoolean(false)
-
 
     init {
         initObserver(this)
@@ -62,7 +60,6 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
         liveAction.postValue(null)
     }
 
-
     /** Clear the liveData observer (if any). */
     internal fun restartObserving() {
         logVerbose("restartObserving")
@@ -70,59 +67,57 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
         startObserver()
     }
 
-
     /** Observes the action of the ViewModel. Call it on Ui thread. */
     fun onVmAction(lifecycleOwner: LifecycleOwner, observer: (vmAction: A) -> Unit) {
         liveAction.observe(lifecycleOwner) {
-            when {
-                !isActive || actionsStopped -> {}
-                it == null -> lastStickyAction = null
-                else -> {
-                    logVerbose("Sending to activity: $it")
-                    tryOrPrint { observer(it) }
-                    if (it is VmAction.VmActionSticky) {
-                        lastStickyAction = it
-                    } else {
-                        liveAction.postValue(null)
-                    }
-                    lastStickyAction?.let { observer(it) }
-                }
+            if (!isActive) return@observe
+            if (actionsStopped) return@observe
+            if (it == null) {
+                lastStickyAction = null
+                return@observe
             }
+            logVerbose("Sending to activity: $it")
+            tryOrPrint { observer(it) }
+            if (it is VmAction.VmActionSticky) {
+                lastStickyAction = it
+            }
+            liveAction.postValue(null)
         }
+        lastStickyAction?.let { observer(it) }
     }
 
-    /** Stop actions from being sent to the observing activity. To resume them call [startVmActions]. */
+    /** Stop sending actions to the observing activity. To resume them call [startVmActions]. */
     fun stopVmActions() { actionsStopped = true }
 
     /** Start sending actions to the observing activity. To stop them call [stopVmActions]. */
     fun startVmActions() { actionsStopped = false }
 
-    /** Start sending actions to the observing activity. To stop them call [stopVmActions]. */
+    /** Clear any retained [VmAction.VmActionSticky]. */
     fun clearStickyAction() { lastStickyAction = null }
+}
 
-    /** Executes [f] only once. If this is called multiple times, it will have no effect. */
-    @Synchronized fun onFirstTime(f: SamaViewModel<A>.() -> Unit) {
-        if(!isInitialized.getAndSet(true)) this.f()
-    }
+/** Executes [f] only once. If this is called multiple times, it will have no effect. */
+@Synchronized fun <T : SamaViewModel<*>> T.onFirstTime(f: T.() -> Unit) {
+    if (!isInitialized.getAndSet(true)) this.f()
 }
 
 /** Class containing action and data sent from the ViewModel to its observers. */
-open class VmResponse<A: VmAction> (
-    /** Specifies what the response is about. */
+open class VmResponse<A : VmAction> (
+    /** Specifies what the response is about . */
     val action: A,
-    /** Optional data provided by the action. */
-    val data: Any?) {
-
+    /** Optional data provided by the action . */
+    val data: Any?
+) {
     override fun toString() = "VmResponse{ action= $action, data=$data }"
-
 }
 
 /** Interface that indicates the action sent by the ViewModel. */
 interface VmAction {
     /**
      * Indicates that this [VmAction] should be retained when activity is recreated.
-     * Any new [VmActionSticky] overrides previous one, so that only 1 action will be retained.
-     * If an action is sent and the device is rotated, when the activity restarts it needs to get that action again.
+     * Any new [VmActionSticky] overrides the previous one, so that only 1 action will be retained.
+     * If an action is sent and the device is rotated,
+     *  when the activity restarts it needs to get that action again.
      */
     interface VmActionSticky
 }
