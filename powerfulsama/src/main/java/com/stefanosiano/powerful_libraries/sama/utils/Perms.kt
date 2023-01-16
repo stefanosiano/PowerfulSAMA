@@ -109,7 +109,7 @@ object Perms {
         val reqCode = SamaActivity.samaRequestCodes.incrementAndGet()
         val permHelper = PermHelper(
             reqCode,
-            optionalPerms.minus(perms).distinct(),
+            optionalPerms.minus(perms.toSet()).distinct(),
             onShowRationale,
             onPermanentlyDenied,
             f
