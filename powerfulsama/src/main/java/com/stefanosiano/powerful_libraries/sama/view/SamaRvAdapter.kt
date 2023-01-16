@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicLong
  * In this case, the items of the adapter must implement
  *  [SamaListItem.getStableId] or [SamaListItem.getStableIdString], or it won't have any effect.
  */
+@Suppress("TooManyFunctions")
 open class SamaRvAdapter(
     private var itemLayoutId: Int,
     private val itemBindingId: Int,

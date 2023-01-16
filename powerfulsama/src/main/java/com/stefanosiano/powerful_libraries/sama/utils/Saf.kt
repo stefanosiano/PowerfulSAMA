@@ -33,6 +33,7 @@ object Saf : CoroutineScope {
     private val safHelperMap = SparseArray<SafHelper>()
 
     /** Manages the Saf request results. Activities extending [SamaActivity] already call it. */
+    @Suppress("ReturnCount")
     internal fun onRequestSafResult(
         activity: Activity,
         requestCode: Int,
@@ -40,73 +41,77 @@ object Saf : CoroutineScope {
         data: Intent?
     ): Boolean {
         val safHelper = safHelperMap[requestCode]
-        if (safHelper == null || resultCode != Activity.RESULT_OK) {
+        val uri = data?.data
+        if (safHelper == null || resultCode != Activity.RESULT_OK || uri == null) {
             return false
         }
         safHelperMap.remove(requestCode)
-        data?.data?.let { uri ->
-            // If persisted permission is required: for single documents i ask read for
-            // read/write permission, for folders i need read/write permissions
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT &&
-                safHelper.persistableUriPermission
-            ) {
-                when {
-                    safHelper.isSingleDocument && safHelper.isInput ->
-                        activity.contentResolver.takePersistableUriPermission(
-                            uri,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        )
-                    safHelper.isSingleDocument && !safHelper.isInput -> {
-                        activity.contentResolver.takePersistableUriPermission(
-                            uri,
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                        )
-                        activity.contentResolver.takePersistableUriPermission(
-                            uri,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        )
-                    }
-                    else -> {
-                        activity.contentResolver.takePersistableUriPermission(
-                            uri,
-                            Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                        )
-                        activity.contentResolver.takePersistableUriPermission(
-                            uri,
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        )
-                    }
-                }
+        takePersistableUriPermission(safHelper, activity, uri)
+        val fDf = safHelper.fDf
+        if (fDf != null) {
+            val df = if (safHelper.isSingleDocument) {
+                getDocument(uri, activity)
+            } else {
+                getDocumentTree(uri, activity)
             }
-            val fDf = safHelper.fDf
-            if (fDf != null) {
-                val df =
-                    if (safHelper.isSingleDocument) {
-                        getDocument(uri, activity)
+            df?.let {
+                launch {
+                    withContext(Dispatchers.IO) { fDf(it) }
+                }
+                return true
+            }
+        }
+        launch {
+            withContext(Dispatchers.IO) {
+                val stream = tryOrPrint {
+                    if (safHelper.isInput) {
+                        activity.contentResolver.openInputStream(uri)
                     } else {
-                        getDocumentTree(uri, activity)
+                        activity.contentResolver.openOutputStream(uri)
                     }
-                df?.let {
-                    launch {
-                        withContext(Dispatchers.IO) { fDf(it) }
-                    }
-                    return true
                 }
+                stream?.use { safHelper.f!!.invoke(it) }
             }
-            launch {
-                withContext(Dispatchers.IO) {
-                    val stream = tryOrPrint {
-                        if (safHelper.isInput) {
-                            activity.contentResolver.openInputStream(uri)
-                        } else {
-                            activity.contentResolver.openOutputStream(uri)
-                        }
-                    }
-                    stream?.use { safHelper.f!!.invoke(it) }
-                }
-            }
-        } ?: return false
+        }
         return true
+    }
+
+    /**
+     * If persisted permission is required:
+     *  for single documents we ask read permission, while for folders we need read/write permissions.
+     */
+    private fun takePersistableUriPermission(safHelper: SafHelper, activity: Activity, uri: Uri) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT &&
+            safHelper.persistableUriPermission
+        ) {
+            when {
+                safHelper.isSingleDocument && safHelper.isInput ->
+                    activity.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                safHelper.isSingleDocument && !safHelper.isInput -> {
+                    activity.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    )
+                    activity.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                }
+                else -> {
+                    activity.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    )
+                    activity.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                }
+            }
+        }
     }
 
     /** Release persisted uris held by this app. */

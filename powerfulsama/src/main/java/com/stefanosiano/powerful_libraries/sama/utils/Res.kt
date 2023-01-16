@@ -16,6 +16,7 @@ import java.io.InputStream
  * Class that retrieves resources using current activity context,
  *  or application context if no activity is available.
  */
+@Suppress("TooManyFunctions")
 object Res {
 
     /** Application context. */

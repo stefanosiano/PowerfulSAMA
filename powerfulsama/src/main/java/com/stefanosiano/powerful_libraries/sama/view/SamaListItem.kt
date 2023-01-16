@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * Class to be extended by other list items. To be used with [SamaRvAdapter].
  * In case a dynamic object needs to be attached to the item, use [SamaMutableListItem].
  */
+@Suppress("TooManyFunctions")
 abstract class SamaListItem : CoroutineScope, SamaObserver by SamaObserverImpl() {
     @Ignore private val coroutineJob: Job = SupervisorJob()
 

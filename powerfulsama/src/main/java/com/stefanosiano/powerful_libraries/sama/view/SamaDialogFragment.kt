@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * If you want more control over them override [getDialogLayout] and [getDialogDataBindingId]
  *  and/or [bindingData].
  */
+@Suppress("TooManyFunctions")
 abstract class SamaDialogFragment(
     private val layoutId: Int,
     private val dataBindingId: Int = -1,

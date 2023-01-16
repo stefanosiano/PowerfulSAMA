@@ -22,6 +22,7 @@ import kotlinx.coroutines.cancel
 import java.util.concurrent.atomic.AtomicInteger
 
 /** Abstract Activity for all Activities to extend. */
+@Suppress("TooManyFunctions")
 abstract class SamaActivity :
     AppCompatActivity(), CoroutineScope, SamaObserver by SamaObserverImpl() {
     private val coroutineJob: Job = SupervisorJob()

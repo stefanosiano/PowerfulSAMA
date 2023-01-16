@@ -11,10 +11,16 @@ import android.os.Build
 @Suppress("DEPRECATION")
 object SamaSignature {
 
+    /** PackageName of the application. */
     val pkgName: String = PowerfulSama.applicationContext.packageName
+
+    /** PackageManager of the application. */
     val pm: PackageManager = PowerfulSama.applicationContext.packageManager
 
+    /** Function to call when signature check fails. */
     var onSignatureFailed: ((Array<Signature>) -> Unit)? = null
+
+    /** Function to call when signature check succeeds. */
     var onCheckSignature: ((Array<Signature>) -> Boolean)? = null
 
     /**

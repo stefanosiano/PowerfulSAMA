@@ -47,6 +47,7 @@ import java.util.concurrent.atomic.AtomicLong
  *      autoDismissDelay = 0 (doesn't dismiss)
  *      duration = LENGHT_SHORT
  */
+@Suppress("TooManyFunctions", "LongParameterList", "ComplexMethod")
 class Msg private constructor(
 
     /** Theme of the message (if available). */
@@ -689,10 +690,16 @@ class Msg private constructor(
      *      indeterminate = true
      *      cancelable = false
      */
+    @Suppress("TooManyFunctions")
     companion object : CoroutineScope {
 
+        /** Short length, similar to [Toast.LENGTH_SHORT] and [Snackbar.LENGTH_SHORT]. */
         const val LENGHT_SHORT = -1
+
+        /** Long length, similar to [Toast.LENGTH_LONG] and [Snackbar.LENGTH_LONG]. */
         const val LENGHT_LONG = -2
+
+        /** Indefinite length, similar to [Snackbar.LENGTH_INDEFINITE]. */
         const val LENGHT_INDEFINITE = -3
 
         override val coroutineContext = coroutineSamaHandler(SupervisorJob())

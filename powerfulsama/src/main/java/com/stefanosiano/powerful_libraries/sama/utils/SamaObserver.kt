@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * Interface that allows a component to observe variables and call methods when they change.
  * The main methods are [initObserver], [destroyObserver], [stopObserver] and [startObserver].
  */
+@Suppress("TooManyFunctions")
 interface SamaObserver {
     /**
      * Initializes the observer with the current coroutine, used to handle delays on
@@ -207,6 +208,7 @@ interface SamaObserver {
  * Class that implements [SamaObserver].
  * The main methods are [initObserver], [destroyObserver], [stopObserver] and [startObserver].
  */
+@Suppress("TooManyFunctions")
 class SamaObserverImpl : SamaObserver {
 
     private var coroutineScope: CoroutineScope? = null

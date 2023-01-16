@@ -13,6 +13,7 @@ import androidx.fragment.app.FragmentManager
 import com.stefanosiano.powerful_libraries.sama.logVerbose
 
 /** Abstract DialogFragment for all DialogFragments to extend. */
+@Suppress("TooManyFunctions")
 open class SimpleSamaDialogFragment : DialogFragment() {
 
     private var layoutId: Int = 0

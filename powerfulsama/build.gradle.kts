@@ -71,3 +71,11 @@ detekt {
     buildUponDefaultConfig = true
     autoCorrect = false
 }
+
+tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    exclude("**/powerful_libraries/sama/utils/SamaDataBindingAdapters.kt")
+}
+
+tasks.withType<io.gitlab.arturbosch.detekt.DetektCreateBaselineTask>().configureEach {
+    exclude("**/powerful_libraries/sama/utils/SamaDataBindingAdapters.kt")
+}

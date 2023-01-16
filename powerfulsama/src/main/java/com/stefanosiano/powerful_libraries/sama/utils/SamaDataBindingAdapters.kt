@@ -27,12 +27,13 @@ import com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
 import java.math.BigDecimal
 
-@Suppress("UndocumentedPublicFunction")
-class SamaDataBindingAdapters
+internal class SamaDataBindingAdapters
 
 /** Puts the [bitmap] into the [imageView]. */
 @BindingAdapter("src")
-fun setImageViewSource(imageView: ImageView, bitmap: Bitmap?) { imageView.post { imageView.setImageBitmap(bitmap) } }
+fun setImageViewSource(imageView: ImageView, bitmap: Bitmap?) {
+    imageView.post { imageView.setImageBitmap(bitmap) }
+}
 
 /** Puts the [drawable] into the [imageView]. */
 @BindingAdapter("src")
@@ -46,31 +47,49 @@ fun setImageViewSource(imageView: ImageView, drawable: Drawable?) {
 
 /** Puts the resource with id [id] into the [imageView]. */
 @BindingAdapter("src")
-fun setImageViewSource(imageView: ImageView, id: Int?) { imageView.post { imageView.setImageResource(id ?: 0) } }
+fun setImageViewSource(imageView: ImageView, id: Int?) {
+    imageView.post { imageView.setImageResource(id ?: 0) }
+}
 
 /** Sets the visibility of the view: if [visible] then Visible, else Gone. */
 @BindingAdapter("visible")
-fun setVisibility(view: View, visible: Boolean) { view.visibility = if (visible) View.VISIBLE else View.GONE }
+fun setVisibility(view: View, visible: Boolean) {
+    view.visibility = if (visible) View.VISIBLE else View.GONE
+}
 
 /** Sets the visibility of the view: if [invisible] then Invisible, else Visible. */
 @BindingAdapter("invisible")
-fun setInvisibility(view: View, invisible: Boolean) { view.visibility = if (invisible) View.INVISIBLE else View.VISIBLE }
+fun setInvisibility(view: View, invisible: Boolean) {
+    view.visibility = if (invisible) View.INVISIBLE else View.VISIBLE
+}
 
 /** Sets the hidden status of the view: if [hidden] then Gone, else Visible. */
 @BindingAdapter("hidden")
-fun setHidden(view: View, hidden: Boolean) { view.visibility = if (hidden) View.GONE else View.VISIBLE }
+fun setHidden(view: View, hidden: Boolean) {
+    view.visibility = if (hidden) View.GONE else View.VISIBLE
+}
 
-/** Sets the visibility status of the view: if current screen orientation equals [orientation] then view is Visible, else it's Gone. */
+/**
+ * Sets the visibility status of the view:
+ *  if current screen orientation equals [orientation] then view is Visible, else it's Gone.
+ */
 @BindingAdapter("visibleOnOrientation")
-fun setVisibleOnOrientation(view: View, orientation: Int) { view.visibility = if (view.context.resources.configuration.orientation == orientation) View.VISIBLE else View.GONE }
+fun setVisibleOnOrientation(view: View, orientation: Int) {
+    view.visibility =
+        if (view.context.resources.configuration.orientation == orientation) View.VISIBLE else View.GONE
+}
 
 /** Disable the view if [disable] is true. */
 @BindingAdapter("disabled")
-fun setDisabled(view: View, disable: Boolean) { view.isEnabled = !disable }
+fun setDisabled(view: View, disable: Boolean) {
+    view.isEnabled = !disable
+}
 
 /** Enable the view if [enable] is true. */
 @BindingAdapter("enabled")
-fun setEnabled(view: View, enable: Boolean) { view.isEnabled = enable }
+fun setEnabled(view: View, enable: Boolean) {
+    view.isEnabled = enable
+}
 
 /** Sets a tooltip on longClick on the view with a toast. */
 @BindingAdapter("tooltip")
@@ -146,14 +165,19 @@ fun setTextInputLayoutError(textInputLayoutError: TextInputLayout, error: String
 @BindingAdapter("textAttrChanged")
 fun setListeners(view: BigDecimalEditText, attrChange: InverseBindingListener) {
     view.addTextChangedListener(object : TextWatcher {
-        override fun afterTextChanged(s: Editable?) { attrChange.onChange() }
+        override fun afterTextChanged(s: Editable?) {
+            attrChange.onChange()
+        }
+
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
         override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
     })
 }
 
 @BindingAdapter("text")
-fun setBdetText(view: BigDecimalEditText, newValue: BigDecimal) { view.setTextBd(newValue) }
+fun setBdetText(view: BigDecimalEditText, newValue: BigDecimal) {
+    view.setTextBd(newValue)
+}
 
 @InverseBindingAdapter(attribute = "text")
 fun getBdetText(view: BigDecimalEditText): BigDecimal = view.getTextBd()
@@ -161,14 +185,19 @@ fun getBdetText(view: BigDecimalEditText): BigDecimal = view.getTextBd()
 @BindingAdapter("textAttrChanged")
 fun setListeners(view: BigDecimalTextInputEditText, attrChange: InverseBindingListener) {
     view.addTextChangedListener(object : TextWatcher {
-        override fun afterTextChanged(s: Editable?) { attrChange.onChange() }
+        override fun afterTextChanged(s: Editable?) {
+            attrChange.onChange()
+        }
+
         override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
         override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
     })
 }
 
 @BindingAdapter("text")
-fun setTietText(view: BigDecimalTextInputEditText, newValue: BigDecimal) { view.setTextBd(newValue) }
+fun setTietText(view: BigDecimalTextInputEditText, newValue: BigDecimal) {
+    view.setTextBd(newValue)
+}
 
 @InverseBindingAdapter(attribute = "text")
 fun getTietText(view: BigDecimalTextInputEditText): BigDecimal = view.getTextBd()
@@ -179,7 +208,9 @@ fun setSpnValueListener(spinner: SamaSpinner, listener: InverseBindingListener) 
 }
 
 @BindingAdapter("spnValue")
-fun setSpnValue(spinner: SamaSpinner, value: String?) { if (value != spinner.getSpnValue()) spinner.setSpnValue(value) }
+fun setSpnValue(spinner: SamaSpinner, value: String?) {
+    if (value != spinner.getSpnValue()) spinner.setSpnValue(value)
+}
 
 @InverseBindingAdapter(attribute = "spnValue")
 fun getSpnValue(spinner: SamaSpinner): String? = spinner.getSpnValue()
@@ -190,7 +221,9 @@ fun setSpnKeyListener(spinner: SamaSpinner, listener: InverseBindingListener) {
 }
 
 @BindingAdapter("spnKey")
-fun setSpnKey(spinner: SamaSpinner, key: String?) { if (key != spinner.getSpnKey()) spinner.setSpnKey(key) }
+fun setSpnKey(spinner: SamaSpinner, key: String?) {
+    if (key != spinner.getSpnKey()) spinner.setSpnKey(key)
+}
 
 @InverseBindingAdapter(attribute = "spnKey")
 fun getSpnKey(spinner: SamaSpinner): String? = spinner.getSpnKey()
@@ -198,8 +231,13 @@ fun getSpnKey(spinner: SamaSpinner): String? = spinner.getSpnKey()
 @BindingAdapter("ssvQueryAttrChanged")
 fun setSsvQueryListener(searchView: SamaSearchView, listener: InverseBindingListener) {
     searchView.addOnQueryTextListener(object : SearchView.OnQueryTextListener {
-        override fun onQueryTextSubmit(query: String?): Boolean { listener.onChange(); return true }
-        override fun onQueryTextChange(newText: String?): Boolean { listener.onChange(); return true }
+        override fun onQueryTextSubmit(query: String?): Boolean {
+            listener.onChange(); return true
+        }
+
+        override fun onQueryTextChange(newText: String?): Boolean {
+            listener.onChange(); return true
+        }
     })
 }
 
@@ -216,7 +254,11 @@ fun setSsvQuery(searchView: SamaSearchView, query: String?) {
 fun getSsvQuery(searchView: SamaSearchView): String = searchView.getSsvQuery()
 
 @BindingAdapter("onLongClick")
-fun onLongClick(view: View, onLongClick: (() -> Unit)?) { onLongClick?.let { view.setOnLongClickListener { it(); true } } }
+fun onLongClick(view: View, onLongClick: (() -> Unit)?) {
+    onLongClick?.let { view.setOnLongClickListener { it(); true } }
+}
 
 @BindingAdapter("onClick")
-fun onClick(view: View, onClick: (() -> Unit)?) { onClick?.let { view.setOnClickListener { it() } } }
+fun onClick(view: View, onClick: (() -> Unit)?) {
+    onClick?.let { view.setOnClickListener { it() } }
+}

@@ -32,6 +32,7 @@ object PowerfulSama {
      * [onSignatureChackFailed] Function to run if the signatures of the app are NOT correct
      *  (will be run by [SamaSignature.checkSignatures])
      */
+    @Suppress("LongParameterList")
     fun init(
         application: Application,
         isDebug: Boolean,

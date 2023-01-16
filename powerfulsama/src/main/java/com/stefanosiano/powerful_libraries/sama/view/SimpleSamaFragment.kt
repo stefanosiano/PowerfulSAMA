@@ -16,6 +16,7 @@ import com.stefanosiano.powerful_libraries.sama.logVerbose
  * Base Class that provides easy way to use data binding with a fragment,
  *  without the need of other classes.
  */
+@Suppress("TooManyFunctions")
 open class SimpleSamaFragment : SamaFragment() {
 
     private var layoutId: Int = 0
