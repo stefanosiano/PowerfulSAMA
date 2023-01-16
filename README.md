@@ -21,9 +21,9 @@ Gradle
   
 ```
 dependencies {
-    implementation 'io.github.stefanosiano.powerful_libraries:sama:0.4.23' // Put this line into module's build.gradle
-    compileOnly 'io.github.stefanosiano.powerful_libraries:sama_annotations:0.4.23' // Put this line for extended funcionalities
-    kapt 'io.github.stefanosiano.powerful_libraries:sama_annotations:0.4.23' // Put this line for extended funcionalities
+    implementation 'io.github.stefanosiano.powerful_libraries:sama:0.5.00' // Put this line into module's build.gradle
+    compileOnly 'io.github.stefanosiano.powerful_libraries:sama_annotations:0.5.00' // Put this line for extended funcionalities
+    kapt 'io.github.stefanosiano.powerful_libraries:sama_annotations:0.5.00' // Put this line for extended funcionalities
 }
 ```
   
