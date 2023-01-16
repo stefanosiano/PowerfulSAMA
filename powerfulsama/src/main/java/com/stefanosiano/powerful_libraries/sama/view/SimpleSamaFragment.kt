@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.databinding.ViewDataBinding
+import com.stefanosiano.powerful_libraries.sama.iterate
 import com.stefanosiano.powerful_libraries.sama.logVerbose
 
 /**
@@ -121,7 +122,7 @@ open class SimpleSamaFragment : SamaFragment() {
 
         val binding: ViewDataBinding = DataBindingUtil.inflate(inflater, layoutId, container, false)
 
-        bindingPairs.forEach { binding.setVariable(it.first, it.second) }
+        bindingPairs.iterate { binding.setVariable(it.first, it.second) }
 
         return binding.root
     }

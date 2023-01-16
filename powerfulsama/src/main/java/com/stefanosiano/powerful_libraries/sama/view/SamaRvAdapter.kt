@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
+import com.stefanosiano.powerful_libraries.sama.iterate
 import com.stefanosiano.powerful_libraries.sama.logDebug
 import com.stefanosiano.powerful_libraries.sama.tryOrNull
 import kotlinx.coroutines.CoroutineScope
@@ -213,7 +214,7 @@ open class SamaRvAdapter(
             item.onBind(passedObjects)
         }
         item.setSendActionListener { action ->
-            itemUpdatedListeners.forEach { it.invoke(action) }
+            itemUpdatedListeners.iterate { it.invoke(action) }
         }
         item.onStart()
     }
@@ -438,7 +439,7 @@ open class SamaRvAdapter(
             liveDataItems?.removeObserver(liveDataObserver)
             liveDataPagedItems?.removeObserver(pagedLiveDataObserver)
         }
-        items.forEach { it.onStop() }
+        items.iterate { it.onStop() }
     }
 
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
@@ -447,7 +448,7 @@ open class SamaRvAdapter(
         this.recyclerView = WeakReference(recyclerView)
 
         // remove the observer from the optional current liveData
-        items.forEach { it.onStart() }
+        items.iterate { it.onStart() }
         launch(Dispatchers.Main) {
             liveDataItems?.observeForever(liveDataObserver)
             liveDataPagedItems?.observeForever(pagedLiveDataObserver)
@@ -462,7 +463,7 @@ open class SamaRvAdapter(
             liveDataPagedItems?.removeObserver(pagedLiveDataObserver)
         }
 
-        items.forEach { it.onDestroy() }
+        items.iterate { it.onDestroy() }
     }
 
     override fun onViewRecycled(holder: SimpleViewHolder) {

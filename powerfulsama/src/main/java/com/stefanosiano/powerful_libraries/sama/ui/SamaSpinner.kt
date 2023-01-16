@@ -7,6 +7,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import androidx.appcompat.widget.AppCompatSpinner
 import com.stefanosiano.powerful_libraries.sama.getKey
+import com.stefanosiano.powerful_libraries.sama.iterate
 import com.stefanosiano.powerful_libraries.sama.logDebug
 import com.stefanosiano.powerful_libraries.sama.logVerbose
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner.SamaSpinnerItem
@@ -81,7 +82,7 @@ open class SamaSpinner : AppCompatSpinner {
     fun setItems(items: Collection<SamaSpinnerItem>?) {
         if (items == null) return
         itemMap.clear()
-        items.forEach { itemMap[it.key()] = it.value() }
+        items.iterate { itemMap[it.key()] = it.value() }
         val old = getSpnKey()
         arrayAdapter?.clear()
         arrayAdapter?.addAll(items.map { it.value() })
@@ -90,7 +91,7 @@ open class SamaSpinner : AppCompatSpinner {
         logVerbose(
             if (items.isNotEmpty()) "Setting spinner items: " else "No items set for this spinner"
         )
-        items.forEach { logVerbose(it.toString()) }
+        items.iterate { logVerbose(it.toString()) }
 
         setSpnKey(toSelectKey ?: old)
     }

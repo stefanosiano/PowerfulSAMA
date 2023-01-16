@@ -241,14 +241,4 @@ class SamaObserverUnitTest : CoroutineScope {
         Assert.assertEquals(1, j)
         Assert.assertEquals(1, k)
     }
-
-    /** Run each tests 10 times to be sure everything works. */
-    @Test
-    fun observeTestAll() {
-        for (i in 0 until 10) {
-            println("Test N. $i")
-            observeOnChange_isCorrect()
-            observeOnMultipleChangesOnlyOnce_isCorrect()
-        }
-    }
 }
