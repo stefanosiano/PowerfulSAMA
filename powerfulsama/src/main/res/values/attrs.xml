@@ -34,7 +34,6 @@
         <!-- Sets whether to disable the predictive animation. Useful when items are changed and take some time to reload the adapter. Used only with srvInconsistencyWorkaround. Reduces (or removes) inconsistency exceptions -->
         <attr name="srvDisablePredictiveAnimation" format="boolean" />
 
-
     </declare-styleable>
 
     <declare-styleable name="BigDecimalEditText">
@@ -50,7 +49,6 @@
         <!-- Sets maximum fractional digits to use -->
         <attr name="bdetMaxFractionDigits" format="integer" />
     </declare-styleable>
-
 
     <declare-styleable name="BigDecimalTextView">
         <!-- Sets the locale used to show the number -->

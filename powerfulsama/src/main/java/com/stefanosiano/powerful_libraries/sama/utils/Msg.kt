@@ -11,12 +11,12 @@ import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.snackbar.Snackbar
-import com.stefanosiano.powerful_libraries.sama.extensions.coroutineSamaHandler
-import com.stefanosiano.powerful_libraries.sama.extensions.delayUntil
-import com.stefanosiano.powerful_libraries.sama.extensions.logError
-import com.stefanosiano.powerful_libraries.sama.extensions.logVerbose
-import com.stefanosiano.powerful_libraries.sama.extensions.logWarning
-import com.stefanosiano.powerful_libraries.sama.extensions.runOnUi
+import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
+import com.stefanosiano.powerful_libraries.sama.delayUntil
+import com.stefanosiano.powerful_libraries.sama.logError
+import com.stefanosiano.powerful_libraries.sama.logVerbose
+import com.stefanosiano.powerful_libraries.sama.logWarning
+import com.stefanosiano.powerful_libraries.sama.runOnUi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -30,7 +30,7 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Class that manages common messages in the app, like ProgressDialogs, AlertDialog, Snackbar, etc.
+ * Class that manages common messages in the app, like ProgressDialogs, AlertDialogs, Snackbars and Toasts.
  *
  * Default values for every message (if not overwritten by "as..." methods:
  *
@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.AtomicLong
  *      autoDismissDelay = 0 (doesn't dismiss)
  *      duration = LENGHT_SHORT
  */
-@Suppress("TooManyFunctions", "LongParameterList")
+@Suppress("TooManyFunctions", "LongParameterList", "ComplexMethod")
 class Msg private constructor(
 
     /** Theme of the message (if available). */
@@ -120,12 +120,14 @@ class Msg private constructor(
     private var customize: ((Any) -> Unit)? = null
 ) {
 
-
-    /** Unique id used to check equality with other messages. */
+    /** Unique id used to check equality with other messages . */
     private val uid: Long = uniqueId.incrementAndGet()
 
-    /** Implementation of the message. Careful when using it. This is a weakReference to the underlying implementation
-     * (AlertDialog, ProgressDialog, Toast or Snackbar). Cast it to the right class and bear in mind it can be null. */
+    /**
+     * Implementation of the message. Careful when using it.
+     * This is a weakReference to the underlying implementation (AlertDialog, ProgressDialog, Toast or Snackbar).
+     * Cast it to the right class and bear in mind it can be null.
+     */
     var implementation: WeakReference<Any>? = null
 
     /** Job of the auto dismiss feature. When the message is dismissed, the job should be canceled. */
@@ -141,110 +143,153 @@ class Msg private constructor(
     private var waitForDismiss = false
 
     /** Sets the title. Default is null.
-     * Method that takes the text id overrides the one with string, if both are specified.
-     */
-    fun title(id: Int): Msg { this.iTitle = id; this.title = null; return this }
+     * Method that takes the text id overrides the one with string, if both are specified. */
+    fun title(id: Int): Msg = this.also {
+        this.iTitle = id
+        this.title = null
+    }
 
     /** Sets the title. Default is null.
-     * Method that takes the text id overrides the one with string, if both are specified.
-     */
-    fun title(title: String): Msg { this.title = title; this.iTitle = 0; return this }
+     * Method that takes the text id overrides the one with string, if both are specified. */
+    fun title(title: String): Msg = this.also {
+        this.title = title
+        this.iTitle = 0
+    }
 
     /** Sets the positive button label. Default is R.string.lbl_yes.
-     * Method that takes the text id overrides the one with string, if both are specified.
-     */
-    fun positive(id: Int): Msg { this.iPositive = id; this.positive = null; return this }
+     * Method that takes the text id overrides the one with string, if both are specified. */
+    fun positive(id: Int): Msg = this.also {
+        this.iPositive = id
+        this.positive = null
+    }
 
     /** Sets the positive button label. Default is R.string.lbl_yes.
-     * Method that takes the text id overrides the one with string, if both are specified.
-     */
-    fun positive(positive: String): Msg { this.positive = positive; this.iPositive = 0; return this }
+     * Method that takes the text id overrides the one with string, if both are specified. */
+    fun positive(positive: String): Msg = this.also {
+        this.positive = positive
+        this.iPositive = 0
+    }
 
     /** Sets the negative button label. Default is R.string.lbl_no.
-     * Method that takes the text id overrides the one with string, if both are specified.
-     */
-    fun negative(id: Int): Msg { this.iNegative = id; this.negative = null; return this }
+     * Method that takes the text id overrides the one with string, if both are specified. */
+    fun negative(id: Int): Msg = this.also {
+        this.iNegative = id
+        this.negative = null
+    }
 
     /** Sets the negative button label. Default is R.string.lbl_no.
-     * Method that takes the text id overrides the one with string, if both are specified.
-     */
-    fun negative(negative: String): Msg { this.negative = negative; this.iNegative = 0; return this }
+     * Method that takes the text id overrides the one with string, if both are specified. */
+    fun negative(negative: String): Msg = this.also {
+        this.negative = negative
+        this.iNegative = 0
+    }
 
     /** Sets the neutral button label. Default is null. If set, the neutral button is added to the AlertDialog.
-     * Method that takes the text id overrides the one with string, if both are specified.
-     */
-    fun neutral(id: Int): Msg { this.iNeutral = id; this.neutral = null; return this }
+     * Method that takes the text id overrides the one with string, if both are specified. */
+    fun neutral(id: Int): Msg = this.also {
+        this.iNeutral = id
+        this.neutral = null
+    }
 
     /** Sets the neutral button label. Default is null. If set, the neutral button is added to the AlertDialog.
-     * Method that takes the text id overrides the one with string, if both are specified.
-     */
-    fun neutral(neutral: String): Msg { this.neutral = neutral; this.iNeutral = 0; return this }
+     * Method that takes the text id overrides the one with string, if both are specified. */
+    fun neutral(neutral: String): Msg = this.also {
+        this.neutral = neutral
+        this.iNeutral = 0
+    }
 
     /** Sets the message label. Default is null.
-     * Method that takes the text id overrides the one with string, if both are specified.
-     */
-    fun message(id: Int): Msg { this.iMessage = id; this.message = ""; return this }
+     * Method that takes the text id overrides the one with string, if both are specified. */
+    fun message(id: Int): Msg = this.also {
+        this.iMessage = id
+        this.message = ""
+    }
 
     /** Sets the message label. Default is null.
-     * Method that takes the text id overrides the one with string, if both are specified.
-     */
-    fun message(message: String): Msg { this.message = message; this.iMessage = 0; return this }
+     * Method that takes the text id overrides the one with string, if both are specified. */
+    fun message(message: String): Msg = this.also {
+        this.message = message
+        this.iMessage = 0
+    }
 
-    /** Sets the indeterminate flag. Default is true. */
-    fun indeterminate(indeterminate: Boolean): Msg { this.indeterminate = indeterminate; return this }
+    /** Sets the indeterminate flag. Default is true . */
+    fun indeterminate(indeterminate: Boolean): Msg = this.also {
+        this.indeterminate = indeterminate
+    }
 
-    /** Sets the cancelable flag. Default is false. */
-    fun cancelable(cancelable: Boolean): Msg { this.cancelable = cancelable; return this }
+    /** Sets the cancelable flag. Default is false . */
+    fun cancelable(cancelable: Boolean): Msg = this.also {
+        this.cancelable = cancelable
+    }
 
-    /** Sets the runnable to run when positive button is clicked. */
-    fun onOk(onOk: (Msg?) -> Unit): Msg { this.onOk = onOk; return this }
+    /** Sets the runnable to run when positive button is clicked . */
+    fun onOk(onOk: (Msg?) -> Unit): Msg = this.also {
+        this.onOk = onOk
+    }
 
-    /** Sets the positive button label and the runnable to run when it's clicked. */
-    fun onOk(positive: Int, onOk: (Msg?) -> Unit): Msg { this.iPositive = positive; this.onOk = onOk; return this }
+    /** Sets the positive button label and the runnable to run when it's clicked . */
+    fun onOk(positive: Int, onOk: (Msg?) -> Unit): Msg = this.also {
+        this.iPositive = positive
+        this.onOk = onOk
+    }
 
-    /** Sets the runnable to run when negative button is clicked. */
-    fun onNo(onNo: (Msg) -> Unit): Msg { this.onNo = onNo; return this }
+    /** Sets the runnable to run when negative button is clicked . */
+    fun onNo(onNo: (Msg) -> Unit): Msg = this.also {
+        this.onNo = onNo
+    }
 
-    /** Sets the negative button label and the runnable to run when it's clicked. */
-    fun onNo(negative: Int, onNo: (Msg) -> Unit): Msg { this.iNegative = negative; this.onNo = onNo; return this }
+    /** Sets the negative button label and the runnable to run when it's clicked . */
+    fun onNo(negative: Int, onNo: (Msg) -> Unit): Msg = this.also {
+        this.iNegative = negative
+        this.onNo = onNo
+    }
 
-    /** Sets the runnable to run when neutral button is clicked. */
-    fun onCancel(onCancel: (Msg) -> Unit): Msg { this.onCancel = onCancel; return this }
+    /** Sets the runnable to run when neutral button is clicked . */
+    fun onCancel(onCancel: (Msg) -> Unit): Msg = this.also {
+        this.onCancel = onCancel
+    }
 
-    /** Sets the neutral button label and the runnable to run when it's clicked. */
-    fun onCancel(neutral: Int, onCancel: (Msg) -> Unit): Msg {
+    /** Sets the neutral button label and the runnable to run when it's clicked . */
+    fun onCancel(neutral: Int, onCancel: (Msg) -> Unit): Msg = this.also {
         this.iNeutral = neutral
         this.onCancel = onCancel
-        return this
     }
 
     /** Sets the delay in milliseconds after which the message will automatically dismiss. */
-    fun autoDismissDelay(autoDismissDelay: Long): Msg { this.autoDismissDelay = autoDismissDelay; return this }
-
-    /** Sets the duration of the message in milliseconds (for [Toast] and [Snackbar]). */
-    fun duration(duration: Int): Msg { this.duration = duration; return this }
-
-    /** Sets the runnable to run right before the message is shown. */
-    fun onShow(onShow: (Msg) -> Unit): Msg { this.onShow = onShow; return this }
-
-    /** Sets the runnable to run right after the message is dismissed. */
-    fun onDismiss(onDismiss: (Msg) -> Unit): Msg { this.onDismiss = onDismiss; return this }
-
-    /**
-     * Sets whether to lock the orientation while showing the message until it's dismissed.
-     * Does nothing if api level < MR2.
-     * Be sure to check correctness by calling [Activity.setRequestedOrientation] with [SCREEN_ORIENTATION_UNSPECIFIED].
-     * If the activity changed while showing the message, the orientation may not be restored after dismissing it.
-     */
-    fun lockOrientation(lockOrientation: Boolean): Msg { this.lockOrientation = lockOrientation; return this }
-
-    /** Customization function of the message, called right after showing it. Note: It will be called on main thread. */
-    fun customize(customize: (Any) -> Unit): Msg {
-        this.customize = customize
-        return this
+    fun autoDismissDelay(autoDismissDelay: Long): Msg = this.also {
+        this.autoDismissDelay = autoDismissDelay
     }
 
+    /** Sets the duration of the message in milliseconds (for [Toast] and [Snackbar]). */
+    fun duration(duration: Int): Msg = this.also {
+        this.duration = duration
+    }
 
+    /** Sets the runnable to run right before the message is shown. */
+    fun onShow(onShow: (Msg) -> Unit): Msg = this.also {
+        this.onShow = onShow
+    }
+
+    /** Sets the runnable to run right after the message is dismissed. */
+    fun onDismiss(onDismiss: (Msg) -> Unit): Msg = this.also {
+        this.onDismiss = onDismiss
+    }
+
+    /** Sets whether to lock the orientation while showing the message until it's dismissed.
+     * Does nothing if api level < MR2.
+     * Be sure to check correctness by calling [Activity.setRequestedOrientation] with
+     *  [ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED].
+     * If the activity changed while showing the message, it's possible that the orientation will not be restored after
+     *  dismissing the message.
+     */
+    fun lockOrientation(lockOrientation: Boolean): Msg = this.also {
+        this.lockOrientation = lockOrientation
+    }
+
+    /** Customization function of the message, called right after showing it. Note: It will be called on main thread. */
+    fun customize(customize: (Any) -> Unit): Msg = this.also {
+        this.customize = customize
+    }
 
     /**
      * Retrieves the activity name by the context.
@@ -253,23 +298,28 @@ class Msg private constructor(
     private fun getActivityFromCtx(context: Context): Activity? {
         var c = context
         while (c is ContextWrapper) {
-            if (c is Activity) return c
+            if (c is Activity) {
+                return c
+            }
             c = c.baseContext
         }
         return PowerfulSama.getCurrentActivity()
     }
-
 
     /**
      * Shows the message and returns it.
      * If [showMessage] is met (true, default), then the message will be shown, otherwise [onOk] will be called.
      */
     fun show(context: Context? = null, showMessage: Boolean = true): Msg? =
-        if(showMessage) showMessage(context) else { onOk?.invoke(null); null }
+        if (showMessage) {
+            showMessage(context)
+        } else {
+            onOk?.invoke(null)
+            null
+        }
 
     /** Shows the message and returns it. */
     fun show(context: Context? = null): Msg = showMessage(context)
-
 
     /**
      * Shows the message and waits until it's dismissed.
@@ -287,47 +337,53 @@ class Msg private constructor(
      * If [showMessage] is met (true by default), then the message will be shown, otherwise [onOk] will be called.
      */
     @Suppress("UNCHECKED_CAST")
-    fun <T> showAs(context: Context? = null, f: ((T?) -> Unit)? = null, showMessage: Boolean = true): Msg? =
-        build(context).also { f?.invoke(it.implementation?.get() as? T?) }.show(context, showMessage)
+    fun <T> showAs(context: Context? = null, f: ((T?) -> Unit)? = null, showMessage: Boolean = true): Msg? {
+        val msg = build(context)
+        f?.invoke(msg.implementation?.get() as? T?)
+        return msg.show(context, showMessage)
+    }
 
     /**
-     * Shows the message and returns its implementation (e.g. AlertDialog).
+     * Build the message and returns it.
      * Optionally calls [f] right after building the message and before showing it.
      */
     @Suppress("UNCHECKED_CAST")
-    fun <T> showAs(context: Context? = null, f: ((T?) -> Unit)? = null): Msg =
-        build(context).also { f?.invoke(it.implementation?.get() as? T?) }.show(context)
-
-    /**
-     * Shows the message and returns its implementation (e.g. AlertDialog).
-     * Optionally calls [f] right after building the message and before showing it.
-     */
-    @Suppress("UNCHECKED_CAST")
-    fun <T> buildAs(ctx: Context? = null, f: ((T?) -> Unit)? = null): T? =
-        build(ctx).also { f?.invoke(it.implementation?.get() as? T?) }.implementation?.get() as? T?
+    fun <T> buildAs(ctx: Context? = null, f: ((T?) -> Unit)? = null): T? {
+        val msg = build(ctx)
+        f?.invoke(msg.implementation?.get() as? T?)
+        return msg.implementation?.get() as? T?
+    }
 
     /** Build the message and returns it. */
     fun build(ctx: Context?): Msg {
-
         logVerbose("Building message")
-        val context = retrieveContext(ctx)
+        val context = ctx ?: PowerfulSama.getCurrentActivity() ?: PowerfulSama.applicationContext
         initStrings(context.applicationContext)
 
         var finished = false
-        val activity = getActivityFromCtx(context)
         runBlocking {
             runOnUi {
-                when {
-                    messageImpl == MessageImpl.Toast || activity == null -> buildAsToast(context)
-                    messageImpl == MessageImpl.ProgressDialog -> buildAsProgressDialog(activity)
-                    messageImpl == MessageImpl.AlertDialogOneButton -> buildAsAlertDialogOneButton(activity)
-                    messageImpl == MessageImpl.AlertDialog -> buildAsAlertDialog(activity)
-                    messageImpl == MessageImpl.Snackbar -> {
-                        val view = snackbarView ?: activity.findViewById(android.R.id.content)
-                        view?.let { buildAsSnackbar(it) } ?: buildAsToast(context)
-                    }
-                    else -> logError("Cannot understand the implementation type of the message. Skipping build")
+                logError("a1")
+                when (messageImpl) {
+                    MessageImpl.ProgressDialog -> getActivityFromCtx(context)
+                        ?.let { buildAsProgressDialog(context) }
+                        ?: buildAsToast(context)
+                    MessageImpl.AlertDialogOneButton -> getActivityFromCtx(context)
+                        ?.let { buildAsAlertDialogOneButton(it) }
+                        ?: buildAsToast(context)
+                    MessageImpl.AlertDialog -> getActivityFromCtx(context)
+                        ?.let { buildAsAlertDialog(it) }
+                        ?: buildAsToast(context)
+                    MessageImpl.Toast -> buildAsToast(context)
+                    MessageImpl.Snackbar -> snackbarView?.let { buildAsSnackbar(it) }
+                        ?: run {
+                            getActivityFromCtx(context)?.window?.decorView?.findViewById<View?>(android.R.id.content)
+                                ?.let { buildAsSnackbar(it) }
+                                ?: buildAsToast(context)
+                        }
+                    else -> logError("Cannot understand the implementation type of the message. Skipping show")
                 }
+                logError("a2")
                 finished = true
             }
             while (isActive && !finished) {
@@ -339,22 +395,28 @@ class Msg private constructor(
 
     /** Build the message and returns it. */
     private suspend fun build2(ctx: Context?): Msg {
-
         logVerbose("Building message")
-        val context = retrieveContext(ctx)
+        val context = ctx ?: PowerfulSama.getCurrentActivity() ?: PowerfulSama.applicationContext
         initStrings(context.applicationContext)
-        val activity = getActivityFromCtx(context)
         withContext(Dispatchers.Main) {
-            when {
-                messageImpl == MessageImpl.Toast || activity == null -> buildAsToast(context)
-                messageImpl == MessageImpl.ProgressDialog -> buildAsProgressDialog(activity)
-                messageImpl == MessageImpl.AlertDialogOneButton -> buildAsAlertDialogOneButton(activity)
-                messageImpl == MessageImpl.AlertDialog -> buildAsAlertDialog(activity)
-                messageImpl == MessageImpl.Snackbar -> {
-                    val view = snackbarView ?: activity.findViewById(android.R.id.content)
-                    view?.let { buildAsSnackbar(it) } ?: buildAsToast(context)
-                }
-                else -> logError("Cannot understand the implementation type of the message. Skipping build")
+            when (messageImpl) {
+                MessageImpl.ProgressDialog -> getActivityFromCtx(context)
+                    ?.let { buildAsProgressDialog(context) }
+                    ?: buildAsToast(context)
+                MessageImpl.AlertDialogOneButton -> getActivityFromCtx(context)
+                    ?.let { buildAsAlertDialogOneButton(it) }
+                    ?: buildAsToast(context)
+                MessageImpl.AlertDialog -> getActivityFromCtx(context)
+                    ?.let { buildAsAlertDialog(it) }
+                    ?: buildAsToast(context)
+                MessageImpl.Toast -> buildAsToast(context)
+                MessageImpl.Snackbar -> snackbarView?.let { buildAsSnackbar(it) }
+                    ?: run {
+                        getActivityFromCtx(context)?.window?.decorView?.findViewById<View?>(android.R.id.content)
+                            ?.let { buildAsSnackbar(it) }
+                            ?: buildAsToast(context)
+                    }
+                else -> logError("Cannot understand the implementation type of the message. Skipping show")
             }
         }
         return this
@@ -362,14 +424,13 @@ class Msg private constructor(
 
     @Suppress("DEPRECATION")
     private fun showMessage(ctx: Context?): Msg {
-
         logVerbose("Showing message")
-        val context = retrieveContext(ctx)
+        val context = ctx ?: PowerfulSama.getCurrentActivity() ?: PowerfulSama.applicationContext
         initStrings(context.applicationContext)
 
         autoDismissJob?.cancel()
-        //Auto-dismiss message after x seconds
-        if(autoDismissDelay > 0) {
+        // Auto-dismiss message after x seconds
+        if (autoDismissDelay > 0) {
             autoDismissJob = launch {
                 delay(autoDismissDelay)
                 logWarning("Auto dismissing message: $autoDismissDelay milliseconds are passed")
@@ -377,59 +438,63 @@ class Msg private constructor(
             }
         }
 
-        launch (Dispatchers.Main) {
-            if (!isBuilt) {
-                build2(context)
-            }
+        launch(Dispatchers.Main) {
+            if (!isBuilt) build2(context)
             when (messageImpl) {
                 MessageImpl.ProgressDialog -> {
                     onShow?.invoke(this@Msg)
-                    if (lockOrientation) lockOrientation(context)
-                    withImplementationAs<ProgressDialog> {
-                        it.show()
-                    } ?: logError("No activity found to show this progress dialog. Skipping show")
+                    if (lockOrientation) {
+                        lockOrientation(context)
+                    }
+                    (implementation?.get() as ProgressDialog?)?.show()
+                        ?: logError("No activity found to show this progress dialog. Skipping show")
                 }
-                MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> {
+                MessageImpl.AlertDialogOneButton -> {
                     onShow?.invoke(this@Msg)
-                    if (lockOrientation) lockOrientation(context)
-                    withImplementationAs<AlertDialog> { it.show() }
-                        ?: withImplementationAs<Toast> { it.show() }
+                    if (lockOrientation) {
+                        lockOrientation(context)
+                    }
+                    (implementation?.get() as? AlertDialog?)?.show()
+                        ?: (implementation?.get() as? Toast?)?.show()
+                }
+                MessageImpl.AlertDialog -> {
+                    onShow?.invoke(this@Msg)
+                    if (lockOrientation) {
+                        lockOrientation(context)
+                    }
+                    (implementation?.get() as? AlertDialog?)?.show()
+                        ?: (implementation?.get() as? Toast?)?.show()
                 }
                 MessageImpl.Toast -> {
                     onShow?.invoke(this@Msg)
-                    withImplementationAs<Toast> { it.show() }
+                    (implementation?.get() as? Toast?)?.show()
                 }
                 MessageImpl.Snackbar -> {
                     onShow?.invoke(this@Msg)
-                    if (lockOrientation) lockOrientation(context)
-                    withImplementationAs<Snackbar> { it.show() }
-                        ?: withImplementationAs<Toast> { it.show() }
+                    if (lockOrientation) {
+                        lockOrientation(context)
+                    }
+                    (implementation?.get() as? Snackbar?)?.show()
+                        ?: (implementation?.get() as? Toast?)?.show()
                 }
-                else ->
-                    logError("Cannot understand the implementation type of the message. Skipping show")
+                else -> logError("Cannot understand the implementation type of the message. Skipping show")
             }
-            withImplementationAs<Any> { customize?.invoke(it) }
+            implementation?.get()?.let { customize?.invoke(it) }
         }
 
         return this
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun <T: Any> withImplementationAs(f: (T) -> Unit): T? = (implementation?.get() as? T?)?.also { f(it) }
-
-    private fun retrieveContext(context: Context?) =
-        context ?: PowerfulSama.getCurrentActivity() ?: PowerfulSama.applicationContext
-
     private fun lockOrientation(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            val c = getActivityFromCtx(context) ?: PowerfulSama.getCurrentActivity()
-            c?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
+            (getActivityFromCtx(context) ?: PowerfulSama.getCurrentActivity())?.requestedOrientation =
+                ActivityInfo.SCREEN_ORIENTATION_LOCKED
         }
     }
 
     private fun unlockOrientation(context: Context) {
-        val c = getActivityFromCtx(context) ?: PowerfulSama.getCurrentActivity()
-        c?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        (getActivityFromCtx(context) ?: PowerfulSama.getCurrentActivity())?.requestedOrientation =
+            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 
     /** Dismisses the message. */
@@ -438,26 +503,40 @@ class Msg private constructor(
         logVerbose("Dismiss message")
         launch(Dispatchers.Main) {
             when (messageImpl) {
-                MessageImpl.ProgressDialog ->
-                    withImplementationAs<ProgressDialog> {
-                        if (lockOrientation) unlockOrientation(it.context)
-                        if (it.isShowing) it.dismiss()
+                MessageImpl.ProgressDialog -> {
+                    (implementation?.get() as? ProgressDialog?)?.let {
+                        if (lockOrientation) {
+                            unlockOrientation(it.context)
+                        }
+                        if (it.isShowing) {
+                            it.dismiss()
+                        }
                     }
-                MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog ->
-                    withImplementationAs<AlertDialog> {
-                        if (lockOrientation) unlockOrientation(it.context)
-                        if (it.isShowing) it.dismiss()
+                }
+                MessageImpl.AlertDialogOneButton, MessageImpl.AlertDialog -> {
+                    (implementation?.get() as? AlertDialog?)?.let {
+                        if (lockOrientation) {
+                            unlockOrientation(it.context)
+                        }
+                        if (it.isShowing) {
+                            it.dismiss()
+                        }
                     }
+                }
                 MessageImpl.Toast -> {
                     onDismiss?.invoke(this@Msg)
-                    withImplementationAs<Toast> { it.cancel() }
+                    (implementation?.get() as? Toast?)?.cancel()
                     waitForDismiss = false
                 }
                 MessageImpl.Snackbar -> {
                     onDismiss?.invoke(this@Msg)
-                    withImplementationAs<Snackbar> {
-                        if (lockOrientation) unlockOrientation(it.context)
-                        if (it.isShown) it.dismiss()
+                    (implementation?.get() as? Snackbar?)?.let {
+                        if (lockOrientation) {
+                            unlockOrientation(it.context)
+                        }
+                        if (it.isShown) {
+                            it.dismiss()
+                        }
                         waitForDismiss = false
                     }
                 }
@@ -467,8 +546,8 @@ class Msg private constructor(
         }
     }
 
+    /** Returns if the message is showing (Toasts will always return false). */
     @Suppress("DEPRECATION")
-            /** Returns if the message is showing (Toasts will always return false). */
     fun isShowing() =
         when (messageImpl) {
             MessageImpl.ProgressDialog -> (implementation?.get() as? ProgressDialog?)?.isShowing
@@ -482,9 +561,7 @@ class Msg private constructor(
             }
         }
 
-
-
-    /** Retrieves the strings from the ids.. */
+    /** Retrieves the strings from the ids. */
     private fun initStrings(context: Context) {
         if (iTitle != 0) title = context.getString(iTitle)
         if (iMessage != 0) message = context.getString(iMessage)
@@ -493,7 +570,6 @@ class Msg private constructor(
         if (iNeutral != 0) neutral = context.getString(iNeutral)
     }
 
-
     @Suppress("DEPRECATION")
     private fun buildAsProgressDialog(context: Context): Msg {
         val progressDialog = ProgressDialog(context, theme ?: 0)
@@ -501,14 +577,16 @@ class Msg private constructor(
         progressDialog.setMessage(message)
         progressDialog.isIndeterminate = indeterminate
         progressDialog.setCancelable(cancelable)
-        progressDialog.setOnDismissListener { onDismiss?.invoke(this); waitForDismiss = false }
+        progressDialog.setOnDismissListener {
+            onDismiss?.invoke(this)
+            waitForDismiss = false
+        }
         implementation = WeakReference(progressDialog)
         isBuilt = true
         return this
     }
 
     private fun buildAsAlertDialog(activity: Activity): Msg {
-
         initStrings(activity)
 
         val mAlert = AlertDialog.Builder(activity, theme ?: 0)
@@ -516,33 +594,46 @@ class Msg private constructor(
         mAlert.setTitle(title)
         mAlert.setMessage(message)
 
-        mAlert.setPositiveButton(positive) { dialog, _ -> onOk?.invoke(this); dialog.dismiss() }
-        mAlert.setNegativeButton(negative) { dialog, _ -> onNo?.invoke(this); dialog.dismiss() }
-        mAlert.setOnDismissListener { onDismiss?.invoke(this); waitForDismiss = false }
+        mAlert.setPositiveButton(positive) { dialog, _ ->
+            onOk?.invoke(this)
+            dialog.dismiss()
+        }
+        mAlert.setNegativeButton(negative) { dialog, _ ->
+            onNo?.invoke(this)
+            dialog.dismiss()
+        }
+        mAlert.setOnDismissListener {
+            onDismiss?.invoke(this)
+            waitForDismiss = false
+        }
 
         if (!TextUtils.isEmpty(neutral)) {
             mAlert.setNeutralButton(neutral) { dialog, _ ->
-                onCancel?.invoke(this); dialog.dismiss()
+                onCancel?.invoke(this)
+                dialog.dismiss()
             }
         }
-
 
         implementation = WeakReference(mAlert.create())
         isBuilt = true
         return this
     }
 
-
     private fun buildAsAlertDialogOneButton(activity: Activity): Msg {
-
         val mAlert = AlertDialog.Builder(activity, theme ?: 0)
 
         mAlert.setCancelable(cancelable)
         mAlert.setTitle(title)
         mAlert.setMessage(message)
 
-        mAlert.setPositiveButton(positive) { dialog, _ -> onOk?.invoke(this); dialog.dismiss() }
-        mAlert.setOnDismissListener { onDismiss?.invoke(this); waitForDismiss = false }
+        mAlert.setPositiveButton(positive) { dialog, _ ->
+            onOk?.invoke(this)
+            dialog.dismiss()
+        }
+        mAlert.setOnDismissListener {
+            onDismiss?.invoke(this)
+            waitForDismiss = false
+        }
 
         implementation = WeakReference(mAlert.create())
         isBuilt = true
@@ -550,7 +641,7 @@ class Msg private constructor(
     }
 
     private fun buildAsToast(context: Context): Msg {
-        val d = when(duration){
+        val d = when (duration) {
             LENGHT_SHORT -> Toast.LENGTH_SHORT
             LENGHT_LONG -> Toast.LENGTH_LONG
             else -> duration
@@ -561,38 +652,27 @@ class Msg private constructor(
     }
 
     private fun buildAsSnackbar(view: View): Msg {
-        val d = when(duration){
+        val d = when (duration) {
             LENGHT_SHORT -> Snackbar.LENGTH_SHORT
             LENGHT_LONG -> Snackbar.LENGTH_LONG
             LENGHT_INDEFINITE -> Snackbar.LENGTH_INDEFINITE
             else -> duration
         }
         val snackbar = Snackbar.make(view, message, d)
-        if (onOk != null) snackbar.setAction(positive) { onOk?.invoke(this) }
+        if (onOk != null) {
+            snackbar.setAction(positive) { onOk?.invoke(this) }
+        }
         implementation = WeakReference(snackbar)
         return this
     }
 
-
-    /** Implementation type used to show and dismiss the message. */
-
-    private enum class MessageImpl {
-        ProgressDialog,
-        AlertDialogOneButton,
-        AlertDialog,
-        Toast,
-        Snackbar
-    }
-
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other == null || javaClass != other.javaClass) return false
-        return uid == (other as? Msg)?.uid
+        return uid == (other as Msg?)?.uid
     }
 
     override fun hashCode(): Int = (uid xor uid.ushr(32)).toInt()
-
 
     /**
      * Class that manages common messages in the app, like ProgressDialogs, AlertDialog, Snackbar, etc.
@@ -613,29 +693,31 @@ class Msg private constructor(
     @Suppress("TooManyFunctions")
     companion object : CoroutineScope {
 
-        /** Alias for [Toast.LENGHT_SHORT] or [Snackbar.LENGTH_SHORT]. */
+        /** Short length, similar to [Toast.LENGTH_SHORT] and [Snackbar.LENGTH_SHORT]. */
         const val LENGHT_SHORT = -1
-        /** Alias for [Toast.LENGTH_LONG] or [Snackbar.LENGTH_LONG]. */
+
+        /** Long length, similar to [Toast.LENGTH_LONG] and [Snackbar.LENGTH_LONG]. */
         const val LENGHT_LONG = -2
-        /** Alias for [Snackbar.LENGTH_INDEFINITE]. */
+
+        /** Indefinite length, similar to [Snackbar.LENGTH_INDEFINITE]. */
         const val LENGHT_INDEFINITE = -3
 
         override val coroutineContext = coroutineSamaHandler(SupervisorJob())
 
-        /** Shared unique id used to check equality with other messages. */
+        /** Shared unique id used to check equality with other messages . */
         private val uniqueId: AtomicLong = AtomicLong(0)
 
         /** Default "Yes" string id. */
-        internal var defaultYes : Int = android.R.string.ok
+        internal var defaultYes: Int = android.R.string.yes
 
         /** Default "No" string id. */
-        internal var defaultNo : Int = android.R.string.cancel
+        internal var defaultNo: Int = android.R.string.no
 
         /** Default theme used by messages. */
-        internal var defaultTheme : Int? = null
+        internal var defaultTheme: Int? = null
 
         /** Default customization function. Note: It will be called on UI thread. */
-        internal var defaultCustomization : ((Any) -> Unit)? = null
+        internal var defaultCustomization: ((Any) -> Unit)? = null
 
         /**
          * Creates an alertDialog with one button, with an optional [theme].
@@ -653,7 +735,8 @@ class Msg private constructor(
             iPositive = android.R.string.ok,
             cancelable = false,
             messageImpl = MessageImpl.AlertDialogOneButton,
-            customize = defaultCustomization)
+            customize = defaultCustomization
+        )
 
         /** Alias for [alertDialogOneButton] with specified [messageId]. */
         fun adob(messageId: Int) = alertDialogOneButton().message(messageId)
@@ -713,7 +796,6 @@ class Msg private constructor(
         /** Alias for [toast] with specified [message]. */
         fun ts(message: String) = toast().message(message)
 
-
         /**
          * Creates a Snackbar with specified title and okRunnable.
          *
@@ -732,5 +814,14 @@ class Msg private constructor(
 
         /** Alias for [snackbar] with specified [message]. */
         fun sb(view: View, message: String) = snackbar(view).message(message)
+    }
+
+    /** Implementation type used to show and dismiss the message . */
+    private enum class MessageImpl {
+        ProgressDialog,
+        AlertDialogOneButton,
+        AlertDialog,
+        Toast,
+        Snackbar
     }
 }

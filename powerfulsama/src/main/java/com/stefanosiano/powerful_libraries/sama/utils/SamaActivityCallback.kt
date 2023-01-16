@@ -13,7 +13,6 @@ internal class SamaActivityCallback(
     private val onDestroy: ((activity: SamaActivity) -> Unit)? = null,
     private val onSaveInstanceState: ((activity: SamaActivity) -> Unit)? = null
 ) {
-
     val uid = id.incrementAndGet()
 
     fun onCreate(activity: SamaActivity) = onCreate?.invoke(activity)

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <variable
+                name="testVm"
+                type="com.stefanosiano.powerful_libraries.sama_sample.AllCustomViewsTestVM"/>
+    </data>
+
+    <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        <com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
+                android:id="@+id/testSearch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:iconifiedByDefault="false"
+                app:ssvMillis="@{testVm.searchMillis}"
+                app:ssvQuery="@={testVm.searchTerm}"
+                tools:ssvQuery="{testVm.searchTerm}"/>
+<!-- ssvQuery - spnKey - spnValue - visible -->
+        <com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
+                android:id="@+id/testSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:items="@{testVm.spnItems}"
+                app:spnKey="@={testVm.spnKey}"
+                app:spnValue="@={testVm.spnValue}"/>
+
+        <com.stefanosiano.powerful_libraries.sama.ui.SamaRecyclerView
+                android:id="@+id/testRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                app:srvColumns="1"
+                app:adapter="@{testVm.rvAdapter}"
+                tools:listitem="@layout/list_item_test"
+                tools:itemCount="6"/>
+
+    </LinearLayout>
+
+</layout>

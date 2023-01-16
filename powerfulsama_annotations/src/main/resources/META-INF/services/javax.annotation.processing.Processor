@@ -1,2 +1,2 @@
-com.stefanosiano.powerful_libraries.sama_annotations.ShellCommandAnnotationProcessor
-com.stefanosiano.powerful_libraries.sama_annotations.SamaExtensionsAnnotationProcessor
+com.stefanosiano.powerful_libraries.sama.annotations.ShellCommandAnnotationProcessor
+com.stefanosiano.powerful_libraries.sama.annotations.SamaExtensionsAnnotationProcessor
