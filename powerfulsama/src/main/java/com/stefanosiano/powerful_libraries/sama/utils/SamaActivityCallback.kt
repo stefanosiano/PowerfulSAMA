@@ -31,9 +31,7 @@ internal class SamaActivityCallback(
         return true
     }
 
-    override fun hashCode(): Int {
-        return uid.hashCode()
-    }
+    override fun hashCode(): Int = uid.hashCode()
 
     companion object {
         val id = AtomicLong()

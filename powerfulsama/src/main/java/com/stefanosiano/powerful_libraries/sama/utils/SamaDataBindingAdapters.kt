@@ -20,12 +20,14 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputLayout
+import com.stefanosiano.powerful_libraries.sama.tryOr
 import com.stefanosiano.powerful_libraries.sama.ui.BigDecimalEditText
 import com.stefanosiano.powerful_libraries.sama.ui.BigDecimalTextInputEditText
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
 import java.math.BigDecimal
 
+@Suppress("UndocumentedPublicFunction")
 class SamaDataBindingAdapters
 
 /** Puts the [bitmap] into the [imageView]. */
@@ -130,7 +132,7 @@ fun setShapeBackgroundColor(textView: TextView, strikethrough: Boolean) {
 /** Sets the error id to the TextInputLayout . */
 @BindingAdapter("tilError")
 fun setTextInputLayoutError(textInputLayoutError: TextInputLayout, error: Int) {
-    val stringError = try { textInputLayoutError.context.getString(error) } catch (e: Exception) { "" }
+    val stringError = tryOr("") { textInputLayoutError.context.getString(error) }
     setTextInputLayoutError(textInputLayoutError, stringError)
 }
 
@@ -154,7 +156,7 @@ fun setListeners(view: BigDecimalEditText, attrChange: InverseBindingListener) {
 fun setBdetText(view: BigDecimalEditText, newValue: BigDecimal) { view.setTextBd(newValue) }
 
 @InverseBindingAdapter(attribute = "text")
-fun getBdetText(view: BigDecimalEditText): BigDecimal { return view.getTextBd() }
+fun getBdetText(view: BigDecimalEditText): BigDecimal = view.getTextBd()
 
 @BindingAdapter("textAttrChanged")
 fun setListeners(view: BigDecimalTextInputEditText, attrChange: InverseBindingListener) {
@@ -169,7 +171,7 @@ fun setListeners(view: BigDecimalTextInputEditText, attrChange: InverseBindingLi
 fun setTietText(view: BigDecimalTextInputEditText, newValue: BigDecimal) { view.setTextBd(newValue) }
 
 @InverseBindingAdapter(attribute = "text")
-fun getTietText(view: BigDecimalTextInputEditText): BigDecimal { return view.getTextBd() }
+fun getTietText(view: BigDecimalTextInputEditText): BigDecimal = view.getTextBd()
 
 @BindingAdapter("spnValueAttrChanged")
 fun setSpnValueListener(spinner: SamaSpinner, listener: InverseBindingListener) {

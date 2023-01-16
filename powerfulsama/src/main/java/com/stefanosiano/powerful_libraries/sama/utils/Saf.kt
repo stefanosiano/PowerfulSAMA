@@ -9,7 +9,6 @@ import android.util.SparseArray
 import androidx.annotation.RequiresApi
 import androidx.documentfile.provider.DocumentFile
 import com.stefanosiano.powerful_libraries.sama.logDebug
-import com.stefanosiano.powerful_libraries.sama.logWarning
 import com.stefanosiano.powerful_libraries.sama.tryOrPrint
 import com.stefanosiano.powerful_libraries.sama.view.SamaActivity
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -40,8 +39,8 @@ object Saf : CoroutineScope {
         resultCode: Int,
         data: Intent?
     ): Boolean {
-        val safHelper = safHelperMap[requestCode] ?: return false
-        if (resultCode != Activity.RESULT_OK) {
+        val safHelper = safHelperMap[requestCode]
+        if (safHelper == null || resultCode != Activity.RESULT_OK) {
             return false
         }
         safHelperMap.remove(requestCode)
@@ -106,9 +105,7 @@ object Saf : CoroutineScope {
                     stream?.use { safHelper.f!!.invoke(it) }
                 }
             }
-        } ?: let {
-            return false
-        }
+        } ?: return false
         return true
     }
 
@@ -230,7 +227,11 @@ object Saf : CoroutineScope {
      */
     @Suppress("UNCHECKED_CAST")
     @RequiresApi(Build.VERSION_CODES.KITKAT)
-    fun createDocumentOs(persistableUriPermission: Boolean, mimeType: String, f: (outputStream: OutputStream?) -> Unit) {
+    fun createDocumentOs(
+        persistableUriPermission: Boolean,
+        mimeType: String,
+        f: (outputStream: OutputStream?) -> Unit
+    ) {
         val intent = Intent(Intent.ACTION_CREATE_DOCUMENT)
             .setType(mimeType)
             .addCategory(Intent.CATEGORY_OPENABLE)

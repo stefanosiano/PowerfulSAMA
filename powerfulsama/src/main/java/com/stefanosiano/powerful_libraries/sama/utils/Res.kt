@@ -10,7 +10,6 @@ import androidx.databinding.ObservableInt
 import com.stefanosiano.powerful_libraries.sama.tryOrNull
 import java.io.File
 import java.io.FileOutputStream
-import java.io.IOException
 import java.io.InputStream
 
 /**

@@ -39,8 +39,10 @@ object Perms {
         permissions: Array<out String>,
         grantResults: IntArray
     ): Boolean {
-        val permHelper = permHelperMap[requestCode] ?: return false
-        if (!permHelper.isCallingResult) return false
+        val permHelper = permHelperMap[requestCode]
+        if (permHelper == null || !permHelper.isCallingResult) {
+            return false
+        }
         permHelperMap.remove(requestCode)
         return permHelper.onRequestPermissionsResult(activity, permissions, grantResults)
     }
@@ -48,19 +50,19 @@ object Perms {
     /** Checks if all [perms] are granted. Return true only if all of them are granted. */
     fun hasPermissions(vararg perms: String): Boolean = perms.all {
         ActivityCompat.checkSelfPermission(applicationContext, it) ==
-                PackageManager.PERMISSION_GRANTED
+            PackageManager.PERMISSION_GRANTED
     }
 
     /** Checks if all [perms] are granted. Return true only if all of them are granted. */
     fun hasPermissions(perms: Collection<String>): Boolean = perms.all {
         ActivityCompat.checkSelfPermission(applicationContext, it) ==
-                PackageManager.PERMISSION_GRANTED
+            PackageManager.PERMISSION_GRANTED
     }
 
     /** Checks if all [perms] are granted. Return true only if all of them are granted. */
     fun hasPermissions(perms: List<String>): Boolean = perms.all {
         ActivityCompat.checkSelfPermission(applicationContext, it) ==
-                PackageManager.PERMISSION_GRANTED
+            PackageManager.PERMISSION_GRANTED
     }
 
     /**
@@ -91,14 +93,15 @@ object Perms {
     ) {
         if (
             PowerfulSama.isAppDebug &&
-            (!requestedPermissions.contains(perms) ||
-                    !requestedPermissions.contains(optionalPerms))
+            (!requestedPermissions.contains(perms) || !requestedPermissions.contains(optionalPerms))
         ) {
             Msg.alertDialog().message(
-                "Warning: The requested permissions are not defined in the manifest. This is only a debug message. Release version will fail silently (function will not be called)"
+                "Warning: The requested permissions are not defined in the manifest. This is only a debug message. " +
+                    "Release version will fail silently (function will not be called)"
             ).show()
             logError(
-                "Warning: The requested permissions are not defined in the manifest. This is only a debug message. Release version will fail silently (function will not be called)"
+                "Warning: The requested permissions are not defined in the manifest. This is only a debug message. " +
+                    "Release version will fail silently (function will not be called)"
             )
             return
         }
@@ -351,24 +354,24 @@ object Perms {
                     }
                 }
 
-            if (permissionsToRationale.isNotEmpty()) {
-                isCallingResult = true
-                permissionsToRationale.addAll(permissionsToAsk)
-                onShowRationale(permissionsToRationale.toTypedArray(), activity, requestCode)
-                return true
+            return when {
+                permissionsToRationale.isNotEmpty() -> {
+                    isCallingResult = true
+                    permissionsToRationale.addAll(permissionsToAsk)
+                    onShowRationale(permissionsToRationale.toTypedArray(), activity, requestCode)
+                    true
+                }
+                permissionsToAsk.isNotEmpty() -> {
+                    isCallingResult = true
+                    ActivityCompat.requestPermissions(
+                        activity,
+                        permissionsToAsk.toTypedArray(),
+                        requestCode
+                    )
+                    true
+                }
+                else -> false
             }
-
-            if (permissionsToAsk.isNotEmpty()) {
-                isCallingResult = true
-                ActivityCompat.requestPermissions(
-                    activity,
-                    permissionsToAsk.toTypedArray(),
-                    requestCode
-                )
-                return true
-            }
-
-            return false
         }
 
         internal fun onRequestPermissionsResult(
@@ -394,33 +397,27 @@ object Perms {
                     // if permission is optional and (!showRationale) user CHECKED "never ask again"
                     // but permission is optional, so function can be called anyway
 
-                    // if permission is needed
-                    if (!optionalPermissions.contains(permission)) {
-                        // user CHECKED "never ask again": open another dialog explaining again
-                        // the permission and directing to the app setting
-                        if (!showRationale) deniedPermissions.add(permission)
+                    // if permission is needed and user CHECKED "never ask again": open another dialog explaining again
+                    // the permission and directing to the app setting
+                    if (!optionalPermissions.contains(permission) && !showRationale) {
+                        deniedPermissions.add(permission)
                     }
                 }
             }
 
-            // if at least 1 needed permission was permanently denied, I need to ask for it
-            if (deniedPermissions.isNotEmpty()) {
-                onPermanentlyDenied(
+            when {
+                // if at least 1 needed permission was permanently denied, I need to ask for it
+                deniedPermissions.isNotEmpty() -> onPermanentlyDenied(
                     deniedPermissions.toTypedArray(),
                     rationalePermissions.toTypedArray(),
                     activity,
                     requestCode
                 )
-                return true
+                // if at least 1 permission needs rationale, I must show it!
+                rationalePermissions.isNotEmpty() ->
+                    onShowRationale(rationalePermissions.toTypedArray(), activity, requestCode)
+                else -> onGranted()
             }
-
-            // if at least 1 permission needs rationale, I must show it!
-            if (rationalePermissions.isNotEmpty()) {
-                onShowRationale(rationalePermissions.toTypedArray(), activity, requestCode)
-                return true
-            }
-
-            onGranted()
             return true
         }
     }
@@ -430,6 +427,7 @@ object Perms {
  * Abstract class that contains informations regarding permissions to run a specific function.
  * Used through [Perms.call].
  */
+@Suppress("UnusedPrivateMember", "UnnecessaryAbstractClass", "EmptyFunctionBlock")
 abstract class PermissionContainer(
     /** Required permissions needed by the function to be be asked for, if not already granted. */
     val perms: List<String>,

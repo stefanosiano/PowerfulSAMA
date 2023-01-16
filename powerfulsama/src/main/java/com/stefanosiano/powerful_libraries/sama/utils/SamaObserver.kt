@@ -43,17 +43,23 @@ interface SamaObserver {
      */
     fun initObserver(coroutineScope: CoroutineScope)
 
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     *  now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed.
+     * Returns an [ObservableField] with initial value of null.
+     */
     fun <R, T> observe(
         o: Flow<T>,
         vararg obs: Observable,
         obFun: (data: T) -> R
     ): ObservableField<R>
 
-    /** 
-     * Observes [o] until this object is destroyed and calls [obFun] in the background, 
-     *  now and whenever [o] or any of [obs] change, with the current value of [o]. 
-     * Does nothing if [o] is null or already changed. 
-     * Returns an [ObservableField] with initial value of null. 
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     *  now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed.
+     * Returns an [ObservableField] with initial value of null.
      */
     fun <R> observe(
         o: ObservableInt,
@@ -61,11 +67,11 @@ interface SamaObserver {
         obFun: (data: Int) -> R
     ): ObservableField<R>
 
-    /** 
-     * Observes [o] until this object is destroyed and calls [obFun] in the background, 
-     *  now and whenever [o] or any of [obs] change, with the current value of [o]. 
-     * Does nothing if [o] is null or already changed. 
-     * Returns an [ObservableField] with initial value of null. 
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     *  now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed.
+     * Returns an [ObservableField] with initial value of null.
      */
     fun <R> observe(
         o: ObservableShort,
@@ -73,11 +79,11 @@ interface SamaObserver {
         obFun: (data: Short) -> R
     ): ObservableField<R>
 
-    /** 
-     * Observes [o] until this object is destroyed and calls [obFun] in the background, 
-     *  now and whenever [o] or any of [obs] change, with the current value of [o]. 
-     * Does nothing if [o] is null or already changed. 
-     * Returns an [ObservableField] with initial value of null. 
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     *  now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed.
+     * Returns an [ObservableField] with initial value of null.
      */
     fun <R> observe(
         o: ObservableLong,
@@ -85,11 +91,11 @@ interface SamaObserver {
         obFun: (data: Long) -> R
     ): ObservableField<R>
 
-    /** 
-     * Observes [o] until this object is destroyed and calls [obFun] in the background, 
-     *  now and whenever [o] or any of [obs] change, with the current value of [o]. 
-     * Does nothing if [o] is null or already changed. 
-     * Returns an [ObservableField] with initial value of null. 
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     *  now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed.
+     * Returns an [ObservableField] with initial value of null.
      */
     fun <R> observe(
         o: ObservableByte,
@@ -97,11 +103,11 @@ interface SamaObserver {
         obFun: (data: Byte) -> R
     ): ObservableField<R>
 
-    /** 
-     * Observes [o] until this object is destroyed and calls [obFun] in the background, 
-     *  now and whenever [o] or any of [obs] change, with the current value of [o]. 
-     * Does nothing if [o] is null or already changed. 
-     * Returns an [ObservableField] with initial value of null. 
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     *  now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed.
+     * Returns an [ObservableField] with initial value of null.
      */
     fun <R> observe(
         o: ObservableChar,
@@ -109,11 +115,11 @@ interface SamaObserver {
         obFun: (data: Char) -> R
     ): ObservableField<R>
 
-    /** 
-     * Observes [o] until this object is destroyed and calls [obFun] in the background, 
-     *  now and whenever [o] or any of [obs] change, with the current value of [o]. 
-     * Does nothing if [o] is null or already changed. 
-     * Returns an [ObservableField] with initial value of null. 
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     *  now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed.
+     * Returns an [ObservableField] with initial value of null.
      */
     fun <R> observe(
         o: ObservableBoolean,
@@ -121,11 +127,11 @@ interface SamaObserver {
         obFun: (data: Boolean) -> R
     ): ObservableField<R>
 
-    /** 
-     * Observes [o] until this object is destroyed and calls [obFun] in the background, 
-     *  now and whenever [o] or any of [obs] change, with the current value of [o]. 
-     * Does nothing if [o] is null or already changed. 
-     * Returns an [ObservableField] with initial value of null. 
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     *  now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed.
+     * Returns an [ObservableField] with initial value of null.
      */
     fun <R> observe(
         o: ObservableFloat,
@@ -133,11 +139,11 @@ interface SamaObserver {
         obFun: (data: Float) -> R
     ): ObservableField<R>
 
-    /** 
-     * Observes [o] until this object is destroyed and calls [obFun] in the background, 
-     *  now and whenever [o] or any of [obs] change, with the current value of [o]. 
-     * Does nothing if [o] is null or already changed. 
-     * Returns an [ObservableField] with initial value of null. 
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     *  now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed.
+     * Returns an [ObservableField] with initial value of null.
      */
     fun <R> observe(
         o: ObservableDouble,
@@ -145,11 +151,11 @@ interface SamaObserver {
         obFun: (data: Double) -> R
     ): ObservableField<R>
 
-    /** 
-     * Observes [o] until this object is destroyed and calls [obFun] in the background, 
-     *  now and whenever [o] or any of [obs] change, with the current value of [o]. 
-     * Does nothing if [o] is null or already changed. 
-     * Returns an [ObservableField] with initial value of null. 
+    /**
+     * Observes [o] until this object is destroyed and calls [obFun] in the background,
+     *  now and whenever [o] or any of [obs] change, with the current value of [o].
+     * Does nothing if [o] is null or already changed.
+     * Returns an [ObservableField] with initial value of null.
      */
     fun <R, T> observe(
         o: ObservableField<T>,
@@ -203,7 +209,7 @@ interface SamaObserver {
  */
 class SamaObserverImpl : SamaObserver {
 
-    var coroutineScope: CoroutineScope? = null
+    private var coroutineScope: CoroutineScope? = null
 
     private val observableMap: HashMap<Int, SamaObservableHelper> = HashMap()
     private val flowMap: HashMap<Int, SamaFlowHelper> = HashMap()
@@ -389,15 +395,17 @@ class SamaObserverImpl : SamaObserver {
         }
 
         synchronized(observables) {
-            observables.addAll(obs.map {
-                SamaInnerObservable(
-                    it,
-                    it.onPropertyChanged {
-                        helper.onStart = f
-                        f()
-                    }
-                )
-            })
+            observables.addAll(
+                obs.map {
+                    SamaInnerObservable(
+                        it,
+                        it.onPropertyChanged {
+                            helper.onStart = f
+                            f()
+                        }
+                    )
+                }
+            )
             // sets the function to call when using an observable and runs it now
             observables.add(SamaInnerObservable(o, o.onPropertyChanged { helper.onStart = f; f() }))
         }
@@ -432,13 +440,22 @@ class SamaObserverImpl : SamaObserver {
         }
 
         synchronized(observables) {
-            observables.addAll(obs.map {
-                SamaInnerObservable(
-                    it,
-                    it.onPropertyChanged { helper.onStart = f; f() })
-            })
+            observables.addAll(
+                obs.map {
+                    SamaInnerObservable(
+                        it,
+                        it.onPropertyChanged {
+                            helper.onStart = f
+                            f()
+                        }
+                    )
+                }
+            )
 
-            val c = o.onAnyChange { helper.onStart = f; f() }
+            val c = o.onAnyChange {
+                helper.onStart = f
+                f()
+            }
             listObservables.add(
                 SamaInnerListObservable(
                     o as ObservableList<Any>,
@@ -454,6 +471,7 @@ class SamaObserverImpl : SamaObserver {
      * Observes [o] until this object is destroyed and calls [obFun] in the background,
      *  now and whenever [o] or any of [obs] change, with the current value of [o].
      * Does nothing if [o] is null or already changed.
+     * Returns an [ObservableField] with initial value of null.
      */
     @Suppress("UNCHECKED_CAST")
     override fun <R, T> observe(
@@ -548,11 +566,17 @@ class SamaObserverImpl : SamaObserver {
         }
 
         synchronized(observables) {
-            observables.addAll(obs.map {
-                SamaInnerObservable(
-                    it,
-                    it.onPropertyChanged { helper.onStart = f; f() })
-            })
+            observables.addAll(
+                obs.map {
+                    SamaInnerObservable(
+                        it,
+                        it.onPropertyChanged {
+                            helper.onStart = f
+                            f()
+                        }
+                    )
+                }
+            )
         }
         val observer: Observer<Any?> = Observer { helper.onStart = f; f() }
         synchronized(customObservedLiveData) {
@@ -567,7 +591,10 @@ class SamaObserverImpl : SamaObserver {
         return liveData
     }
 
-    /** Run [f] to get a [LiveData] every time any of [o] or [obs] changes, removing the old one. It return a [LiveData] of the same type as [f]. */
+    /**
+     * Run [f] to get a [LiveData] every time any of [o] or [obs] changes, removing the old one.
+     * It return a [LiveData] of the same type as [f].
+     */
     override fun <T> observeAndReloadLiveData(
         o: ObservableField<*>,
         vararg obs: Observable,
