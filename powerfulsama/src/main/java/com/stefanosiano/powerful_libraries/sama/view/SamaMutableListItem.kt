@@ -4,25 +4,22 @@ import androidx.room.Ignore
 import kotlinx.coroutines.launch
 
 /**
- * Class that represents a list item. Used in conjunction with [SamaRvAdapter].
- * The difference with [SamaListItem] lies in an object kept in memory by the adapter that is associated with this item.
+ * Class to be extended by other list items. To be used with [SamaRvAdapter].
+ * It contains a dynamic object that is retained in memory by the adapter, passed in [onBind].
+ * In case no dynamic objects are needed, use [SamaListItem].
  */
-abstract class SamaMutableListItem<T: Any> : SamaListItem() {
+abstract class SamaMutableListItem<T : Any> : SamaListItem() {
 
-    /** Column count of the adapter's recyclerView. Works only when using [SamaRecyclerView]. Surely set in [onBind]. */
+    /** Function to edit the object bound to this item. */
     @Ignore internal var mEditBoundItem: (T) -> Unit = {}
 
-    @Deprecated(
-        message = "Use method with bound object, since this is a mutableListItem",
-        replaceWith = ReplaceWith("onBind(bound, initObjects)")
-    )
     final override suspend fun onBind() = super.onBind()
 
     /** Called the first time the bound item needs to be created. */
     abstract fun newBoundItem(): T
 
     /** Called when it's bound to the view. */
-    open suspend fun onBind(bound: T) {  }
+    open suspend fun onBind(bound: T) { }
 
     /** Edit the item bound to this list item. */
     protected fun editBoundItem(item: T) { mEditBoundItem(item) }
@@ -34,5 +31,4 @@ abstract class SamaMutableListItem<T: Any> : SamaListItem() {
         launchableFunctions.clear()
         launch { onBind(bound as T) }
     }
-
 }
