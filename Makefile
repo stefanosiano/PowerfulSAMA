@@ -19,7 +19,7 @@ stop:
 # Assemble release of the library modules to publish
 assembleLibraryModules:
 	./gradlew :powerfulsama:assembleRelease
-	./gradlew :powerfulsama_annotations:assembleRelease
+	./gradlew :powerfulsama_annotations:build
 
 # Publish library to Sonatype
 publishLibrary:
