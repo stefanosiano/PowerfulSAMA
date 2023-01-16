@@ -4,9 +4,7 @@ import android.content.res.ColorStateList
 import android.graphics.Bitmap
 import android.graphics.Paint
 import android.graphics.drawable.Drawable
-import android.text.Editable
 import android.text.TextUtils
-import android.text.TextWatcher
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -21,11 +19,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputLayout
 import com.stefanosiano.powerful_libraries.sama.tryOr
-import com.stefanosiano.powerful_libraries.sama.ui.BigDecimalEditText
-import com.stefanosiano.powerful_libraries.sama.ui.BigDecimalTextInputEditText
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSearchView
 import com.stefanosiano.powerful_libraries.sama.ui.SamaSpinner
-import java.math.BigDecimal
 
 internal class SamaDataBindingAdapters
 
@@ -161,46 +156,6 @@ fun setTextInputLayoutError(textInputLayoutError: TextInputLayout, error: String
     textInputLayoutError.error = error
     textInputLayoutError.isErrorEnabled = !TextUtils.isEmpty(error)
 }
-
-@BindingAdapter("textAttrChanged")
-fun setListeners(view: BigDecimalEditText, attrChange: InverseBindingListener) {
-    view.addTextChangedListener(object : TextWatcher {
-        override fun afterTextChanged(s: Editable?) {
-            attrChange.onChange()
-        }
-
-        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-    })
-}
-
-@BindingAdapter("text")
-fun setBdetText(view: BigDecimalEditText, newValue: BigDecimal) {
-    view.setTextBd(newValue)
-}
-
-@InverseBindingAdapter(attribute = "text")
-fun getBdetText(view: BigDecimalEditText): BigDecimal = view.getTextBd()
-
-@BindingAdapter("textAttrChanged")
-fun setListeners(view: BigDecimalTextInputEditText, attrChange: InverseBindingListener) {
-    view.addTextChangedListener(object : TextWatcher {
-        override fun afterTextChanged(s: Editable?) {
-            attrChange.onChange()
-        }
-
-        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-    })
-}
-
-@BindingAdapter("text")
-fun setTietText(view: BigDecimalTextInputEditText, newValue: BigDecimal) {
-    view.setTextBd(newValue)
-}
-
-@InverseBindingAdapter(attribute = "text")
-fun getTietText(view: BigDecimalTextInputEditText): BigDecimal = view.getTextBd()
 
 @BindingAdapter("spnValueAttrChanged")
 fun setSpnValueListener(spinner: SamaSpinner, listener: InverseBindingListener) {

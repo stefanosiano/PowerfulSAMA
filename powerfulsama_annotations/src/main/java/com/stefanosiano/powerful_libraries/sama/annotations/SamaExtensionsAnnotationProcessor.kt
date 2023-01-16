@@ -3,6 +3,7 @@ package com.stefanosiano.powerful_libraries.sama.annotations
 import androidx.room.Ignore
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
+import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import java.io.File
 import javax.annotation.processing.RoundEnvironment
@@ -59,6 +60,7 @@ internal class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
 
                 val function = FunSpec.builder("defaultContentEquals")
                     .receiver(getKotlinType(cls.qualifiedName.toString()))
+                    .addModifiers(KModifier.INTERNAL)
 
                 function.addParameter(
                     ParameterSpec
@@ -111,6 +113,7 @@ internal class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
 
             val function = FunSpec.builder("defaultRestore")
                 .receiver(getKotlinType(cls.qualifiedName.toString()))
+                .addModifiers(KModifier.INTERNAL)
 
             function.addParameter(
                 ParameterSpec.builder("oldDialog", dialogFragmentType.toKotlinType()).build()
