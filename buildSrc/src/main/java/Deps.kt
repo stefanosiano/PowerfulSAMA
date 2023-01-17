@@ -5,9 +5,9 @@ object Deps {
     const val sdkTarget = sdkCompile
     const val sdkMin = 14
 
-    private const val agpVersion = "7.3.0"
+    private const val agpVersion = "7.3.1"
     private const val kotlinVersion = "1.8.0"
-    private const val coroutinesVersion = "1.5.1"
+    private const val coroutinesVersion = "1.6.4"
     private const val espressoVersion = "3.5.0"
     private const val roomVersion = "2.4.3"
     const val detektPluginVersion = "1.19.0"
