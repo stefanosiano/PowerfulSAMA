@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -181,7 +182,7 @@ interface SamaObserver {
     fun <T> observe(
         liveData: LiveData<T>,
         vararg obs: Observable,
-        observerFunction: (data: T) -> Unit
+        obFun: (data: T) -> Unit
     ): LiveData<T>
 
     /**
@@ -370,13 +371,14 @@ class SamaObserverImpl : SamaObserver {
      * Whenever [o] or any of [obs] change, [obFun] is called with the current value of [o].
      * Does nothing if the value of [o] is null or already changed.
      */
+    @Suppress("UNCHECKED_CAST")
     private fun <T> observePrivate(
         o: Observable,
         obFun: (data: T) -> Unit,
         vararg obs: Observable
     ) {
         val obsId = observablesId.incrementAndGet()
-        val helper = SamaObservableHelper(obsId, null, null)
+        val helper = SamaObservableHelper(obsId, null, null, obFun as (Any?) -> Unit)
         synchronized(observableMap) { observableMap[obsId] = helper }
 
         val f: () -> Unit = {
@@ -390,7 +392,7 @@ class SamaObserverImpl : SamaObserver {
                 }
                 (o.get() as? T?)?.let {
                     logVerbose(it.toString())
-                    obFun(it)
+                    helper.f?.invoke(it)
                 }
                 helper.onStart = null
             }
@@ -427,7 +429,7 @@ class SamaObserverImpl : SamaObserver {
         obFun: (data: List<T>) -> Unit
     ) {
         val obsId = observablesId.incrementAndGet()
-        val helper = SamaObservableHelper(obsId, null, null)
+        val helper = SamaObservableHelper(obsId, null, null, obFun as (Any?) -> Unit)
         synchronized(observableMap) { observableMap[obsId] = helper }
 
         val f: () -> Unit = {
@@ -436,7 +438,7 @@ class SamaObserverImpl : SamaObserver {
                 if (obs.isNotEmpty()) delay(50L)
                 if (isPaused) return@launch
                 if (!isActive) return@launch
-                o.toList().let { logVerbose(it.toString()); obFun(it) }
+                o.toList().let { logVerbose(it.toString()); helper.f?.invoke(it) }
                 helper.onStart = null
             }
         }
@@ -446,18 +448,12 @@ class SamaObserverImpl : SamaObserver {
                 obs.map {
                     SamaInnerObservable(
                         it,
-                        it.onPropertyChanged {
-                            helper.onStart = f
-                            f()
-                        }
+                        it.onPropertyChanged { helper.onStart = f; f() }
                     )
                 }
             )
 
-            val c = o.onAnyChange {
-                helper.onStart = f
-                f()
-            }
+            val c = o.onAnyChange { helper.onStart = f; f() }
             listObservables.add(
                 SamaInnerListObservable(
                     o as ObservableList<Any>,
@@ -483,7 +479,7 @@ class SamaObserverImpl : SamaObserver {
     ): ObservableField<R> {
         val toRet = ObservableField<R>()
         val obsId = observablesId.incrementAndGet()
-        val helper = SamaFlowHelper(obsId, null, null, null)
+        val helper = SamaFlowHelper(obsId, null, null, null, obFun as (Any?) -> Unit)
         synchronized(flowMap) {
             flowMap[obsId] = helper
         }
@@ -499,7 +495,7 @@ class SamaObserverImpl : SamaObserver {
                     return@launch
                 }
                 logVerbose(t.toString())
-                toRet.set(obFun(t))
+                toRet.set(helper.f?.invoke(t) as R)
                 helper.onStart = null
             }
         }
@@ -542,13 +538,14 @@ class SamaObserverImpl : SamaObserver {
     override fun <T> observe(
         liveData: LiveData<T>,
         vararg obs: Observable,
-        observerFunction: (data: T) -> Unit
+        obFun: (data: T) -> Unit
     ): LiveData<T> {
         val obsId = observablesId.incrementAndGet()
-        val helper = SamaObservableHelper(obsId, null, null)
+        val helper = SamaObservableHelper(obsId, null, null, obFun as (Any?) -> Unit)
         synchronized(observableMap) {
             observableMap[obsId] = helper
         }
+        val liveDataWeakRef = WeakReference(liveData)
 
         val f: () -> Unit = {
             helper.job?.cancel()
@@ -559,9 +556,9 @@ class SamaObserverImpl : SamaObserver {
                 if (isPaused || !isActive) {
                     return@launch
                 }
-                liveData.value?.let {
+                liveDataWeakRef.get()?.value?.let {
                     logVerbose(it.toString())
-                    observerFunction(it)
+                    helper.f?.invoke(it)
                 }
                 helper.onStart = null
             }
@@ -679,15 +676,34 @@ class SamaObserverImpl : SamaObserver {
                 customObservedLiveData.clear()
             }
         }
+        synchronized(observableMap) {
+            observableMap.values.forEach {
+                it.job?.cancel()
+                it.job = null
+                it.f = null
+                it.onStart = null
+            }
+            observableMap.clear()
+        }
+        synchronized(flowMap) {
+            flowMap.values.forEach {
+                it.job?.cancel()
+                it.job = null
+                it.f = null
+                it.onStart = null
+            }
+            flowMap.clear()
+        }
     }
 
-    private inner class SamaObservableHelper(val id: Int, var onStart: (() -> Unit)?, var job: Job?)
+    private inner class SamaObservableHelper(val id: Int, var onStart: (() -> Unit)?, var job: Job?, var f: ((data: Any?) -> Unit)?)
 
     private inner class SamaFlowHelper(
         val id: Int,
         var onStart: ((t: Any) -> Unit)?,
         var job: Job?,
-        var lastValue: Any?
+        var lastValue: Any?,
+        var f: ((data: Any?) -> Unit)?
     )
 
     private inner class SamaInnerFlowObservable(

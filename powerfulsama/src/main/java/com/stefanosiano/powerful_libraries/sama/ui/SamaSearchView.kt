@@ -3,6 +3,7 @@ package com.stefanosiano.powerful_libraries.sama.ui
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import androidx.appcompat.widget.SearchView
 import com.stefanosiano.powerful_libraries.sama.R
 import com.stefanosiano.powerful_libraries.sama.coroutineSamaHandler
@@ -132,7 +133,7 @@ open class SamaSearchView : SearchView, CoroutineScope {
         mSuggestionsAdapter = mSuggestionsAdapter ?: ArrayAdapter(context, mSuggestionLayout)
         mSuggestionsAdapter?.clear()
         suggestions?.let { mSuggestionsAdapter?.addAll(it) }
-        val searchAutoComplete = findViewById<SearchAutoComplete>(R.id.search_src_text)
+        val searchAutoComplete = findViewById<AutoCompleteTextView>(R.id.search_src_text)
 
         searchAutoComplete.setOnItemClickListener { _, _, position, _ ->
             mSuggestionsAdapter?.getItem(position)?.let { logVerbose("Clicked on $it"); f(it) }
@@ -151,7 +152,7 @@ open class SamaSearchView : SearchView, CoroutineScope {
             .map { mSuggestionsAdapter?.getItem(it) }
         mSuggestionsAdapter = ArrayAdapter(context, mSuggestionLayout)
         mSuggestionsAdapter?.addAll(oldItems)
-        val searchAutoComplete = findViewById<SearchAutoComplete>(R.id.search_src_text)
+        val searchAutoComplete = findViewById<AutoCompleteTextView>(R.id.search_src_text)
         post { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
     }
 }

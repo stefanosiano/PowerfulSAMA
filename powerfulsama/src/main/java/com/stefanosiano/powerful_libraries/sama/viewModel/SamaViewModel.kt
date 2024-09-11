@@ -32,7 +32,7 @@ protected constructor() : ViewModel(), CoroutineScope, SamaObserver by SamaObser
     private var lastStickyAction: A? = null
 
     /** LiveData of the response the ViewModel sends to the observer (activity/fragment). */
-    private var liveAction: MediatorLiveData<A> = MediatorLiveData()
+    private var liveAction: MediatorLiveData<A?> = MediatorLiveData()
 
     /** Flag to know if this [SamaViewModel] is initialized. Used to check if [onFirtstTime] should be called. */
     internal var isInitialized = AtomicBoolean(false)

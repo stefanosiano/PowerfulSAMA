@@ -464,6 +464,11 @@ open class SamaRvAdapter(
         }
 
         items.iterate { it.onDestroy() }
+        passedObjects.clear()
+        items.clear()
+        idsMap.clear()
+        mutableBoundItems.clear()
+        spannedSizes.clear()
     }
 
     override fun onViewRecycled(holder: SimpleViewHolder) {
