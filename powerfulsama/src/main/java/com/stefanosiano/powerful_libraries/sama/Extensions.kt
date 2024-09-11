@@ -48,7 +48,8 @@ suspend inline fun delayUntil(millis: Long = 100, timeout: Long = 6000, crossinl
     }
     var passed = 0L
     while (!f() && (timeout < 0 || passed < timeout)) {
-        delay(millis); passed += millis
+        delay(millis)
+        passed += millis
     }
 }
 

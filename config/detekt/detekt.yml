@@ -104,4 +104,10 @@ formatting:
   NoUnusedImports:
     active: true
     autoCorrect: true
+  Wrapping:
+    active: true
+    autoCorrect: true
+  PackageName:
+    active: false
+
 

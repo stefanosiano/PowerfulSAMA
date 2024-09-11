@@ -23,7 +23,7 @@ allprojects {
 
 detekt {
     toolVersion = Deps.detektPluginVersion
-    config = files("config/detekt/detekt.yml")
+    config.from("config/detekt/detekt.yml")
     buildUponDefaultConfig = true
 }
 

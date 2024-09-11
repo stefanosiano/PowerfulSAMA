@@ -10,6 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.stefanosiano.powerful_libraries.sama_sample"
+        namespace = "com.stefanosiano.powerful_libraries.sama_sample"
         minSdk = Deps.sdkMin
         targetSdk = Deps.sdkTarget
         versionCode = 1
@@ -29,6 +30,7 @@ android {
     }
 
     buildFeatures {
+        buildConfig = true
         dataBinding = true
         viewBinding = true
         // Enables Jetpack Compose for this module: compose = true
@@ -46,6 +48,10 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
         }
     }
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 dependencies {
@@ -85,7 +91,7 @@ dependencies {
 
 detekt {
     toolVersion = Deps.detektPluginVersion
-    config = files("$rootDir/config/detekt/detekt.yml")
+    config.from("$rootDir/config/detekt/detekt.yml")
 //    allRules = true
     buildUponDefaultConfig = true
     autoCorrect = false

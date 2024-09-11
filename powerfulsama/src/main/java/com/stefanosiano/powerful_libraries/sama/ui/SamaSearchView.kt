@@ -80,19 +80,19 @@ open class SamaSearchView : SearchView, CoroutineScope {
 
     constructor(context: Context) : this(context, null)
     constructor(context: Context, attrs: AttributeSet?) :
-        this(context, attrs, R.attr.searchViewStyle)
+        this(context, attrs, androidx.appcompat.R.attr.searchViewStyle)
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) :
         super(context, attrs, defStyleAttr) {
-            val attrSet = context.theme
-                .obtainStyledAttributes(attrs, R.styleable.SamaSearchView, defStyleAttr, 0)
-            clearFocusOnSubmit = attrSet
-                .getBoolean(R.styleable.SamaSearchView_ssvClearFocusOnSubmit, clearFocusOnSubmit)
-            millis = attrSet.getInt(R.styleable.SamaSearchView_ssvMillis, 0).toLong()
-            mSuggestionLayout = attrSet.getInt(R.styleable.SamaSearchView_ssvSuggestionLayout, -1)
-            val query = attrSet.getString(R.styleable.SamaSearchView_ssvQuery) ?: ""
-            attrSet.recycle()
-            setQuery(query, true)
-        }
+        val attrSet = context.theme
+            .obtainStyledAttributes(attrs, R.styleable.SamaSearchView, defStyleAttr, 0)
+        clearFocusOnSubmit = attrSet
+            .getBoolean(R.styleable.SamaSearchView_ssvClearFocusOnSubmit, clearFocusOnSubmit)
+        millis = attrSet.getInt(R.styleable.SamaSearchView_ssvMillis, 0).toLong()
+        mSuggestionLayout = attrSet.getInt(R.styleable.SamaSearchView_ssvSuggestionLayout, -1)
+        val query = attrSet.getString(R.styleable.SamaSearchView_ssvQuery) ?: ""
+        attrSet.recycle()
+        setQuery(query, true)
+    }
 
     /** Call the [addOnQueryTextListener]. */
     override fun setOnQueryTextListener(listener: OnQueryTextListener?) =
@@ -133,10 +133,13 @@ open class SamaSearchView : SearchView, CoroutineScope {
         mSuggestionsAdapter = mSuggestionsAdapter ?: ArrayAdapter(context, mSuggestionLayout)
         mSuggestionsAdapter?.clear()
         suggestions?.let { mSuggestionsAdapter?.addAll(it) }
-        val searchAutoComplete = findViewById<AutoCompleteTextView>(R.id.search_src_text)
+        val searchAutoComplete = findViewById<AutoCompleteTextView>(androidx.appcompat.R.id.search_src_text)
 
         searchAutoComplete.setOnItemClickListener { _, _, position, _ ->
-            mSuggestionsAdapter?.getItem(position)?.let { logVerbose("Clicked on $it"); f(it) }
+            mSuggestionsAdapter?.getItem(position)?.let {
+                logVerbose("Clicked on $it")
+                f(it)
+            }
         }
         post { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
     }
@@ -152,7 +155,7 @@ open class SamaSearchView : SearchView, CoroutineScope {
             .map { mSuggestionsAdapter?.getItem(it) }
         mSuggestionsAdapter = ArrayAdapter(context, mSuggestionLayout)
         mSuggestionsAdapter?.addAll(oldItems)
-        val searchAutoComplete = findViewById<AutoCompleteTextView>(R.id.search_src_text)
+        val searchAutoComplete = findViewById<AutoCompleteTextView>(androidx.appcompat.R.id.search_src_text)
         post { searchAutoComplete.setAdapter(mSuggestionsAdapter) }
     }
 }

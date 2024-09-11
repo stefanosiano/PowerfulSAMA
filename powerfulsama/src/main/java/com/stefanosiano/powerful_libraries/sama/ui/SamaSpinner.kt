@@ -59,7 +59,7 @@ open class SamaSpinner : AppCompatSpinner {
     fun init(spinnerLayoutId: Int) {
         val temp = ArrayList<String>()
         val old = getSpnKey()
-        (0 until (arrayAdapter?.count ?: 0)).forEach { i ->
+        for (i in 0 until (arrayAdapter?.count ?: 0)) {
             arrayAdapter?.getItem(i)?.let { temp.add(it) }
         }
         post {

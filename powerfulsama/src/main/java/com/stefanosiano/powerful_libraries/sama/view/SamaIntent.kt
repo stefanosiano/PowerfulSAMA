@@ -15,17 +15,25 @@ class SamaIntent : Intent {
 
     internal val uid: Long
 
-    constructor() : super() { this.uid = uids.incrementAndGet(); putExtra(extra, uid) }
+    constructor() : super() {
+        this.uid = uids.incrementAndGet()
+        putExtra(extra, uid)
+    }
     constructor(o: Intent?) : super(o) { this.uid = getLongExtra(extra, 0) }
-    constructor(action: String?) : super(action) { this.uid = uids.incrementAndGet(); putExtra(extra, uid) }
+    constructor(action: String?) : super(action) {
+        this.uid = uids.incrementAndGet()
+        putExtra(extra, uid)
+    }
     constructor(action: String?, uri: Uri?) : super(action, uri) {
-        this.uid = uids.incrementAndGet(); putExtra(
+        this.uid = uids.incrementAndGet()
+        putExtra(
             extra,
             uid
         )
     }
     constructor(packageContext: Context?, cls: Class<*>) : super(packageContext, cls) {
-        this.uid = uids.incrementAndGet(); putExtra(
+        this.uid = uids.incrementAndGet()
+        putExtra(
             extra,
             uid
         )

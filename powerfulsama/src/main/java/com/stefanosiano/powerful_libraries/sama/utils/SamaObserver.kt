@@ -411,7 +411,15 @@ class SamaObserverImpl : SamaObserver {
                 }
             )
             // sets the function to call when using an observable and runs it now
-            observables.add(SamaInnerObservable(o, o.onPropertyChanged { helper.onStart = f; f() }))
+            observables.add(
+                SamaInnerObservable(
+                    o,
+                    o.onPropertyChanged {
+                        helper.onStart = f
+                        f()
+                    }
+                )
+            )
         }
         helper.onStart = f
         f()
@@ -438,7 +446,10 @@ class SamaObserverImpl : SamaObserver {
                 if (obs.isNotEmpty()) delay(50L)
                 if (isPaused) return@launch
                 if (!isActive) return@launch
-                o.toList().let { logVerbose(it.toString()); helper.f?.invoke(it) }
+                o.toList().let {
+                    logVerbose(it.toString())
+                    helper.f?.invoke(it)
+                }
                 helper.onStart = null
             }
         }
@@ -448,12 +459,18 @@ class SamaObserverImpl : SamaObserver {
                 obs.map {
                     SamaInnerObservable(
                         it,
-                        it.onPropertyChanged { helper.onStart = f; f() }
+                        it.onPropertyChanged {
+                            helper.onStart = f
+                            f()
+                        }
                     )
                 }
             )
 
-            val c = o.onAnyChange { helper.onStart = f; f() }
+            val c = o.onAnyChange {
+                helper.onStart = f
+                f()
+            }
             listObservables.add(
                 SamaInnerListObservable(
                     o as ObservableList<Any>,
@@ -577,7 +594,10 @@ class SamaObserverImpl : SamaObserver {
                 }
             )
         }
-        val observer: Observer<Any?> = Observer { helper.onStart = f; f() }
+        val observer: Observer<Any?> = Observer {
+            helper.onStart = f
+            f()
+        }
         synchronized(customObservedLiveData) {
             customObservedLiveData.add(
                 Pair(liveData as LiveData<Any?>, observer)
@@ -696,7 +716,14 @@ class SamaObserverImpl : SamaObserver {
         }
     }
 
-    private inner class SamaObservableHelper(val id: Int, var onStart: (() -> Unit)?, var job: Job?, var f: ((data: Any?) -> Unit)?)
+    private inner class SamaObservableHelper(
+        val id: Int,
+        var onStart: (() -> Unit)?,
+        var job: Job?,
+        var f: (
+            (data: Any?) -> Unit
+        )?
+    )
 
     private inner class SamaFlowHelper(
         val id: Int,

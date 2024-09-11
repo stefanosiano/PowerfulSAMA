@@ -30,18 +30,18 @@ object Deps {
     const val kotlinCoroutinesAndroid = "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion"
 
     // Android
-    const val appCompat = "androidx.appcompat:appcompat:1.7.0"
+    const val appCompat = "androidx.appcompat:appcompat:1.5.1"
     const val fragmentKtx = "androidx.fragment:fragment-ktx:1.5.5"
     const val roomRuntime = "androidx.room:room-runtime:$roomVersion"
     const val roomCommon = "androidx.room:room-common:$roomVersion"
     const val roomCompiler = "androidx.room:room-compiler:$roomVersion"
     const val roomKtx = "androidx.room:room-ktx:$roomVersion"
-    const val activityKtx = "androidx.activity:activity-ktx:1.9.0"
+    const val activityKtx = "androidx.activity:activity-ktx:1.6.1"
     const val recyclerView = "androidx.recyclerview:recyclerview:1.3.2"
-    const val material = "com.google.android.material:material:1.12.0"
+    const val material = "com.google.android.material:material:1.7.0"
     const val lifecycleExtensions = "androidx.lifecycle:lifecycle-extensions:2.2.0"
     const val documentFile = "androidx.documentfile:documentfile:1.0.1"
-    const val pagingRuntimeKtx = "androidx.paging:paging-runtime-ktx:3.3.0"
+    const val pagingRuntimeKtx = "androidx.paging:paging-runtime-ktx:3.1.1"
 
     // Tests
     const val androidJUnitRunner = "androidx.test.runner.AndroidJUnitRunner"

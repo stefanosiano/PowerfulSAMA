@@ -36,26 +36,26 @@ open class SamaRecyclerView : RecyclerView {
     constructor(context: Context, attrs: AttributeSet?, defStyle: Int) :
         super(context, attrs, defStyle) {
 
-            val attrSet = context.theme
-                .obtainStyledAttributes(attrs, R.styleable.SamaRecyclerView, defStyle, 0)
-            columns = attrSet.getInt(R.styleable.SamaRecyclerView_srvColumns, columns)
-            horizontal = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvHorizontal, horizontal)
-            autoDetach = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvAutoDetach, autoDetach)
-            inconsistencyWorkaround = attrSet.getBoolean(
-                R.styleable.SamaRecyclerView_srvInconsistencyWorkaround,
-                inconsistencyWorkaround
-            )
-            disableAdapterAutoStop = attrSet.getBoolean(
-                R.styleable.SamaRecyclerView_srvDisableAdapterAutoStop,
-                disableAdapterAutoStop
-            )
-            disablePredictiveAnimation = attrSet.getBoolean(
-                R.styleable.SamaRecyclerView_srvDisablePredictiveAnimation,
-                disablePredictiveAnimation
-            )
-            attrSet.recycle()
-            resetLayoutManager()
-        }
+        val attrSet = context.theme
+            .obtainStyledAttributes(attrs, R.styleable.SamaRecyclerView, defStyle, 0)
+        columns = attrSet.getInt(R.styleable.SamaRecyclerView_srvColumns, columns)
+        horizontal = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvHorizontal, horizontal)
+        autoDetach = attrSet.getBoolean(R.styleable.SamaRecyclerView_srvAutoDetach, autoDetach)
+        inconsistencyWorkaround = attrSet.getBoolean(
+            R.styleable.SamaRecyclerView_srvInconsistencyWorkaround,
+            inconsistencyWorkaround
+        )
+        disableAdapterAutoStop = attrSet.getBoolean(
+            R.styleable.SamaRecyclerView_srvDisableAdapterAutoStop,
+            disableAdapterAutoStop
+        )
+        disablePredictiveAnimation = attrSet.getBoolean(
+            R.styleable.SamaRecyclerView_srvDisablePredictiveAnimation,
+            disablePredictiveAnimation
+        )
+        attrSet.recycle()
+        resetLayoutManager()
+    }
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()

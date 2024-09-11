@@ -37,7 +37,8 @@ class SamaObserverUnitTest : CoroutineScope {
 
     /** Test if observing a variable calls the corresponding lambda functions on changes. */
     @Suppress("LongMethod")
-    @Test fun observeOnChange_isCorrect() {
+    @Test
+    fun observeOnChange_isCorrect() {
         val observer: SamaObserver = SamaObserverImpl()
 
         var boolToSet = false

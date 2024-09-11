@@ -19,7 +19,7 @@ internal class SamaExtensionsAnnotationProcessor : BaseAnnotationProcessor() {
         setOf(SamaExtensions::class.java.name, JvmField::class.java.name)
 
     override fun process(set: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
-        val annotation = roundEnv.getElementsAnnotatedWith(SamaExtensions::class.java)
+        roundEnv.getElementsAnnotatedWith(SamaExtensions::class.java)
             .filter { it.kind == ElementKind.CLASS }
             .map { it.getAnnotation(SamaExtensions::class.java) }
             .firstOrNull()

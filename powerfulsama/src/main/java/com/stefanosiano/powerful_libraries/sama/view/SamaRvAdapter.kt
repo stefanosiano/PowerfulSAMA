@@ -411,10 +411,16 @@ open class SamaRvAdapter(
     }
 
     /** Function run when adapter loads items, when [bindItems] or [bindPagingItems] is called. */
-    fun onLoadStarted(f: () -> Unit): SamaRvAdapter { this.onLoadStarted = f; return this }
+    fun onLoadStarted(f: () -> Unit): SamaRvAdapter {
+        this.onLoadStarted = f
+        return this
+    }
 
     /** Function run after adapter loads items, when [bindItems] or [bindPagingItems] finished. */
-    fun onLoadFinished(f: () -> Unit): SamaRvAdapter { this.onLoadFinished = f; return this }
+    fun onLoadFinished(f: () -> Unit): SamaRvAdapter {
+        this.onLoadFinished = f
+        return this
+    }
 
     private fun getItemStableId(listItem: SamaListItem?): Long {
         return if (listItem?.getStableId() != RecyclerView.NO_ID) {
@@ -629,7 +635,7 @@ open class SamaRvAdapter(
         override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
             !hasStableId ||
                 getItemStableId(oldList[oldItemPosition]) ==
-                    getItemStableId(newList[newItemPosition])
+                getItemStableId(newList[newItemPosition])
         override fun getOldListSize(): Int = oldList.size
         override fun getNewListSize(): Int = newList.size
         override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
