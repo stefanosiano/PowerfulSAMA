@@ -18,8 +18,8 @@ group = libGroupId
 version = libVersion
 
 //retrieve variables from system environmental variables
-def sonatypeUser = enableDeploy ? System.getenv('SONATYPE_USERTOKEN_USER') : ''
-def sonatypePwd = enableDeploy ? System.getenv('SONATYPE_USERTOKEN_PASSWORD') : ''
+def sonatypeUser = enableDeploy ? System.getenv('SONATYPE_USER') : ''
+def sonatypePwd = enableDeploy ? System.getenv('SONATYPE_PWD') : ''
 def sonatypeGpgKey = enableDeploy ? System.getenv('SONATYPE_GPG_KEY') : ''
 def sonatypeGpgPwd = enableDeploy ? System.getenv('SONATYPE_GPG_PWD') : ''
 def sonatypeGpgPath = enableDeploy ? System.getenv('SONATYPE_GPG_PATH') : ''
