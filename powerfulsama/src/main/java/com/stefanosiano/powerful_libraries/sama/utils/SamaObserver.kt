@@ -696,6 +696,7 @@ class SamaObserverImpl : SamaObserver {
                 customObservedLiveData.clear()
             }
         }
+        coroutineScope = null
         synchronized(observableMap) {
             observableMap.values.forEach {
                 it.job?.cancel()
